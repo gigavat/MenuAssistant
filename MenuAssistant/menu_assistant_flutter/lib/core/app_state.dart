@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
-import '../main.dart'; // To access the Serverpod client
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
+
+// SharedPreferences keys
+const _keyThemeMode = 'themeMode';
+const _keyLanguageCode = 'languageCode';
+const _keyCurrencyCode = 'currencyCode';
+const _keyGridMode = 'isGridMode';
 
 class AppState extends ChangeNotifier {
   AppState();
@@ -11,9 +18,9 @@ class AppState extends ChangeNotifier {
   }
 
   ThemeMode themeMode = ThemeMode.system;
-  String languageCode = 'ru'; // Default to Russian
-  String currencyCode = 'EUR'; // Default to Euro
-  
+  String languageCode = 'ru';
+  String currencyCode = 'EUR';
+
   // Data Caching
   List<Restaurant> recentRestaurants = [];
   List<Restaurant> favoriteRestaurants = [];
@@ -21,24 +28,55 @@ class AppState extends ChangeNotifier {
   bool isDataLoaded = false;
   bool isGridMode = true;
 
+  // Error state — screens observe this to show SnackBar
+  String? loadError;
+
   bool get isAuthenticated => client.auth.isAuthenticated;
-  
+
+  // ── Settings persistence ──────────────────────────────────────────────────
+
+  Future<void> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeName = prefs.getString(_keyThemeMode);
+    themeMode = switch (themeName) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+    languageCode = prefs.getString(_keyLanguageCode) ?? 'ru';
+    currencyCode = prefs.getString(_keyCurrencyCode) ?? 'EUR';
+    isGridMode = prefs.getBool(_keyGridMode) ?? true;
+    notifyListeners();
+  }
+
+  Future<void> _saveTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = switch (themeMode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      _ => 'system',
+    };
+    await prefs.setString(_keyThemeMode, name);
+  }
+
+  // ── Settings setters ──────────────────────────────────────────────────────
+
   void setGridMode(bool value) {
     if (isGridMode != value) {
       isGridMode = value;
       notifyListeners();
+      SharedPreferences.getInstance()
+          .then((p) => p.setBool(_keyGridMode, value));
     }
   }
 
-  void toggleGridMode() {
-    isGridMode = !isGridMode;
-    notifyListeners();
-  }
-  
+  void toggleGridMode() => setGridMode(!isGridMode);
+
   void setThemeMode(ThemeMode mode) {
     if (themeMode != mode) {
       themeMode = mode;
       notifyListeners();
+      _saveTheme();
     }
   }
 
@@ -46,6 +84,8 @@ class AppState extends ChangeNotifier {
     if (languageCode != lang) {
       languageCode = lang;
       notifyListeners();
+      SharedPreferences.getInstance()
+          .then((p) => p.setString(_keyLanguageCode, lang));
     }
   }
 
@@ -53,12 +93,14 @@ class AppState extends ChangeNotifier {
     if (currencyCode != currency) {
       currencyCode = currency;
       notifyListeners();
+      SharedPreferences.getInstance()
+          .then((p) => p.setString(_keyCurrencyCode, currency));
     }
   }
 
+  // ── Data loading ──────────────────────────────────────────────────────────
+
   Future<void> loadData() async {
-    // If not authenticated, we can't load user-specific data (favorites, etc.)
-    // but we still want to mark data as "loaded" to stop the entry spinner.
     if (!client.auth.isAuthenticated) {
       isDataLoaded = true;
       notifyListeners();
@@ -66,6 +108,7 @@ class AppState extends ChangeNotifier {
     }
 
     try {
+      loadError = null;
       final futures = await Future.wait([
         client.restaurant.getAllRestaurants(),
         client.restaurant.getFavoriteRestaurants(limit: 3),
@@ -77,26 +120,23 @@ class AppState extends ChangeNotifier {
       isDataLoaded = true;
       notifyListeners();
     } catch (e) {
-      // If an error occurs, we still mark it as loaded so the UI doesn't hang
       debugPrint('Error loading data: $e');
-      isDataLoaded = true; 
+      loadError = 'Не удалось загрузить данные. Проверьте подключение.';
+      isDataLoaded = true;
       notifyListeners();
     }
   }
 
-  bool isRestaurantFavorite(int id) {
-    return favoriteRestaurants.any((r) => r.id == id);
-  }
+  bool isRestaurantFavorite(int id) =>
+      favoriteRestaurants.any((r) => r.id == id);
 
-  bool isMenuItemFavorite(int id) {
-    return favoriteMenuItems.any((item) => item.id == id);
-  }
+  bool isMenuItemFavorite(int id) =>
+      favoriteMenuItems.any((item) => item.id == id);
 
   Future<void> toggleRestaurantFavorite(Restaurant restaurant) async {
     final restaurantId = restaurant.id;
     if (restaurantId == null) return;
 
-    // Optimistic Update: toggle from favoriteRestaurants first
     final wasFavorite = isRestaurantFavorite(restaurantId);
     if (wasFavorite) {
       favoriteRestaurants.removeWhere((r) => r.id == restaurantId);
@@ -107,9 +147,11 @@ class AppState extends ChangeNotifier {
 
     try {
       await client.restaurant.toggleRestaurantFavorite(restaurantId);
-      await loadData(); // Reload to get the most updated lists correctly
+      await loadData();
     } catch (e) {
-      // Revert if needed (simplified here)
+      debugPrint('Error toggling restaurant favorite: $e');
+      loadError = 'Не удалось обновить избранное.';
+      notifyListeners();
       await loadData();
     }
   }
@@ -130,6 +172,9 @@ class AppState extends ChangeNotifier {
       await client.restaurant.toggleMenuItemFavorite(itemId);
       await loadData();
     } catch (e) {
+      debugPrint('Error toggling menu item favorite: $e');
+      loadError = 'Не удалось обновить избранное.';
+      notifyListeners();
       await loadData();
     }
   }

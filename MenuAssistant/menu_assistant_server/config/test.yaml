@@ -44,6 +44,8 @@ redis:
   #user: # defaults to empty
   #requireSsl: true # defaults to false
 
+maxRequestSize: 10485760 # 10 MB — for menu photo/PDF uploads
+
 sessionLogs:
   persistentEnabled: true
   consoleEnabled: true

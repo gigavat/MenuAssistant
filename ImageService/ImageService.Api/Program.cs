@@ -7,16 +7,37 @@ using ImageService.Api.Options;
 using ImageService.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
+
+// 10 MB limit for image uploads
+const long maxUploadBytes = 10L * 1024 * 1024;
+builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = maxUploadBytes);
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = maxUploadBytes);
+
+// Health checks — skip DB/S3 checks when using InMemory (tests)
+var isInMemory = string.Equals(
+    builder.Configuration["Database:Provider"], "InMemory",
+    StringComparison.OrdinalIgnoreCase);
+
+var healthChecks = builder.Services.AddHealthChecks();
+if (!isInMemory)
+{
+    var connectionString = builder.Configuration.GetConnectionString("ImageDb")
+        ?? string.Empty;
+    healthChecks
+        .AddNpgSql(connectionString, name: "database", failureStatus: HealthStatus.Unhealthy)
+        .AddCheck<S3HealthCheck>("s3", failureStatus: HealthStatus.Unhealthy);
+}
 
 builder.Services.AddDbContext<ImageDbContext>((serviceProvider, options) =>
 {
@@ -105,7 +126,15 @@ var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ImageDbContext>();
-    await dbContext.Database.EnsureCreatedAsync();
+    // InMemory provider doesn't support migrations — use EnsureCreated for tests only.
+    if (dbContext.Database.IsInMemory())
+    {
+        await dbContext.Database.EnsureCreatedAsync();
+    }
+    else
+    {
+        await dbContext.Database.MigrateAsync();
+    }
 }
 
 app.UseExceptionHandler();

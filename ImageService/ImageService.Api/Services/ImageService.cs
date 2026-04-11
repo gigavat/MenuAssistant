@@ -152,10 +152,25 @@ public sealed class ImageService(
             return false;
         }
 
-        await _objectStorageService.DeleteAsync(image, cancellationToken);
-
+        // Delete from DB first: if DB fails the S3 object is preserved (no data loss).
+        // If S3 deletion later fails, the object becomes orphaned but the DB record is gone
+        // (S3 lifecycle policies can clean orphans).
         _dbContext.Images.Remove(image);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _objectStorageService.DeleteAsync(image, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Failed to delete S3 blob {Bucket}/{ObjectKey} for image {ImageId}. The object may be orphaned.",
+                image.S3BucketName,
+                image.S3ObjectKey,
+                image.ImageId);
+        }
 
         return true;
     }

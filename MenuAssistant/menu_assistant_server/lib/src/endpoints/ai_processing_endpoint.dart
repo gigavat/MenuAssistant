@@ -12,7 +12,7 @@ class AiProcessingEndpoint extends Endpoint {
 
   /// Simulates processing an uploaded menu photo or document
   Future<Restaurant> processMenuUpload(Session session, String fileName, List<int> fileBytes) async {
-    final userId = session.authenticated!.userIdentifier;
+    final userId = session.authenticated!.authId;
 
     // 1. Extract Restaurant info (Mock)
     var restaurantData = await _llmService.extractMenuAsync(fileName, fileBytes);

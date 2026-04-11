@@ -83,6 +83,14 @@ public sealed class S3ObjectStorageService(
             },
             cancellationToken);
 
+    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+    };
+
     private static void ValidateImage(IFormFile file)
     {
         if (file.Length <= 0)
@@ -90,10 +98,11 @@ public sealed class S3ObjectStorageService(
             throw new InvalidImageException("Uploaded file is empty.");
         }
 
-        if (string.IsNullOrWhiteSpace(file.ContentType) ||
-            !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(file.ContentType) || !AllowedContentTypes.Contains(file.ContentType))
         {
-            throw new InvalidImageException("Only image/* content types are accepted.");
+            throw new InvalidImageException(
+                $"Content type '{file.ContentType}' is not allowed. " +
+                "Accepted types: image/jpeg, image/png, image/webp, image/gif.");
         }
     }
 

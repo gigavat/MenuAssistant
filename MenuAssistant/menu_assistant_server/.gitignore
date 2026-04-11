@@ -14,5 +14,8 @@ doc/api/
 # Passwords file
 config/passwords.yaml
 
+# Environment variables (contain secrets — never commit)
+.env
+
 # Firebase service account key for Firebase auth
 config/firebase_service_account_key.json
