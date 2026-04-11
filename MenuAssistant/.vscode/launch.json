@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "menu_assistant_flutter",
+            "cwd": "${workspaceFolder}/menu_assistant_flutter",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "menu_assistant_server",
+            "cwd": "${workspaceFolder}/menu_assistant_server",
+            "request": "launch",
+            "type": "dart",
+            "preLaunchTask": "docker_compose_up",
+            "program": "bin/main.dart",
+            "env": {
+                "SERVERPOD_PASSWORD_database": "HMsXFY9JIeReKTA3fmMCnUvraG9wFKLJ"
+            },
+            "args": [
+                "--apply-migrations"
+            ]
+        }
+    ],
+    "compounds": [
+        {
+            "name": "menu_assistant (full stack)",
+            "configurations": [
+                "menu_assistant_server",
+                "menu_assistant_flutter"
+            ],
+            "presentation": {
+                "order": 1
+            }
+        }
+    ]
+}

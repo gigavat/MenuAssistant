@@ -1,0 +1,28 @@
+emailIdp:
+  - login:
+  - startRegistration:
+  - verifyRegistrationCode:
+  - finishRegistration:
+  - startPasswordReset:
+  - verifyPasswordResetCode:
+  - finishPasswordReset:
+  - hasAccount:
+jwtRefresh:
+  - refreshAccessToken:
+aiProcessing:
+  - processMenuUpload:
+restaurant:
+  - createRestaurant:
+  - getAllRestaurants:
+  - getRestaurantById:
+  - getCategoriesForRestaurant:
+  - getMenuItemsForCategory:
+  - toggleRestaurantFavorite:
+  - toggleMenuItemFavorite:
+  - getFavoriteRestaurants:
+  - getFavoriteMenuItems:
+  - isRestaurantFavorite:
+userAccount:
+  - checkEmailExists:
+greeting:
+  - hello:

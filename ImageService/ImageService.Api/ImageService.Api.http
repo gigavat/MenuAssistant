@@ -1,0 +1,51 @@
+@ImageService.Api_HostAddress = http://localhost:5050
+@ImageId = 00000000-0000-0000-0000-000000000000
+@InternalJwt = replace-with-bearer-token
+
+GET {{ImageService.Api_HostAddress}}/images?limit=20&offset=0
+Accept: application/json
+Authorization: Bearer {{InternalJwt}}
+
+###
+
+GET {{ImageService.Api_HostAddress}}/images/{{ImageId}}
+Accept: application/json
+Authorization: Bearer {{InternalJwt}}
+
+###
+
+GET {{ImageService.Api_HostAddress}}/images/{{ImageId}}/content
+Authorization: Bearer {{InternalJwt}}
+
+###
+
+POST {{ImageService.Api_HostAddress}}/images
+Authorization: Bearer {{InternalJwt}}
+Content-Type: multipart/form-data; boundary=ImageServiceBoundary
+
+--ImageServiceBoundary
+Content-Disposition: form-data; name="file"; filename="sample.png"
+Content-Type: image/png
+
+< ./sample.png
+--ImageServiceBoundary--
+
+###
+
+PUT {{ImageService.Api_HostAddress}}/images/{{ImageId}}
+Authorization: Bearer {{InternalJwt}}
+Content-Type: multipart/form-data; boundary=ImageServiceBoundary
+
+--ImageServiceBoundary
+Content-Disposition: form-data; name="file"; filename="updated.png"
+Content-Type: image/png
+
+< ./updated.png
+--ImageServiceBoundary--
+
+###
+
+DELETE {{ImageService.Api_HostAddress}}/images/{{ImageId}}
+Authorization: Bearer {{InternalJwt}}
+
+###

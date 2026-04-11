@@ -1,0 +1,7 @@
+class: RestaurantMember
+table: restaurant_member
+fields:
+  userId: String
+  restaurant: Restaurant?, relation
+  role: String
+  createdAt: DateTime

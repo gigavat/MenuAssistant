@@ -1,0 +1,10 @@
+class: FavoriteRestaurant
+table: favorite_restaurant
+fields:
+  userId: String
+  restaurant: Restaurant?, relation
+  createdAt: DateTime
+indexes:
+  favorite_restaurant_unique_idx:
+    fields: userId, restaurantId
+    unique: true

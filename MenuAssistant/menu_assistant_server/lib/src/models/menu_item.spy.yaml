@@ -1,0 +1,11 @@
+class: MenuItem
+table: menu_item
+fields:
+  name: String
+  descriptionRaw: String?
+  price: double
+  tags: List<String>?
+  imageUrl: String?
+  spicyLevel: int?
+  category: Category?, relation
+  createdAt: DateTime

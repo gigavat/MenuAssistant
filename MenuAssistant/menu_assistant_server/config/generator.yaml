@@ -1,0 +1,9 @@
+type: server
+
+client_package_path: ../menu_assistant_client
+
+modules:
+  serverpod_auth_server:
+    nickname: authCore
+  serverpod_auth_idp_server:
+    nickname: authIdp

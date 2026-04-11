@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: image-service-postgres
+    environment:
+      POSTGRES_DB: image_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d image_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  image-service:
+    build:
+      context: .
+      dockerfile: ImageService.Api/Dockerfile
+    container_name: image-service-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ImageDb: Host=postgres;Port=5432;Database=image_service;Username=postgres;Password=postgres
+      InternalJwt__Issuer: serverpod-dev
+      InternalJwt__Audience: image-service
+      InternalJwt__SigningKey: dev-only-32-byte-minimum-shared-secret
+      AWS__S3__Region: eu-west-1
+      AWS__S3__BucketName: replace-with-your-s3-bucket
+      AWS__S3__AccessKey: replace-with-your-access-key
+      AWS__S3__SecretKey: replace-with-your-secret-key
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:

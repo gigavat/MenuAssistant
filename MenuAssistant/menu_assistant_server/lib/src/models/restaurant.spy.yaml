@@ -1,0 +1,8 @@
+class: Restaurant
+table: restaurant
+fields:
+  name: String
+  location: String?
+  imageUrl: String?
+  currency: String
+  createdAt: DateTime

@@ -1,0 +1,10 @@
+class: FavoriteMenuItem
+table: favorite_menu_item
+fields:
+  userId: String
+  menuItem: MenuItem?, relation
+  createdAt: DateTime
+indexes:
+  favorite_menu_item_unique_idx:
+    fields: userId, menuItemId
+    unique: true
