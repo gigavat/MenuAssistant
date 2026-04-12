@@ -8,24 +8,30 @@ import 'package:serverpod_auth_idp_server/providers/google.dart';
 
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
+import 'src/service_registry.dart';
+import 'src/services/enrichment/dish_catalog_service.dart';
+import 'src/services/enrichment/wikidata_service.dart';
+import 'src/services/image_persistence/image_persistence_service.dart';
+import 'src/services/image_persistence/image_service_persistence.dart';
+import 'src/services/image_search/fal_ai_image_service.dart';
+import 'src/services/image_search/image_search_service.dart';
+import 'src/services/image_search/pexels_image_search_service.dart';
+import 'src/services/image_search/unsplash_image_search_service.dart';
+import 'src/services/llm/claude_llm_service.dart';
+import 'src/services/llm/llm_service.dart';
+import 'src/services/llm/mock_llm_service.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/root.dart';
 
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
-  // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
 
-  // Initialize authentication services for the server.
-  // Token managers will be used to validate and issue authentication keys,
-  // and the identity providers will be the authentication options available for users.
   pod.initializeAuthServices(
     tokenManagerBuilders: [
-      // Use JWT for authentication keys towards the server.
       JwtConfigFromPasswords(),
     ],
     identityProviderBuilders: [
-      // Configure the email identity provider for email/password authentication.
       EmailIdpConfigFromPasswords(
         sendRegistrationVerificationCode: _sendRegistrationCode,
         sendPasswordResetVerificationCode: _sendPasswordResetCode,
@@ -40,28 +46,23 @@ void run(List<String> args) async {
     ],
   );
 
-  // Setup a default page at the web root.
-  // These are used by the default page.
+  // ── Configure Sprint 3 services ────────────────────────────────────────
+  _configureServices(pod);
+
+  // Web routes
   pod.webServer.addRoute(RootRoute(), '/');
   pod.webServer.addRoute(RootRoute(), '/index.html');
 
-  // Serve all files in the web/static relative directory under /.
-  // These are used by the default web page.
   final root = Directory(Uri(path: 'web/static').toFilePath());
   pod.webServer.addRoute(StaticRoute.directory(root));
 
-  // Setup the app config route.
-  // We build this configuration based on the servers api url and serve it to
-  // the flutter app.
   pod.webServer.addRoute(
     AppConfigRoute(apiConfig: pod.config.apiServer),
     '/app/assets/assets/config.json',
   );
 
-  // Checks if the flutter web app has been built and serves it if it has.
   final appDir = Directory(Uri(path: 'web/app').toFilePath());
   if (appDir.existsSync()) {
-    // Serve the flutter web app under the /app path.
     pod.webServer.addRoute(
       FlutterRoute(
         Directory(
@@ -71,7 +72,6 @@ void run(List<String> args) async {
       '/app',
     );
   } else {
-    // If the flutter web app has not been built, serve the build app page.
     pod.webServer.addRoute(
       StaticRoute.file(
         File(
@@ -82,8 +82,77 @@ void run(List<String> args) async {
     );
   }
 
-  // Start the server.
   await pod.start();
+}
+
+/// Wires up LLM, image search providers, dish catalog service and the
+/// enrichment worker future call. Falls back to mock LLM when no
+/// `anthropicApiKey` is configured so local dev without API keys still works.
+void _configureServices(Serverpod pod) {
+  String? key(String name) => pod.getPassword(name);
+
+  // LLM — Claude if key is present, otherwise offline mock.
+  final anthropicKey = key('anthropicApiKey');
+  final LlmService llmService = anthropicKey != null && anthropicKey.isNotEmpty
+      ? ClaudeLlmService(apiKey: anthropicKey)
+      : MockLlmService();
+
+  // Image providers — all optional. Order defines sync fallback.
+  final imageProviders = <ImageSearchService>[];
+  final unsplashKey = key('unsplashAccessKey');
+  if (unsplashKey != null && unsplashKey.isNotEmpty) {
+    imageProviders.add(UnsplashImageSearchService(accessKey: unsplashKey));
+  }
+  final pexelsKey = key('pexelsApiKey');
+  if (pexelsKey != null && pexelsKey.isNotEmpty) {
+    imageProviders.add(PexelsImageSearchService(apiKey: pexelsKey));
+  }
+  final falKey = key('falAiApiKey');
+  if (falKey != null && falKey.isNotEmpty) {
+    imageProviders.add(FalAiImageService(apiKey: falKey));
+  }
+
+  // Image persistence — used for ephemeral sources (fal.ai). Stock providers
+  // (Unsplash, Pexels) bypass this and hotlink directly per their ToS.
+  // The base URL is currently a placeholder; the real upload to ImageService
+  // is wired in Sprint 4.
+  final ImagePersistenceService imagePersistence = ImageServicePersistence(
+    baseUrl: key('imageServiceBaseUrl') ?? 'http://localhost:5000',
+  );
+
+  final catalogService = DishCatalogService(
+    llm: llmService,
+    wikidata: WikidataService(),
+    syncImageProviders: imageProviders,
+    imagePersistence: imagePersistence,
+  );
+
+  final providersById = <String, ImageSearchService>{
+    for (final p in imageProviders) p.providerId: p,
+  };
+
+  ServiceRegistry.configure(
+    llmService: llmService,
+    dishCatalogService: catalogService,
+    imageProvidersById: providersById,
+  );
+
+  // Note: EnrichmentWorkerFutureCall and ImageHealthCheckFutureCall are
+  // auto-discovered and registered by Serverpod's generated dispatcher
+  // (see lib/src/generated/future_calls.dart). They pull dependencies from
+  // ServiceRegistry inside `invoke()`, so the configuration above must
+  // happen before the workers can run. We just need to kick off the first
+  // tick of each loop after startup.
+  Future<void>.delayed(const Duration(seconds: 30), () async {
+    await pod.futureCalls
+        .callAtTime(DateTime.now())
+        .enrichmentWorker
+        .invoke(null);
+    await pod.futureCalls
+        .callAtTime(DateTime.now().add(const Duration(minutes: 1)))
+        .imageHealthCheck
+        .invoke(null);
+  });
 }
 
 void _sendRegistrationCode(
@@ -93,8 +162,6 @@ void _sendRegistrationCode(
   required String verificationCode,
   required Transaction? transaction,
 }) {
-  // NOTE: Here you call your mail service to send the verification code to
-  // the user. For testing, we will just log the verification code.
   session.log('[EmailIdp] Registration code ($email): $verificationCode');
 }
 
@@ -105,7 +172,5 @@ void _sendPasswordResetCode(
   required String verificationCode,
   required Transaction? transaction,
 }) {
-  // NOTE: Here you call your mail service to send the verification code to
-  // the user. For testing, we will just log the verification code.
   session.log('[EmailIdp] Password reset code ($email): $verificationCode');
 }

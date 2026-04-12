@@ -252,7 +252,9 @@ class EndpointAiProcessing extends _i2.EndpointRef {
   @override
   String get name => 'aiProcessing';
 
-  /// Simulates processing an uploaded menu photo or document
+  /// Uploads a menu file (photo/PDF/URL) and returns the restaurant that
+  /// was created. Menu items are linked to the shared DishCatalog so
+  /// subsequent uploads of the same dishes reuse images/descriptions.
   _i3.Future<_i5.Restaurant> processMenuUpload(
     String fileName,
     List<int> fileBytes,

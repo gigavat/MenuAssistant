@@ -8,4 +8,5 @@ fields:
   imageUrl: String?
   spicyLevel: int?
   category: Category?, relation
+  dishCatalog: DishCatalog?, relation
   createdAt: DateTime

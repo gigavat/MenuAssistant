@@ -7,7 +7,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Create a new restaurant and make the current user the owner
   Future<Restaurant> createRestaurant(Session session, Restaurant restaurant) async {
-    final userId = (session.authenticated!).authId;
+    final userId = session.authenticated!.userIdentifier;
 
     // 1. Create the restaurant
     final created = await Restaurant.db.insertRow(session, restaurant);
@@ -28,7 +28,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Get all restaurants where the current user is a member
   Future<List<Restaurant>> getAllRestaurants(Session session) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
 
     final members = await RestaurantMember.db.find(
       session,
@@ -45,7 +45,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Get a single restaurant by ID (verify membership)
   Future<Restaurant?> getRestaurantById(Session session, int id) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
 
     final member = await RestaurantMember.db.findFirstRow(
       session,
@@ -58,7 +58,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Get Categories for a restaurant
   Future<List<Category>> getCategoriesForRestaurant(Session session, int restaurantId) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
     final isMember = await RestaurantMember.db.count(
           session,
           where: (t) => t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
@@ -87,7 +87,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Toggle Favorite status for a restaurant
   Future<bool> toggleRestaurantFavorite(Session session, int restaurantId) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
 
     final existing = await FavoriteRestaurant.db.findFirstRow(
       session,
@@ -112,7 +112,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Toggle Favorite status for a menu item
   Future<bool> toggleMenuItemFavorite(Session session, int menuItemId) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
 
     final existing = await FavoriteMenuItem.db.findFirstRow(
       session,
@@ -137,7 +137,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Get favorite restaurants
   Future<List<Restaurant>> getFavoriteRestaurants(Session session, {int limit = 10}) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
 
     final favorites = await FavoriteRestaurant.db.find(
       session,
@@ -151,7 +151,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Get favorite menu items
   Future<List<MenuItem>> getFavoriteMenuItems(Session session, {int limit = 10}) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
 
     final favorites = await FavoriteMenuItem.db.find(
       session,
@@ -165,7 +165,7 @@ class RestaurantEndpoint extends Endpoint {
 
   /// Checks if a restaurant is favorited by the current user
   Future<bool> isRestaurantFavorite(Session session, int restaurantId) async {
-    final userId = session.authenticated!.authId;
+    final userId = session.authenticated!.userIdentifier;
     return await FavoriteRestaurant.db.count(
           session,
           where: (t) => t.userId.equals(userId) & t.restaurantId.equals(restaurantId),

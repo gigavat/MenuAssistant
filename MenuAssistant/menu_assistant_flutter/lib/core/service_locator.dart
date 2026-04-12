@@ -8,9 +8,13 @@ import '../repositories/restaurant_repository.dart';
 final getIt = GetIt.instance;
 
 Future<void> setupServiceLocator(String apiUrl) async {
-  // Serverpod Client
-  final client = Client(apiUrl)
-    ..connectivityMonitor = FlutterConnectivityMonitor();
+  // Serverpod Client — Claude vision calls with max_tokens=64K can take
+  // up to 2–3 minutes on huge multi-page menus. 4 minutes gives us headroom
+  // over the 3-minute server-side Anthropic timeout.
+  final client = Client(
+    apiUrl,
+    connectionTimeout: const Duration(minutes: 4),
+  )..connectivityMonitor = FlutterConnectivityMonitor();
   client.authSessionManager = FlutterAuthSessionManager();
   await client.auth.initialize();
 

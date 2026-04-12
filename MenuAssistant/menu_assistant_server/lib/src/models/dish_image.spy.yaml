@@ -1,0 +1,22 @@
+class: DishImage
+table: dish_image
+fields:
+  dishCatalog: DishCatalog?, relation
+  imageUrl: String
+  # unsplash | pexels | fal_ai | wikidata | user_uploaded
+  source: String
+  # Provider-specific id for dedupe — e.g. Unsplash photo id.
+  sourceId: String?
+  # Text to display under the image: "Photo by X on Unsplash"
+  attribution: String?
+  attributionUrl: String?
+  isPrimary: bool
+  # Last time the URL was verified reachable by the health-check worker.
+  # Null means never checked yet.
+  lastCheckedAt: DateTime?
+  createdAt: DateTime
+indexes:
+  dish_image_dish_idx:
+    fields: dishCatalogId
+  dish_image_health_idx:
+    fields: lastCheckedAt

@@ -310,26 +310,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Stack(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(12.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            restaurant.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          Flexible(
+                            child: Text(
+                              restaurant.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 8),
                           if (restaurant.location != null) ...[
+                            const SizedBox(height: 4),
                             Row(
                               children: [
                                 const Icon(
                                   Icons.location_on,
-                                  size: 14,
+                                  size: 12,
                                   color: Colors.grey,
                                 ),
                                 const SizedBox(width: 4),
@@ -340,6 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       color: Colors.grey,
                                       fontSize: 12,
                                     ),
+                                    maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),

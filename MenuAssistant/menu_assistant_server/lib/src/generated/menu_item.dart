@@ -13,7 +13,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'category.dart' as _i2;
-import 'package:menu_assistant_server/src/generated/protocol.dart' as _i3;
+import 'dish_catalog.dart' as _i3;
+import 'package:menu_assistant_server/src/generated/protocol.dart' as _i4;
 
 abstract class MenuItem
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
@@ -27,6 +28,8 @@ abstract class MenuItem
     this.spicyLevel,
     required this.categoryId,
     this.category,
+    required this.dishCatalogId,
+    this.dishCatalog,
     required this.createdAt,
   });
 
@@ -40,6 +43,8 @@ abstract class MenuItem
     int? spicyLevel,
     required int categoryId,
     _i2.Category? category,
+    required int dishCatalogId,
+    _i3.DishCatalog? dishCatalog,
     required DateTime createdAt,
   }) = _MenuItemImpl;
 
@@ -51,14 +56,20 @@ abstract class MenuItem
       price: (jsonSerialization['price'] as num).toDouble(),
       tags: jsonSerialization['tags'] == null
           ? null
-          : _i3.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
+          : _i4.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       imageUrl: jsonSerialization['imageUrl'] as String?,
       spicyLevel: jsonSerialization['spicyLevel'] as int?,
       categoryId: jsonSerialization['categoryId'] as int,
       category: jsonSerialization['category'] == null
           ? null
-          : _i3.Protocol().deserialize<_i2.Category>(
+          : _i4.Protocol().deserialize<_i2.Category>(
               jsonSerialization['category'],
+            ),
+      dishCatalogId: jsonSerialization['dishCatalogId'] as int,
+      dishCatalog: jsonSerialization['dishCatalog'] == null
+          ? null
+          : _i4.Protocol().deserialize<_i3.DishCatalog>(
+              jsonSerialization['dishCatalog'],
             ),
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -89,6 +100,10 @@ abstract class MenuItem
 
   _i2.Category? category;
 
+  int dishCatalogId;
+
+  _i3.DishCatalog? dishCatalog;
+
   DateTime createdAt;
 
   @override
@@ -107,6 +122,8 @@ abstract class MenuItem
     int? spicyLevel,
     int? categoryId,
     _i2.Category? category,
+    int? dishCatalogId,
+    _i3.DishCatalog? dishCatalog,
     DateTime? createdAt,
   });
   @override
@@ -122,6 +139,8 @@ abstract class MenuItem
       if (spicyLevel != null) 'spicyLevel': spicyLevel,
       'categoryId': categoryId,
       if (category != null) 'category': category?.toJson(),
+      'dishCatalogId': dishCatalogId,
+      if (dishCatalog != null) 'dishCatalog': dishCatalog?.toJson(),
       'createdAt': createdAt.toJson(),
     };
   }
@@ -139,12 +158,20 @@ abstract class MenuItem
       if (spicyLevel != null) 'spicyLevel': spicyLevel,
       'categoryId': categoryId,
       if (category != null) 'category': category?.toJsonForProtocol(),
+      'dishCatalogId': dishCatalogId,
+      if (dishCatalog != null) 'dishCatalog': dishCatalog?.toJsonForProtocol(),
       'createdAt': createdAt.toJson(),
     };
   }
 
-  static MenuItemInclude include({_i2.CategoryInclude? category}) {
-    return MenuItemInclude._(category: category);
+  static MenuItemInclude include({
+    _i2.CategoryInclude? category,
+    _i3.DishCatalogInclude? dishCatalog,
+  }) {
+    return MenuItemInclude._(
+      category: category,
+      dishCatalog: dishCatalog,
+    );
   }
 
   static MenuItemIncludeList includeList({
@@ -186,6 +213,8 @@ class _MenuItemImpl extends MenuItem {
     int? spicyLevel,
     required int categoryId,
     _i2.Category? category,
+    required int dishCatalogId,
+    _i3.DishCatalog? dishCatalog,
     required DateTime createdAt,
   }) : super._(
          id: id,
@@ -197,6 +226,8 @@ class _MenuItemImpl extends MenuItem {
          spicyLevel: spicyLevel,
          categoryId: categoryId,
          category: category,
+         dishCatalogId: dishCatalogId,
+         dishCatalog: dishCatalog,
          createdAt: createdAt,
        );
 
@@ -214,6 +245,8 @@ class _MenuItemImpl extends MenuItem {
     Object? spicyLevel = _Undefined,
     int? categoryId,
     Object? category = _Undefined,
+    int? dishCatalogId,
+    Object? dishCatalog = _Undefined,
     DateTime? createdAt,
   }) {
     return MenuItem(
@@ -230,6 +263,10 @@ class _MenuItemImpl extends MenuItem {
       category: category is _i2.Category?
           ? category
           : this.category?.copyWith(),
+      dishCatalogId: dishCatalogId ?? this.dishCatalogId,
+      dishCatalog: dishCatalog is _i3.DishCatalog?
+          ? dishCatalog
+          : this.dishCatalog?.copyWith(),
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -275,6 +312,11 @@ class MenuItemUpdateTable extends _i1.UpdateTable<MenuItemTable> {
     value,
   );
 
+  _i1.ColumnValue<int, int> dishCatalogId(int value) => _i1.ColumnValue(
+    table.dishCatalogId,
+    value,
+  );
+
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
       _i1.ColumnValue(
         table.createdAt,
@@ -313,6 +355,10 @@ class MenuItemTable extends _i1.Table<int?> {
       'categoryId',
       this,
     );
+    dishCatalogId = _i1.ColumnInt(
+      'dishCatalogId',
+      this,
+    );
     createdAt = _i1.ColumnDateTime(
       'createdAt',
       this,
@@ -337,6 +383,10 @@ class MenuItemTable extends _i1.Table<int?> {
 
   _i2.CategoryTable? _category;
 
+  late final _i1.ColumnInt dishCatalogId;
+
+  _i3.DishCatalogTable? _dishCatalog;
+
   late final _i1.ColumnDateTime createdAt;
 
   _i2.CategoryTable get category {
@@ -352,6 +402,19 @@ class MenuItemTable extends _i1.Table<int?> {
     return _category!;
   }
 
+  _i3.DishCatalogTable get dishCatalog {
+    if (_dishCatalog != null) return _dishCatalog!;
+    _dishCatalog = _i1.createRelationTable(
+      relationFieldName: 'dishCatalog',
+      field: MenuItem.t.dishCatalogId,
+      foreignField: _i3.DishCatalog.t.id,
+      tableRelation: tableRelation,
+      createTable: (foreignTableRelation) =>
+          _i3.DishCatalogTable(tableRelation: foreignTableRelation),
+    );
+    return _dishCatalog!;
+  }
+
   @override
   List<_i1.Column> get columns => [
     id,
@@ -362,6 +425,7 @@ class MenuItemTable extends _i1.Table<int?> {
     imageUrl,
     spicyLevel,
     categoryId,
+    dishCatalogId,
     createdAt,
   ];
 
@@ -370,19 +434,31 @@ class MenuItemTable extends _i1.Table<int?> {
     if (relationField == 'category') {
       return category;
     }
+    if (relationField == 'dishCatalog') {
+      return dishCatalog;
+    }
     return null;
   }
 }
 
 class MenuItemInclude extends _i1.IncludeObject {
-  MenuItemInclude._({_i2.CategoryInclude? category}) {
+  MenuItemInclude._({
+    _i2.CategoryInclude? category,
+    _i3.DishCatalogInclude? dishCatalog,
+  }) {
     _category = category;
+    _dishCatalog = dishCatalog;
   }
 
   _i2.CategoryInclude? _category;
 
+  _i3.DishCatalogInclude? _dishCatalog;
+
   @override
-  Map<String, _i1.Include?> get includes => {'category': _category};
+  Map<String, _i1.Include?> get includes => {
+    'category': _category,
+    'dishCatalog': _dishCatalog,
+  };
 
   @override
   _i1.Table<int?> get table => MenuItem.t;
@@ -725,6 +801,29 @@ class MenuItemAttachRowRepository {
     await session.db.updateRow<MenuItem>(
       $menuItem,
       columns: [MenuItem.t.categoryId],
+      transaction: transaction,
+    );
+  }
+
+  /// Creates a relation between the given [MenuItem] and [DishCatalog]
+  /// by setting the [MenuItem]'s foreign key `dishCatalogId` to refer to the [DishCatalog].
+  Future<void> dishCatalog(
+    _i1.DatabaseSession session,
+    MenuItem menuItem,
+    _i3.DishCatalog dishCatalog, {
+    _i1.Transaction? transaction,
+  }) async {
+    if (menuItem.id == null) {
+      throw ArgumentError.notNull('menuItem.id');
+    }
+    if (dishCatalog.id == null) {
+      throw ArgumentError.notNull('dishCatalog.id');
+    }
+
+    var $menuItem = menuItem.copyWith(dishCatalogId: dishCatalog.id);
+    await session.db.updateRow<MenuItem>(
+      $menuItem,
+      columns: [MenuItem.t.dishCatalogId],
       transaction: transaction,
     );
   }

@@ -1,0 +1,19 @@
+class: DishCatalog
+table: dish_catalog
+fields:
+  # Lowercased, stripped-of-punctuation, language-stable key — used for dedupe lookups.
+  normalizedName: String
+  # Pretty display name (as extracted by the LLM), e.g. "Bacalhau à Brás".
+  canonicalName: String
+  cuisineType: String?
+  tags: List<String>?
+  description: String?
+  spiceLevel: int?
+  # Enrichment status: "partial" (basic) or "full" (all providers attempted)
+  enrichmentStatus: String
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  dish_catalog_normalized_name_idx:
+    fields: normalizedName
+    unique: true

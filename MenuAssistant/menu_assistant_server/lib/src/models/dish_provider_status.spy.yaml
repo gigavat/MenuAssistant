@@ -1,0 +1,21 @@
+class: DishProviderStatus
+table: dish_provider_status
+fields:
+  dishCatalog: DishCatalog?, relation
+  # wikidata | unsplash | pexels | spoonacular | fal_ai
+  provider: String
+  # pending | success | rate_limited | failed
+  status: String
+  lastAttemptedAt: DateTime?
+  nextRetryAt: DateTime?
+  # Incremented on each retry — used to compute exponential backoff.
+  attemptCount: int
+  errorMessage: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  dish_provider_status_dish_provider_idx:
+    fields: dishCatalogId, provider
+    unique: true
+  dish_provider_status_retry_idx:
+    fields: status, nextRetryAt

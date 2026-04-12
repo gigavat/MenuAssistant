@@ -1,26 +1,38 @@
 import 'package:serverpod/serverpod.dart';
+
 import '../generated/protocol.dart';
-import '../services/mock_llm_service.dart';
-import '../services/mock_image_search_service.dart';
+import '../services/enrichment/dish_catalog_service.dart';
+import '../services/llm/llm_service.dart';
+import '../service_registry.dart';
 
 class AiProcessingEndpoint extends Endpoint {
-  final MockLlmService _llmService = MockLlmService();
-  final MockImageSearchService _imageSearchService = MockImageSearchService();
-
   @override
   bool get requireLogin => true;
 
-  /// Simulates processing an uploaded menu photo or document
-  Future<Restaurant> processMenuUpload(Session session, String fileName, List<int> fileBytes) async {
-    final userId = session.authenticated!.authId;
+  LlmService get _llmService => ServiceRegistry.instance.llmService;
+  DishCatalogService get _catalogService => ServiceRegistry.instance.dishCatalogService;
 
-    // 1. Extract Restaurant info (Mock)
-    var restaurantData = await _llmService.extractMenuAsync(fileName, fileBytes);
-    
-    // Save restaurant to DB to get an ID
-    var savedRestaurant = await Restaurant.db.insertRow(session, restaurantData);
+  /// Uploads a menu file (photo/PDF/URL) and returns the restaurant that
+  /// was created. Menu items are linked to the shared DishCatalog so
+  /// subsequent uploads of the same dishes reuse images/descriptions.
+  Future<Restaurant> processMenuUpload(
+    Session session,
+    String fileName,
+    List<int> fileBytes,
+  ) async {
+    final userId = session.authenticated!.userIdentifier;
 
-    // Create the membership link so the user can see this restaurant
+    // 1. LLM extracts the menu tree.
+    final parsed = await _llmService.parseMenu(
+      fileName: fileName,
+      fileBytes: fileBytes,
+    );
+
+    // 2. Persist restaurant + membership.
+    final savedRestaurant = await Restaurant.db.insertRow(
+      session,
+      parsed.restaurant,
+    );
     await RestaurantMember.db.insertRow(
       session,
       RestaurantMember(
@@ -30,29 +42,47 @@ class AiProcessingEndpoint extends Endpoint {
         createdAt: DateTime.now(),
       ),
     );
-    
-    // 2. Extract Categories (Mock)
-    var categories = await _llmService.extractCategoriesAsync();
-    for (var cat in categories) {
-      cat.restaurantId = savedRestaurant.id!;
-    }
-    var savedCategories = await Category.db.insert(session, categories);
 
-    // 3. Extract Menu Items (Mock)
-    var menuItems = await _llmService.extractMenuItemsAsync();
-    
-    // Distribute menu items to the first category just for mock purposes
-    for (var item in menuItems) {
-      item.categoryId = savedCategories.first.id!;
-      
-      // Simulating Image Search
-      await _imageSearchService.searchDishImagesAsync(item.name, savedRestaurant.name);
-      // In a real app we would have an Image table or a list of URLs field in MenuItem mode.
-      // For now we simulate that it takes time.
+    // 3. Persist categories + menu items, linking each item to the
+    //    shared dish catalog for image/description reuse.
+    for (final parsedCategory in parsed.categories) {
+      parsedCategory.category.restaurantId = savedRestaurant.id!;
+      final savedCategory = await Category.db.insertRow(
+        session,
+        parsedCategory.category,
+      );
+
+      for (final item in parsedCategory.items) {
+        item.categoryId = savedCategory.id!;
+
+        // Find-or-create catalog entry. Sync enrichment happens here
+        // (Wikidata description + primary image).
+        final dishCatalogId = await _catalogService.findOrCreate(session, item);
+        item.dishCatalogId = dishCatalogId;
+
+        // Hydrate the menu item from the shared catalog:
+        //   - primary image URL for immediate client rendering
+        //   - description fallback if the menu itself didn't include one
+        //     (catalog has Wikidata / Claude-generated descriptions)
+        final catalog = await DishCatalog.db.findById(session, dishCatalogId);
+        item.imageUrl = await _primaryImageUrl(session, dishCatalogId);
+        if ((item.descriptionRaw == null || item.descriptionRaw!.isEmpty) &&
+            catalog?.description != null) {
+          item.descriptionRaw = catalog!.description;
+        }
+      }
+
+      await MenuItem.db.insert(session, parsedCategory.items);
     }
-    
-    await MenuItem.db.insert(session, menuItems);
 
     return savedRestaurant;
+  }
+
+  Future<String?> _primaryImageUrl(Session session, int dishCatalogId) async {
+    final img = await DishImage.db.findFirstRow(
+      session,
+      where: (t) => t.dishCatalogId.equals(dishCatalogId) & t.isPrimary.equals(true),
+    );
+    return img?.imageUrl;
   }
 }

@@ -510,6 +510,9 @@ doc/api/
 # dotenv environment variables file
 .env*
 
+# Serverpod secrets — contains DB/Redis passwords, JWT keys, API keys
+**/config/passwords.yaml
+
 # Avoid committing generated Javascript files:
 *.dart.js
 # Produced by the --dump-info flag.

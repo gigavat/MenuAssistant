@@ -12,7 +12,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'category.dart' as _i2;
-import 'package:menu_assistant_client/src/protocol/protocol.dart' as _i3;
+import 'dish_catalog.dart' as _i3;
+import 'package:menu_assistant_client/src/protocol/protocol.dart' as _i4;
 
 abstract class MenuItem implements _i1.SerializableModel {
   MenuItem._({
@@ -25,6 +26,8 @@ abstract class MenuItem implements _i1.SerializableModel {
     this.spicyLevel,
     required this.categoryId,
     this.category,
+    required this.dishCatalogId,
+    this.dishCatalog,
     required this.createdAt,
   });
 
@@ -38,6 +41,8 @@ abstract class MenuItem implements _i1.SerializableModel {
     int? spicyLevel,
     required int categoryId,
     _i2.Category? category,
+    required int dishCatalogId,
+    _i3.DishCatalog? dishCatalog,
     required DateTime createdAt,
   }) = _MenuItemImpl;
 
@@ -49,14 +54,20 @@ abstract class MenuItem implements _i1.SerializableModel {
       price: (jsonSerialization['price'] as num).toDouble(),
       tags: jsonSerialization['tags'] == null
           ? null
-          : _i3.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
+          : _i4.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       imageUrl: jsonSerialization['imageUrl'] as String?,
       spicyLevel: jsonSerialization['spicyLevel'] as int?,
       categoryId: jsonSerialization['categoryId'] as int,
       category: jsonSerialization['category'] == null
           ? null
-          : _i3.Protocol().deserialize<_i2.Category>(
+          : _i4.Protocol().deserialize<_i2.Category>(
               jsonSerialization['category'],
+            ),
+      dishCatalogId: jsonSerialization['dishCatalogId'] as int,
+      dishCatalog: jsonSerialization['dishCatalog'] == null
+          ? null
+          : _i4.Protocol().deserialize<_i3.DishCatalog>(
+              jsonSerialization['dishCatalog'],
             ),
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -85,6 +96,10 @@ abstract class MenuItem implements _i1.SerializableModel {
 
   _i2.Category? category;
 
+  int dishCatalogId;
+
+  _i3.DishCatalog? dishCatalog;
+
   DateTime createdAt;
 
   /// Returns a shallow copy of this [MenuItem]
@@ -100,6 +115,8 @@ abstract class MenuItem implements _i1.SerializableModel {
     int? spicyLevel,
     int? categoryId,
     _i2.Category? category,
+    int? dishCatalogId,
+    _i3.DishCatalog? dishCatalog,
     DateTime? createdAt,
   });
   @override
@@ -115,6 +132,8 @@ abstract class MenuItem implements _i1.SerializableModel {
       if (spicyLevel != null) 'spicyLevel': spicyLevel,
       'categoryId': categoryId,
       if (category != null) 'category': category?.toJson(),
+      'dishCatalogId': dishCatalogId,
+      if (dishCatalog != null) 'dishCatalog': dishCatalog?.toJson(),
       'createdAt': createdAt.toJson(),
     };
   }
@@ -138,6 +157,8 @@ class _MenuItemImpl extends MenuItem {
     int? spicyLevel,
     required int categoryId,
     _i2.Category? category,
+    required int dishCatalogId,
+    _i3.DishCatalog? dishCatalog,
     required DateTime createdAt,
   }) : super._(
          id: id,
@@ -149,6 +170,8 @@ class _MenuItemImpl extends MenuItem {
          spicyLevel: spicyLevel,
          categoryId: categoryId,
          category: category,
+         dishCatalogId: dishCatalogId,
+         dishCatalog: dishCatalog,
          createdAt: createdAt,
        );
 
@@ -166,6 +189,8 @@ class _MenuItemImpl extends MenuItem {
     Object? spicyLevel = _Undefined,
     int? categoryId,
     Object? category = _Undefined,
+    int? dishCatalogId,
+    Object? dishCatalog = _Undefined,
     DateTime? createdAt,
   }) {
     return MenuItem(
@@ -182,6 +207,10 @@ class _MenuItemImpl extends MenuItem {
       category: category is _i2.Category?
           ? category
           : this.category?.copyWith(),
+      dishCatalogId: dishCatalogId ?? this.dishCatalogId,
+      dishCatalog: dishCatalog is _i3.DishCatalog?
+          ? dishCatalog
+          : this.dishCatalog?.copyWith(),
       createdAt: createdAt ?? this.createdAt,
     );
   }
