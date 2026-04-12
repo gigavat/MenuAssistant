@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
 import 'package:serverpod_auth_client/serverpod_auth_client.dart';
-import '../main.dart';
+import '../core/service_locator.dart';
 import '../core/app_state.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -12,6 +13,9 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
+  final _client = getIt<Client>();
+  final _appState = getIt<AppState>();
+
   UserInfo? _userInfo;
   bool _isLoading = true;
 
@@ -22,8 +26,6 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _fetchUserInfo() async {
-    // In Serverpod 3.4 IDP, basic profile info isn't always pushed to the client.
-    // We will just show the auth token's user ID if we don't have a specific endpoint to fetch it.
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -61,7 +63,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                _userInfo?.email ?? client.authSessionManager.authInfo?.authUserId.toString() ?? 'Нет email',
+                _userInfo?.email ?? _client.authSessionManager.authInfo?.authUserId.toString() ?? 'Нет email',
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -74,8 +76,8 @@ class _AccountScreenState extends State<AccountScreen> {
               height: 56,
               child: ElevatedButton(
                 onPressed: () async {
-                  await client.authSessionManager.signOutDevice();
-                  appState.refreshAuth();
+                  await _client.authSessionManager.signOutDevice();
+                  _appState.refreshAuth();
                   if (context.mounted) {
                     Navigator.pop(context);
                   }

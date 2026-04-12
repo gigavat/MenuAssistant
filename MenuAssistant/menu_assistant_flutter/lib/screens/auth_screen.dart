@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
-import 'package:serverpod_auth_client/serverpod_auth_client.dart';
-import '../main.dart'; // To access the Serverpod client
+import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
+import '../core/service_locator.dart';
 import '../core/app_state.dart';
 
 enum AuthView {
@@ -19,6 +18,9 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  final _client = getIt<Client>();
+  final _appState = getIt<AppState>();
+
   late final EmailAuthController _emailAuth;
   late final GoogleAuthController _googleAuth;
 
@@ -36,9 +38,9 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _emailAuth = EmailAuthController(
-      client: client,
+      client: _client,
       onAuthenticated: () {
-        appState.refreshAuth();
+        _appState.refreshAuth();
         if (mounted && Navigator.of(context).canPop()) {
           Navigator.pop(context, true);
         }
@@ -48,9 +50,9 @@ class _AuthScreenState extends State<AuthScreen> {
       },
     );
     _googleAuth = GoogleAuthController(
-      client: client,
+      client: _client,
       onAuthenticated: () {
-        appState.refreshAuth();
+        _appState.refreshAuth();
         if (mounted && Navigator.of(context).canPop()) {
           Navigator.pop(context, true);
         }
@@ -95,30 +97,26 @@ class _AuthScreenState extends State<AuthScreen> {
     _emailAuth.emailController.text = email;
     _emailAuth.passwordController.text = password;
 
-    // 1. Try Login
     await _emailAuth.login();
 
     if (!mounted) return;
 
     if (_emailAuth.state == EmailAuthState.error) {
-      // If login fails, check if user exists or if it was just a wrong password
       setState(() => _errorMessage = null);
-      
+
       try {
-        final exists = await client.userAccount.checkEmailExists(email);
-        
+        final exists = await _client.userAccount.checkEmailExists(email);
+
         if (!mounted) return;
 
         if (exists) {
-          // User exists, so the login failed due to a wrong password
           setState(() {
             _isLoading = false;
             _errorMessage = 'Неверный пароль. Пожалуйста, попробуйте еще раз.';
           });
           return;
         }
-        
-        // User does not exist, proceed to registration
+
         await _emailAuth.startRegistration();
 
         if (!mounted) return;
@@ -131,7 +129,7 @@ class _AuthScreenState extends State<AuthScreen> {
         } else {
           setState(() {
             _isLoading = false;
-            _errorMessage = null; 
+            _errorMessage = null;
             _currentView = AuthView.verifyCode;
           });
           Future.delayed(const Duration(milliseconds: 100), () {
@@ -147,7 +145,6 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       }
     } else {
-      // Login successful
       setState(() {
         _isLoading = false;
         _errorMessage = null;
@@ -191,12 +188,9 @@ class _AuthScreenState extends State<AuthScreen> {
           _errorMessage = _emailAuth.errorMessage ?? 'Ошибка при завершении регистрации';
         });
       } else {
-        // Success! The onAuthenticated callback should have been triggered,
-        // but just in case, we can pop here too or let the callback handle it.
         setState(() {
           _isLoading = false;
         });
-        // Navigator.pop(context, true); // This is usually handled by onAuthenticated
       }
     }
   }
@@ -220,7 +214,7 @@ class _AuthScreenState extends State<AuthScreen> {
         labelText: label,
         prefixIcon: Icon(icon),
         filled: readOnly,
-        fillColor: readOnly ? Theme.of(context).colorScheme.surfaceVariant : null,
+        fillColor: readOnly ? Theme.of(context).colorScheme.surfaceContainerHighest : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
@@ -232,7 +226,7 @@ class _AuthScreenState extends State<AuthScreen> {
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(double.infinity, 54),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        backgroundColor: const Color(0xFF007BFF), // Brighter blue
+        backgroundColor: const Color(0xFF007BFF),
         foregroundColor: Colors.white,
         elevation: 2,
       ),
@@ -320,7 +314,7 @@ class _AuthScreenState extends State<AuthScreen> {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

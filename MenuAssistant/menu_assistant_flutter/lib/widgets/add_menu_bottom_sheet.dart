@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
+import '../core/service_locator.dart';
+import '../repositories/restaurant_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -65,7 +66,7 @@ class AddMenuBottomSheet extends StatelessWidget {
                   FilePickerResult? result = await FilePicker.platform.pickFiles(
                     type: FileType.custom,
                     allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
-                    withData: true, // required for web
+                    withData: true,
                   );
                   if (result != null && result.files.single.bytes != null && context.mounted) {
                      var file = result.files.single;
@@ -78,10 +79,8 @@ class AddMenuBottomSheet extends StatelessWidget {
                 icon: Icons.link,
                 label: 'Ссылка',
                 onTap: () async {
-                  // Wait for the dialog to return a result
                   final result = await _showLinkDialog(context);
                   if (result == true) {
-                    // Bubble the success up to the Home Screen
                     if (context.mounted) {
                       Navigator.pop(context, true);
                     }
@@ -149,8 +148,7 @@ class AddMenuBottomSheet extends StatelessWidget {
                 onPressed: () async {
                   final url = textController.text;
                   if (url.isEmpty) return;
-                  
-                  // Use shared processing method
+
                   await _processFile(ctx, url, []);
                 },
                 child: const Text('Добавить'),
@@ -162,7 +160,8 @@ class AddMenuBottomSheet extends StatelessWidget {
   }
 
   Future<void> _processFile(BuildContext context, String fileName, List<int> bytes) async {
-    // Show loading
+    final repo = getIt<RestaurantRepository>();
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -170,12 +169,11 @@ class AddMenuBottomSheet extends StatelessWidget {
     );
 
     try {
-      // Call Serverpod Endpoint
-      await client.aiProcessing.processMenuUpload(fileName, bytes);
-      
+      await repo.processMenuUpload(fileName, bytes);
+
       if (context.mounted) {
         Navigator.pop(context); // Close loading dialog
-        Navigator.pop(context, true); // Close the current view (Link dialog or BottomSheet) returning true
+        Navigator.pop(context, true); // Close bottom sheet / link dialog
       }
     } catch (e) {
       if (context.mounted) {

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
-import '../main.dart'; // Add access to global client
+import '../core/service_locator.dart';
 import '../core/app_state.dart';
+import '../repositories/restaurant_repository.dart';
 import 'menu_item_screen.dart';
 
 class RestaurantScreen extends StatefulWidget {
@@ -14,10 +15,14 @@ class RestaurantScreen extends StatefulWidget {
 }
 
 class _RestaurantScreenState extends State<RestaurantScreen> {
+  final _appState = getIt<AppState>();
+  final _repo = getIt<RestaurantRepository>();
+
   List<Category> _categories = [];
   final Map<int, List<MenuItem>> _categoryItems = {};
   Category? _selectedCategory;
   bool _isLoadingContent = true;
+  String? _error;
 
   @override
   void initState() {
@@ -26,35 +31,46 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   }
 
   Future<void> _loadCategories() async {
+    final restaurantId = widget.restaurant.id;
+    if (restaurantId == null) {
+      setState(() => _isLoadingContent = false);
+      return;
+    }
+
     try {
-      if (widget.restaurant.id != null) {
-        final categories = await client.restaurant.getCategoriesForRestaurant(widget.restaurant.id!);
-        setState(() {
-          _categories = categories;
-          _isLoadingContent = false;
-          // Load items for all categories in the background
-          for (var category in categories) {
-            _loadItemsForCategory(category);
-          }
-        });
-      } else {
-        setState(() => _isLoadingContent = false);
+      final categories = await _repo.getCategoriesForRestaurant(restaurantId);
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _isLoadingContent = false;
+      });
+      for (var category in categories) {
+        _loadItemsForCategory(category);
       }
     } catch (e) {
-      setState(() => _isLoadingContent = false);
+      if (!mounted) return;
+      setState(() {
+        _isLoadingContent = false;
+        _error = 'Не удалось загрузить категории';
+      });
     }
   }
-  
+
   Future<void> _loadItemsForCategory(Category category) async {
-    if (category.id == null || _categoryItems.containsKey(category.id)) return;
-    
+    final categoryId = category.id;
+    if (categoryId == null || _categoryItems.containsKey(categoryId)) return;
+
     try {
-      final items = await client.restaurant.getMenuItemsForCategory(category.id!);
+      final items = await _repo.getMenuItemsForCategory(categoryId);
+      if (!mounted) return;
       setState(() {
-        _categoryItems[category.id!] = items;
+        _categoryItems[categoryId] = items;
       });
     } catch (e) {
-      // Ignore
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Не удалось загрузить блюда: ${category.name}')),
+      );
     }
   }
 
@@ -84,9 +100,9 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         actions: [
           IconButton(
-            icon: Icon(appState.isGridMode ? Icons.list : Icons.grid_view),
+            icon: Icon(_appState.isGridMode ? Icons.list : Icons.grid_view),
             onPressed: () {
-              appState.toggleGridMode();
+              _appState.toggleGridMode();
             },
           ),
           IconButton(
@@ -103,14 +119,18 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildRestaurantHeader(),
-             
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
           Expanded(
-            child: _isLoadingContent 
+            child: _isLoadingContent
               ? const Center(child: CircularProgressIndicator())
               : ListenableBuilder(
-                  listenable: appState,
+                  listenable: _appState,
                   builder: (context, _) {
-                    return appState.isGridMode ? _buildGridView() : _buildListView();
+                    return _appState.isGridMode ? _buildGridView() : _buildListView();
                   }
                 ),
           ),
@@ -120,6 +140,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   }
 
   Widget _buildRestaurantHeader() {
+    final restaurantId = widget.restaurant.id;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -127,29 +148,30 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         children: [
           Expanded(
             child: Text(
-              _selectedCategory != null 
-                ? '${_selectedCategory!.name} в ${widget.restaurant.name}' 
+              _selectedCategory != null
+                ? '${_selectedCategory!.name} в ${widget.restaurant.name}'
                 : widget.restaurant.name,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontSize: _selectedCategory != null ? 20 : null,
               ),
             ),
           ),
-          ListenableBuilder(
-            listenable: appState,
-            builder: (context, _) {
-              final isFavorite = appState.isRestaurantFavorite(widget.restaurant.id!);
-              return IconButton(
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : null,
-                ),
-                onPressed: () {
-                  appState.toggleRestaurantFavorite(widget.restaurant);
-                },
-              );
-            },
-          ),
+          if (restaurantId != null)
+            ListenableBuilder(
+              listenable: _appState,
+              builder: (context, _) {
+                final isFavorite = _appState.isRestaurantFavorite(restaurantId);
+                return IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : null,
+                  ),
+                  onPressed: () {
+                    _appState.toggleRestaurantFavorite(widget.restaurant);
+                  },
+                );
+              },
+            ),
         ],
       ),
     );
@@ -183,58 +205,62 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   }
 
   List<Widget> _buildListCategoryItems(Category category) {
-    if (category.id == null) return [];
-    
-    final items = _categoryItems[category.id!];
+    final categoryId = category.id;
+    if (categoryId == null) return [];
+
+    final items = _categoryItems[categoryId];
     if (items == null) {
       return [const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator())];
     }
-    
+
     if (items.isEmpty) {
       return [const Padding(padding: EdgeInsets.all(16), child: Text('Нет блюд в категории'))];
     }
-    
-    return items.map((item) => ListTile(
-      title: Text(item.name),
-      subtitle: Text('${item.price.toStringAsFixed(2)} ${appState.currencyCode}'),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListenableBuilder(
-            listenable: appState,
-            builder: (context, _) {
-              final isFav = appState.isMenuItemFavorite(item.id!);
-              return IconButton(
-                icon: Icon(
-                  isFav ? Icons.favorite : Icons.favorite_border,
-                  color: isFav ? Colors.red : null,
-                ),
-                onPressed: () {
-                  appState.toggleMenuItemFavorite(item);
+
+    return items.map((item) {
+      final itemId = item.id;
+      return ListTile(
+        title: Text(item.name),
+        subtitle: Text('${item.price.toStringAsFixed(2)} ${_appState.currencyCode}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (itemId != null)
+              ListenableBuilder(
+                listenable: _appState,
+                builder: (context, _) {
+                  final isFav = _appState.isMenuItemFavorite(itemId);
+                  return IconButton(
+                    icon: Icon(
+                      isFav ? Icons.favorite : Icons.favorite_border,
+                      color: isFav ? Colors.red : null,
+                    ),
+                    onPressed: () {
+                      _appState.toggleMenuItemFavorite(item);
+                    },
+                  );
                 },
-              );
-            },
-          ),
-          if (item.imageUrl != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Image.network(item.imageUrl!, width: 40, height: 40, fit: BoxFit.cover),
-            ),
-        ],
-      ),
-      onTap: () {
-         Navigator.push(context, MaterialPageRoute(builder: (_) => MenuItemScreen(menuItem: item)));
-      },
-    )).toList();
+              ),
+            if (item.imageUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.network(item.imageUrl!, width: 40, height: 40, fit: BoxFit.cover),
+              ),
+          ],
+        ),
+        onTap: () {
+           Navigator.push(context, MaterialPageRoute(builder: (_) => MenuItemScreen(menuItem: item)));
+        },
+      );
+    }).toList();
   }
 
   Widget _buildGridView() {
     if (_selectedCategory == null) {
-      // Show Categories Grid
       if (_categories.isEmpty) {
         return const Center(child: Text('Нет категорий'));
       }
-      
+
       return GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -269,7 +295,6 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         },
       );
     } else {
-      // Show Items Grid for Selected Category
       final items = _categoryItems[_selectedCategory!.id];
       if (items == null) {
         return const Center(child: CircularProgressIndicator());
@@ -277,7 +302,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       if (items.isEmpty) {
         return const Center(child: Text('Нет блюд в категории'));
       }
-      
+
       return GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -295,15 +320,14 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Stack(
               children: [
-                // Visual content (image + price bar)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      child: item.imageUrl != null 
+                      child: item.imageUrl != null
                        ? Image.network(item.imageUrl!, fit: BoxFit.cover)
                        : Container(
-                           color: Theme.of(context).colorScheme.surfaceContainerLow, 
+                           color: Theme.of(context).colorScheme.surfaceContainerLow,
                            child: const Icon(Icons.restaurant, size: 48, color: Colors.grey)
                          ),
                     ),
@@ -315,13 +339,12 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                         children: [
                           Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 4),
-                          Text('${item.price.toStringAsFixed(2)} ${appState.currencyCode}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                          Text('${item.price.toStringAsFixed(2)} ${_appState.currencyCode}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
                   ],
                 ),
-                // Click interaction layer on top for ripple animation
                 Positioned.fill(
                   child: Material(
                     color: Colors.transparent,

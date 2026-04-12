@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
+import '../core/service_locator.dart';
 import '../core/app_state.dart';
 import 'restaurant_screen.dart';
 
@@ -10,7 +12,6 @@ import 'settings_screen.dart';
 import 'menu_item_screen.dart';
 import 'auth_screen.dart';
 import 'account_screen.dart';
-import '../main.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,16 +21,35 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _appState = getIt<AppState>();
+
   @override
   void initState() {
     super.initState();
-    // Replaced FutureBuilder _refreshRestaurants with global appState caching
-    if (!appState.isDataLoaded) {
-      appState.loadData();
+    if (!_appState.isDataLoaded) {
+      _appState.loadData();
+    }
+
+    // Show loadError via SnackBar
+    _appState.addListener(_onAppStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _appState.removeListener(_onAppStateChanged);
+    super.dispose();
+  }
+
+  void _onAppStateChanged() {
+    final error = _appState.loadError;
+    if (error != null && mounted) {
+      _appState.loadError = null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
     }
   }
 
-  // Google Keep Style AppBar
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
 
           if (result == true) {
-            appState.loadData();
+            _appState.loadData();
           }
         },
         child: const Icon(Icons.add),
@@ -54,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   PreferredSizeWidget _buildSearchBarAppBar() {
+    final client = getIt<Client>();
     return AppBar(
       title: Container(
         height: 48,
@@ -64,8 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(
           children: [
             const SizedBox(width: 8),
-            // Default drawer acts as menu icon, but it's handled by Scaffold automatically
-            // if we don't override the leading icon. We override leading inside the Container to mimic Keep
             Builder(
               builder: (innerContext) {
                 return IconButton(
@@ -103,7 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      // Hide default leading since we put the menu icon inside the search bar
       automaticallyImplyLeading: false,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -115,10 +133,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildLeftMenu() {
     return Drawer(
       child: ListenableBuilder(
-        listenable: appState,
+        listenable: _appState,
         builder: (context, _) {
-          final top3Restaurants = appState.favoriteRestaurants;
-          final top3Dishes = appState.favoriteMenuItems;
+          final top3Restaurants = _appState.favoriteRestaurants;
+          final top3Dishes = _appState.favoriteMenuItems;
 
           return SafeArea(
             child: ListView(
@@ -129,7 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text('Menu Assistant', style: TextStyle(fontSize: 24)),
                 ),
 
-                // Favorite Places Header
                 ListTile(
                   leading: const Icon(Icons.favorite),
                   title: const Text(
@@ -137,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   onTap: () {
-                    Navigator.pop(context); // Close Drawer
+                    Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -147,7 +164,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 if (top3Restaurants.isNotEmpty) ...[
-                  // Top 3 Favorite Places
                   ...top3Restaurants.map(
                     (r) => ListTile(
                       contentPadding: const EdgeInsets.only(
@@ -174,7 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
                 const SizedBox(height: 8),
 
-                // Favorite Dishes Header
                 ListTile(
                   leading: const Icon(Icons.restaurant_menu),
                   title: const Text(
@@ -192,7 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 if (top3Dishes.isNotEmpty) ...[
-                  // Top 3 Favorite Dishes
                   ...top3Dishes.map(
                     (dish) => ListTile(
                       contentPadding: const EdgeInsets.only(
@@ -234,9 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ListTile(
                   leading: const Icon(Icons.help_outline),
                   title: const Text('Справка'),
-                  onTap: () {
-                    // Navigate to help
-                  },
+                  onTap: () {},
                 ),
               ],
             ),
@@ -248,13 +260,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRecentItemsGrid() {
     return ListenableBuilder(
-      listenable: appState,
+      listenable: _appState,
       builder: (context, _) {
-        if (!appState.isDataLoaded && appState.recentRestaurants.isEmpty) {
+        if (!_appState.isDataLoaded && _appState.recentRestaurants.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final restaurants = appState.recentRestaurants;
+        final restaurants = _appState.recentRestaurants;
 
         if (restaurants.isEmpty) {
           return const Center(
@@ -276,6 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: restaurants.length,
           itemBuilder: (context, index) {
             final restaurant = restaurants[index];
+            final restaurantId = restaurant.id;
             return Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -336,24 +349,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    Positioned(
-                      right: 4,
-                      bottom: 4,
-                      child: IconButton(
-                        icon: Icon(
-                          appState.isRestaurantFavorite(restaurant.id!)
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: appState.isRestaurantFavorite(restaurant.id!)
-                              ? Colors.red
-                              : Colors.grey.shade400,
-                          size: 22,
+                    if (restaurantId != null)
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: IconButton(
+                          icon: Icon(
+                            _appState.isRestaurantFavorite(restaurantId)
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: _appState.isRestaurantFavorite(restaurantId)
+                                ? Colors.red
+                                : Colors.grey.shade400,
+                            size: 22,
+                          ),
+                          onPressed: () {
+                            _appState.toggleRestaurantFavorite(restaurant);
+                          },
                         ),
-                        onPressed: () {
-                          appState.toggleRestaurantFavorite(restaurant);
-                        },
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -363,4 +377,4 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-} // End of _HomeScreenState
+}

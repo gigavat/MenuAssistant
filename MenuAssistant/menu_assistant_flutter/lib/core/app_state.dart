@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart';
+import 'service_locator.dart';
+import '../repositories/restaurant_repository.dart';
 
 // SharedPreferences keys
 const _keyThemeMode = 'themeMode';
@@ -12,6 +13,9 @@ const _keyGridMode = 'isGridMode';
 
 class AppState extends ChangeNotifier {
   AppState();
+
+  Client get _client => getIt<Client>();
+  RestaurantRepository get _repo => getIt<RestaurantRepository>();
 
   void refreshAuth() {
     notifyListeners();
@@ -31,7 +35,7 @@ class AppState extends ChangeNotifier {
   // Error state — screens observe this to show SnackBar
   String? loadError;
 
-  bool get isAuthenticated => client.auth.isAuthenticated;
+  bool get isAuthenticated => _client.auth.isAuthenticated;
 
   // ── Settings persistence ──────────────────────────────────────────────────
 
@@ -101,7 +105,7 @@ class AppState extends ChangeNotifier {
   // ── Data loading ──────────────────────────────────────────────────────────
 
   Future<void> loadData() async {
-    if (!client.auth.isAuthenticated) {
+    if (!_client.auth.isAuthenticated) {
       isDataLoaded = true;
       notifyListeners();
       return;
@@ -110,9 +114,9 @@ class AppState extends ChangeNotifier {
     try {
       loadError = null;
       final futures = await Future.wait([
-        client.restaurant.getAllRestaurants(),
-        client.restaurant.getFavoriteRestaurants(limit: 3),
-        client.restaurant.getFavoriteMenuItems(limit: 3),
+        _repo.getAllRestaurants(),
+        _repo.getFavoriteRestaurants(limit: 3),
+        _repo.getFavoriteMenuItems(limit: 3),
       ]);
       recentRestaurants = futures[0] as List<Restaurant>;
       favoriteRestaurants = futures[1] as List<Restaurant>;
@@ -146,7 +150,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await client.restaurant.toggleRestaurantFavorite(restaurantId);
+      await _repo.toggleRestaurantFavorite(restaurantId);
       await loadData();
     } catch (e) {
       debugPrint('Error toggling restaurant favorite: $e');
@@ -169,7 +173,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await client.restaurant.toggleMenuItemFavorite(itemId);
+      await _repo.toggleMenuItemFavorite(itemId);
       await loadData();
     } catch (e) {
       debugPrint('Error toggling menu item favorite: $e');
@@ -179,5 +183,3 @@ class AppState extends ChangeNotifier {
     }
   }
 }
-
-final appState = AppState();

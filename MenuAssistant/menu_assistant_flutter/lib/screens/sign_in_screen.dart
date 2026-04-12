@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 
-import '../main.dart';
+import '../core/service_locator.dart';
 
 class SignInScreen extends StatefulWidget {
   final Widget child;
@@ -12,24 +13,25 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final _client = getIt<Client>();
   bool _isSignedIn = false;
 
   @override
   void initState() {
     super.initState();
-    client.auth.authInfoListenable.addListener(_updateSignedInState);
-    _isSignedIn = client.auth.isAuthenticated;
+    _client.auth.authInfoListenable.addListener(_updateSignedInState);
+    _isSignedIn = _client.auth.isAuthenticated;
   }
 
   @override
   void dispose() {
-    client.auth.authInfoListenable.removeListener(_updateSignedInState);
+    _client.auth.authInfoListenable.removeListener(_updateSignedInState);
     super.dispose();
   }
 
   void _updateSignedInState() {
     setState(() {
-      _isSignedIn = client.auth.isAuthenticated;
+      _isSignedIn = _client.auth.isAuthenticated;
     });
   }
 
@@ -39,7 +41,7 @@ class _SignInScreenState extends State<SignInScreen> {
         ? widget.child
         : Center(
             child: SignInWidget(
-              client: client,
+              client: _client,
               onAuthenticated: () {
                 context.showSnackBar(
                   message: 'User authenticated.',

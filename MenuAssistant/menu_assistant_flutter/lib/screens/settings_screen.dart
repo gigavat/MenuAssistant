@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/service_locator.dart';
 import '../core/app_state.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -6,6 +7,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = getIt<AppState>();
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
@@ -69,6 +71,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showThemeDialog(BuildContext context) {
+    final appState = getIt<AppState>();
     showDialog(
       context: context,
       builder: (context) {
@@ -104,6 +107,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showLanguageDialog(BuildContext context) {
+    final appState = getIt<AppState>();
     final langs = {
       'ru': 'Русский',
       'en': 'English',
@@ -139,6 +143,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showCurrencyDialog(BuildContext context) {
+    final appState = getIt<AppState>();
     final currencies = ['EUR', 'USD', 'RUB', 'BRL', 'GBP'];
     
     showDialog(

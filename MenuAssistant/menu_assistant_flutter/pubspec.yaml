@@ -38,6 +38,7 @@ dependencies:
   serverpod_flutter: 3.4.4
   serverpod_auth_client: ^3.4.4
   shared_preferences: ^2.3.0
+  get_it: ^8.0.3
 
 dev_dependencies:
   flutter_lints: '>=3.0.0 <7.0.0'

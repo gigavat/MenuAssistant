@@ -1,14 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:menu_assistant_client/menu_assistant_client.dart';
-import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
-import 'package:serverpod_flutter/serverpod_flutter.dart';
+import 'core/service_locator.dart';
+import 'core/app_state.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth_screen.dart';
-import 'core/app_state.dart';
-
-late final Client client;
 
 Future<String> _loadApiUrl() async {
   final raw = await rootBundle.loadString('assets/config.json');
@@ -22,13 +18,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final apiUrl = await _loadApiUrl();
+  await setupServiceLocator(apiUrl);
 
-  client = Client(apiUrl)
-    ..connectivityMonitor = FlutterConnectivityMonitor();
-
-  client.authSessionManager = FlutterAuthSessionManager();
-  await client.auth.initialize();
-
+  final appState = getIt<AppState>();
   await appState.loadSettings();
 
   runApp(const MenuAssistantApp());
@@ -39,6 +31,8 @@ class MenuAssistantApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = getIt<AppState>();
+
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {

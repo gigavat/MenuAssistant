@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/service_locator.dart';
 import '../core/app_state.dart';
 import 'menu_item_screen.dart';
 
@@ -7,6 +8,7 @@ class FavoriteDishesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = getIt<AppState>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Любимые блюда'),

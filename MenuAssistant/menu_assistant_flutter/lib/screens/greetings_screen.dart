@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:menu_assistant_client/menu_assistant_client.dart';
 
-import '../main.dart';
+import '../core/service_locator.dart';
 
 class GreetingsScreen extends StatefulWidget {
   final Future<void> Function()? onSignOut;
@@ -25,7 +26,7 @@ class _GreetingsScreenState extends State<GreetingsScreen> {
   /// is successful.
   void _callHello() async {
     try {
-      final result = await client.greeting.hello(_textEditingController.text);
+      final result = await getIt<Client>().greeting.hello(_textEditingController.text);
       setState(() {
         _errorMessage = null;
         _resultMessage = result.message;
