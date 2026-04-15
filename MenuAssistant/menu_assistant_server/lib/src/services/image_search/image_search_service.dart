@@ -1,3 +1,5 @@
+import 'package:serverpod/serverpod.dart';
+
 /// One image returned from a search/generation provider.
 class DishImageResult {
   /// wikidata | unsplash | pexels | fal_ai
@@ -41,7 +43,15 @@ abstract class ImageSearchService {
 
   /// Search for images of the dish. Returns at most [limit] results.
   /// Throws [ImageSearchRateLimited] if the provider is exhausted.
-  Future<List<DishImageResult>> search(String dishName, {int limit = 1});
+  ///
+  /// [session] is an optional Serverpod session — required by local providers
+  /// that query the database (e.g. `LocalUnsplashImageSearchService`). HTTP
+  /// providers ignore it.
+  Future<List<DishImageResult>> search(
+    String dishName, {
+    int limit = 1,
+    Session? session,
+  });
 
   /// Called by the consumer after a returned image has actually been used
   /// (i.e. saved into `dish_image`). Required by Unsplash ToS for download

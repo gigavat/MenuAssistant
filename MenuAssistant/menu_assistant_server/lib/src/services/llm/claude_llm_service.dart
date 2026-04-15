@@ -76,8 +76,15 @@ class ClaudeLlmService implements LlmService {
         .map((b) => b['text'] as String)
         .join('\n');
 
+    final usage = _parseUsage(decoded);
+
     try {
-      return _parseMenuJson(text);
+      final parsed = _parseMenuJson(text);
+      return ParsedMenu(
+        restaurant: parsed.restaurant,
+        categories: parsed.categories,
+        usage: usage,
+      );
     } catch (e) {
       // Surfacing the raw model output helps debug prompt regressions.
       throw Exception(
@@ -86,8 +93,62 @@ class ClaudeLlmService implements LlmService {
     }
   }
 
+  /// Parses the Anthropic `usage` field and wraps it into [LlmUsageInfo]
+  /// with a precomputed cost. Returns null if the field is missing (very
+  /// unexpected, but we don't want to break parsing over telemetry).
+  LlmUsageInfo? _parseUsage(Map<String, dynamic> decoded) {
+    final usage = decoded['usage'];
+    if (usage is! Map<String, dynamic>) return null;
+
+    final inputTokens = (usage['input_tokens'] as num?)?.toInt() ?? 0;
+    final outputTokens = (usage['output_tokens'] as num?)?.toInt() ?? 0;
+    final cacheCreation =
+        (usage['cache_creation_input_tokens'] as num?)?.toInt() ?? 0;
+    final cacheRead =
+        (usage['cache_read_input_tokens'] as num?)?.toInt() ?? 0;
+
+    return LlmUsageInfo(
+      model: _model,
+      inputTokens: inputTokens,
+      outputTokens: outputTokens,
+      cacheCreationTokens: cacheCreation,
+      cacheReadTokens: cacheRead,
+      estimatedCostUsd: computeHaikuCostUsd(
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        cacheCreationTokens: cacheCreation,
+        cacheReadTokens: cacheRead,
+      ),
+    );
+  }
+
+  /// Claude Haiku 4.5 price sheet (April 2026):
+  /// - input:        $1.00 per 1M tokens
+  /// - output:       $5.00 per 1M tokens
+  /// - cache write:  $1.25 per 1M tokens (prompt caching, first write)
+  /// - cache read:   $0.10 per 1M tokens (prompt caching hits)
+  ///
+  /// Exposed as static so `AiProcessingEndpoint` and tests can reuse it.
+  static double computeHaikuCostUsd({
+    required int inputTokens,
+    required int outputTokens,
+    int cacheCreationTokens = 0,
+    int cacheReadTokens = 0,
+  }) {
+    const double inputPerMillion = 1.00;
+    const double outputPerMillion = 5.00;
+    const double cacheWritePerMillion = 1.25;
+    const double cacheReadPerMillion = 0.10;
+
+    return (inputTokens * inputPerMillion +
+            outputTokens * outputPerMillion +
+            cacheCreationTokens * cacheWritePerMillion +
+            cacheReadTokens * cacheReadPerMillion) /
+        1000000.0;
+  }
+
   @override
-  Future<String?> generateDishDescription(String dishName) async {
+  Future<LlmDescriptionResult> generateDishDescription(String dishName) async {
     final body = jsonEncode({
       'model': _model,
       'max_tokens': _dishDescriptionMaxTokens,
@@ -100,13 +161,17 @@ class ClaudeLlmService implements LlmService {
       ],
     });
 
-    final response = await _httpClient.post(
-      Uri.parse(_endpoint),
-      headers: _headers(),
-      body: body,
-    );
+    final response = await _httpClient
+        .post(
+          Uri.parse(_endpoint),
+          headers: _headers(),
+          body: body,
+        )
+        .timeout(_requestTimeout);
 
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      return LlmDescriptionResult();
+    }
 
     final decoded = jsonDecode(response.body) as Map<String, dynamic>;
     final contentBlocks = decoded['content'] as List<dynamic>;
@@ -116,7 +181,11 @@ class ClaudeLlmService implements LlmService {
         .map((b) => b['text'] as String)
         .join(' ')
         .trim();
-    return text.isEmpty ? null : text;
+
+    return LlmDescriptionResult(
+      description: text.isEmpty ? null : text,
+      usage: _parseUsage(decoded),
+    );
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────

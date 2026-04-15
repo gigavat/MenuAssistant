@@ -78,7 +78,11 @@ class EnrichmentWorkerFutureCall extends FutureCall {
       }
 
       try {
-        final results = await provider.search(catalog.canonicalName, limit: 1);
+        final results = await provider.search(
+          catalog.canonicalName,
+          limit: 1,
+          session: session,
+        );
         if (results.isNotEmpty) {
           await catalogService.persistAndInsertImage(
             session: session,

@@ -43,6 +43,17 @@ class AiProcessingEndpoint extends Endpoint {
       ),
     );
 
+    // 2b. Record Claude token usage for cost tracking. See METRICS.md for
+    // how to query `llm_usage`. Mock LLM leaves `usage` null and we skip.
+    if (parsed.usage != null) {
+      await recordLlmUsage(
+        session,
+        parsed.usage!,
+        'menu_extraction',
+        restaurantId: savedRestaurant.id,
+      );
+    }
+
     // 3. Persist categories + menu items, linking each item to the
     //    shared dish catalog for image/description reuse.
     for (final parsedCategory in parsed.categories) {

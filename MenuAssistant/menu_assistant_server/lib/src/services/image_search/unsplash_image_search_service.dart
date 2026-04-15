@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:serverpod/serverpod.dart';
 
 import 'image_search_service.dart';
 
@@ -45,7 +46,11 @@ class UnsplashImageSearchService extends ImageSearchService {
       };
 
   @override
-  Future<List<DishImageResult>> search(String dishName, {int limit = 1}) async {
+  Future<List<DishImageResult>> search(
+    String dishName, {
+    int limit = 1,
+    Session? session,
+  }) async {
     // Append "food" to the query as extra signal — cheap hint that pairs
     // with the topic filter and biases results for edge cases where the
     // topic contains general kitchen/restaurant photos.

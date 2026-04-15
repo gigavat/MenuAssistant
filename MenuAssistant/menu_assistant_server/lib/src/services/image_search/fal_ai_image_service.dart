@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:serverpod/serverpod.dart';
 
 import 'image_search_service.dart';
 
@@ -29,7 +30,11 @@ class FalAiImageService extends ImageSearchService {
   String get providerId => 'fal_ai';
 
   @override
-  Future<List<DishImageResult>> search(String dishName, {int limit = 1}) async {
+  Future<List<DishImageResult>> search(
+    String dishName, {
+    int limit = 1,
+    Session? session,
+  }) async {
     final body = jsonEncode({
       'prompt': 'A professional, appetizing food photograph of $dishName, '
           'restaurant menu style, soft natural lighting, shallow depth of field',

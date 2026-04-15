@@ -1,0 +1,26 @@
+class: LlmUsage
+table: llm_usage
+fields:
+  # Claude model id, e.g. "claude-haiku-4-5-20251001".
+  model: String
+  # "menu_extraction" | "dish_description" — what the call was used for.
+  operation: String
+  # Tokens from the Anthropic response `usage` field. Anthropic bills on
+  # actuals, not on `max_tokens`, so these are the real charges.
+  inputTokens: int
+  outputTokens: int
+  cacheCreationTokens: int
+  cacheReadTokens: int
+  # Computed at write time using the Haiku 4.5 price sheet
+  # (input $1/1M, output $5/1M, cache_write $1.25/1M, cache_read $0.10/1M).
+  # Stored so historical reports stay correct even if we later update prices.
+  estimatedCostUsd: double
+  # Nullable — only set for menu_extraction calls made from AiProcessingEndpoint.
+  # dish_description and future calls from other contexts leave it null.
+  restaurantId: int?
+  createdAt: DateTime
+indexes:
+  llm_usage_created_at_idx:
+    fields: createdAt
+  llm_usage_model_operation_idx:
+    fields: model, operation

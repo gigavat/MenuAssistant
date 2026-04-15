@@ -97,7 +97,16 @@ void _configureServices(Serverpod pod) {
       ? ClaudeLlmService(apiKey: anthropicKey)
       : MockLlmService();
 
-  // Image providers — all optional. Order defines sync fallback.
+  // Image providers — ordered list defines sync fallback chain.
+  //
+  // Sprint 4 LocalUnsplashImageSearchService deferred: Unsplash Lite dataset
+  // turned out to have only scene-level keywords (food/fruit/plant), no
+  // dish-level matches. Custom curated dish dataset is the future approach
+  // (see DATASET_DESIGN.md). Until then, chain starts with the API providers.
+  //
+  // 1. Unsplash API (free, 50/h demo or 5K/h prod).
+  // 2. Pexels API (free, 200/h).
+  // 3. fal.ai Flux 2 (~$0.008/image, guaranteed result).
   final imageProviders = <ImageSearchService>[];
   final unsplashKey = key('unsplashAccessKey');
   if (unsplashKey != null && unsplashKey.isNotEmpty) {

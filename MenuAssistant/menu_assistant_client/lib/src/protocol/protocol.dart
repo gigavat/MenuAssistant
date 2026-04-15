@@ -18,17 +18,18 @@ import 'dish_provider_status.dart' as _i5;
 import 'favorite_menu_item.dart' as _i6;
 import 'favorite_restaurant.dart' as _i7;
 import 'greetings/greeting.dart' as _i8;
-import 'menu_item.dart' as _i9;
-import 'restaurant.dart' as _i10;
-import 'restaurant_member.dart' as _i11;
-import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i12;
-import 'package:menu_assistant_client/src/protocol/category.dart' as _i13;
-import 'package:menu_assistant_client/src/protocol/menu_item.dart' as _i14;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i15;
+import 'llm_usage.dart' as _i9;
+import 'menu_item.dart' as _i10;
+import 'restaurant.dart' as _i11;
+import 'restaurant_member.dart' as _i12;
+import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i13;
+import 'package:menu_assistant_client/src/protocol/category.dart' as _i14;
+import 'package:menu_assistant_client/src/protocol/menu_item.dart' as _i15;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i16;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
-    as _i16;
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _i17;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i18;
 export 'category.dart';
 export 'dish_catalog.dart';
 export 'dish_image.dart';
@@ -36,6 +37,7 @@ export 'dish_provider_status.dart';
 export 'favorite_menu_item.dart';
 export 'favorite_restaurant.dart';
 export 'greetings/greeting.dart';
+export 'llm_usage.dart';
 export 'menu_item.dart';
 export 'restaurant.dart';
 export 'restaurant_member.dart';
@@ -96,14 +98,17 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i8.Greeting) {
       return _i8.Greeting.fromJson(data) as T;
     }
-    if (t == _i9.MenuItem) {
-      return _i9.MenuItem.fromJson(data) as T;
+    if (t == _i9.LlmUsage) {
+      return _i9.LlmUsage.fromJson(data) as T;
     }
-    if (t == _i10.Restaurant) {
-      return _i10.Restaurant.fromJson(data) as T;
+    if (t == _i10.MenuItem) {
+      return _i10.MenuItem.fromJson(data) as T;
     }
-    if (t == _i11.RestaurantMember) {
-      return _i11.RestaurantMember.fromJson(data) as T;
+    if (t == _i11.Restaurant) {
+      return _i11.Restaurant.fromJson(data) as T;
+    }
+    if (t == _i12.RestaurantMember) {
+      return _i12.RestaurantMember.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.Category?>()) {
       return (data != null ? _i2.Category.fromJson(data) : null) as T;
@@ -126,14 +131,17 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i1.getType<_i8.Greeting?>()) {
       return (data != null ? _i8.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.MenuItem?>()) {
-      return (data != null ? _i9.MenuItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.LlmUsage?>()) {
+      return (data != null ? _i9.LlmUsage.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.Restaurant?>()) {
-      return (data != null ? _i10.Restaurant.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.MenuItem?>()) {
+      return (data != null ? _i10.MenuItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.RestaurantMember?>()) {
-      return (data != null ? _i11.RestaurantMember.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.Restaurant?>()) {
+      return (data != null ? _i11.Restaurant.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i12.RestaurantMember?>()) {
+      return (data != null ? _i12.RestaurantMember.fromJson(data) : null) as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
@@ -147,26 +155,26 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
     }
-    if (t == List<_i12.Restaurant>) {
-      return (data as List).map((e) => deserialize<_i12.Restaurant>(e)).toList()
+    if (t == List<_i13.Restaurant>) {
+      return (data as List).map((e) => deserialize<_i13.Restaurant>(e)).toList()
           as T;
     }
-    if (t == List<_i13.Category>) {
-      return (data as List).map((e) => deserialize<_i13.Category>(e)).toList()
+    if (t == List<_i14.Category>) {
+      return (data as List).map((e) => deserialize<_i14.Category>(e)).toList()
           as T;
     }
-    if (t == List<_i14.MenuItem>) {
-      return (data as List).map((e) => deserialize<_i14.MenuItem>(e)).toList()
+    if (t == List<_i15.MenuItem>) {
+      return (data as List).map((e) => deserialize<_i15.MenuItem>(e)).toList()
           as T;
     }
-    try {
-      return _i15.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
       return _i16.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
       return _i17.Protocol().deserialize<T>(data, t);
+    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+    try {
+      return _i18.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
@@ -180,9 +188,10 @@ class Protocol extends _i1.SerializationManager {
       _i6.FavoriteMenuItem => 'FavoriteMenuItem',
       _i7.FavoriteRestaurant => 'FavoriteRestaurant',
       _i8.Greeting => 'Greeting',
-      _i9.MenuItem => 'MenuItem',
-      _i10.Restaurant => 'Restaurant',
-      _i11.RestaurantMember => 'RestaurantMember',
+      _i9.LlmUsage => 'LlmUsage',
+      _i10.MenuItem => 'MenuItem',
+      _i11.Restaurant => 'Restaurant',
+      _i12.RestaurantMember => 'RestaurantMember',
       _ => null,
     };
   }
@@ -214,22 +223,24 @@ class Protocol extends _i1.SerializationManager {
         return 'FavoriteRestaurant';
       case _i8.Greeting():
         return 'Greeting';
-      case _i9.MenuItem():
+      case _i9.LlmUsage():
+        return 'LlmUsage';
+      case _i10.MenuItem():
         return 'MenuItem';
-      case _i10.Restaurant():
+      case _i11.Restaurant():
         return 'Restaurant';
-      case _i11.RestaurantMember():
+      case _i12.RestaurantMember():
         return 'RestaurantMember';
-    }
-    className = _i15.Protocol().getClassNameForObject(data);
-    if (className != null) {
-      return 'serverpod_auth.$className';
     }
     className = _i16.Protocol().getClassNameForObject(data);
     if (className != null) {
-      return 'serverpod_auth_idp.$className';
+      return 'serverpod_auth.$className';
     }
     className = _i17.Protocol().getClassNameForObject(data);
+    if (className != null) {
+      return 'serverpod_auth_idp.$className';
+    }
+    className = _i18.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -263,26 +274,29 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'Greeting') {
       return deserialize<_i8.Greeting>(data['data']);
     }
+    if (dataClassName == 'LlmUsage') {
+      return deserialize<_i9.LlmUsage>(data['data']);
+    }
     if (dataClassName == 'MenuItem') {
-      return deserialize<_i9.MenuItem>(data['data']);
+      return deserialize<_i10.MenuItem>(data['data']);
     }
     if (dataClassName == 'Restaurant') {
-      return deserialize<_i10.Restaurant>(data['data']);
+      return deserialize<_i11.Restaurant>(data['data']);
     }
     if (dataClassName == 'RestaurantMember') {
-      return deserialize<_i11.RestaurantMember>(data['data']);
+      return deserialize<_i12.RestaurantMember>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth.')) {
       data['className'] = dataClassName.substring(15);
-      return _i15.Protocol().deserializeByClassName(data);
+      return _i16.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i16.Protocol().deserializeByClassName(data);
+      return _i17.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i17.Protocol().deserializeByClassName(data);
+      return _i18.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -297,13 +311,13 @@ class Protocol extends _i1.SerializationManager {
       return null;
     }
     try {
-      return _i15.Protocol().mapRecordToJson(record);
-    } catch (_) {}
-    try {
       return _i16.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
       return _i17.Protocol().mapRecordToJson(record);
+    } catch (_) {}
+    try {
+      return _i18.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

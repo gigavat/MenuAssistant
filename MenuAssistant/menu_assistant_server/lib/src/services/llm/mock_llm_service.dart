@@ -76,7 +76,11 @@ class MockLlmService implements LlmService {
   }
 
   @override
-  Future<String?> generateDishDescription(String dishName) async {
-    return 'A traditional dish — $dishName.';
+  Future<LlmDescriptionResult> generateDishDescription(String dishName) async {
+    return LlmDescriptionResult(
+      description: 'A traditional dish — $dishName.',
+      // Mock doesn't call Claude, so no tokens to report.
+      usage: null,
+    );
   }
 }

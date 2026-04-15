@@ -106,9 +106,14 @@ class DishCatalogService {
 
     // 2. Claude-generated fallback
     try {
-      final desc = await _llm.generateDishDescription(catalog.canonicalName);
-      if (desc != null) {
-        catalog.description = desc;
+      final result = await _llm.generateDishDescription(catalog.canonicalName);
+      if (result.usage != null) {
+        // Record token usage for cost tracking. restaurantId stays null
+        // because catalog entries are shared across restaurants.
+        await recordLlmUsage(session, result.usage!, 'dish_description');
+      }
+      if (result.description != null) {
+        catalog.description = result.description;
         catalog.updatedAt = DateTime.now();
         await DishCatalog.db.updateRow(session, catalog);
       }
@@ -121,7 +126,11 @@ class DishCatalogService {
   Future<void> _fillPrimaryImage(Session session, DishCatalog catalog) async {
     for (final provider in _syncImageProviders) {
       try {
-        final results = await provider.search(catalog.canonicalName, limit: 1);
+        final results = await provider.search(
+          catalog.canonicalName,
+          limit: 1,
+          session: session,
+        );
         if (results.isEmpty) {
           await _recordProvider(session, catalog.id!, provider.providerId,
               'failed',

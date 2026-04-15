@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:serverpod/serverpod.dart';
 
 import 'image_search_service.dart';
 
@@ -32,7 +33,11 @@ class PexelsImageSearchService extends ImageSearchService {
   bool get producesEphemeralUrls => false;
 
   @override
-  Future<List<DishImageResult>> search(String dishName, {int limit = 1}) async {
+  Future<List<DishImageResult>> search(
+    String dishName, {
+    int limit = 1,
+    Session? session,
+  }) async {
     // Pexels has no topic filter, so we bias the query toward food by
     // appending " food dish" keywords. This prevents matches on location
     // names (e.g. a dish named "Londrina" returning city photos).

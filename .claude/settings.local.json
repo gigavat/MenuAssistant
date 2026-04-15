@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(dotnet add:*)",
+      "Bash(dotnet test:*)",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(xargs cat:*)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(dart pub:*)",
+      "Bash(serverpod generate:*)",
+      "Bash(dart analyze:*)",
+      "Bash(dart run:*)",
+      "Bash(docker exec:*)",
+      "Read(//c/Users/andre/AppData/Local/Pub/Cache/hosted/pub.dev/serverpod-3.4.4/**)",
+      "Read(//c/Users/andre/AppData/Local/Pub/Cache/hosted/pub.dev/serverpod_cli-3.4.4/lib/src/generator/**)",
+      "Read(//c/Users/andre/AppData/Local/Pub/Cache/hosted/pub.dev/serverpod_cli-3.4.4/lib/src/analyzer/**)",
+      "Read(//c/Users/andre/AppData/Local/Pub/Cache/hosted/pub.dev/serverpod_client-3.4.4/lib/src/**)",
+      "WebFetch(domain:github.com)",
+      "Bash(claude mcp:*)",
+      "Read(//c/Users/andre/.claude/projects/c--Users-andre-OneDrive-Desktop-MenuAssistant3/memory//**)",
+      "Read(//c/Users/andre/.claude/projects/c--Users-andre-OneDrive-Desktop-MenuAssistant3/memory/**)",
+      "mcp__serena__find_symbol",
+      "mcp__serena__find_referencing_symbols"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

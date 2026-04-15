@@ -24,12 +24,13 @@ import 'dish_provider_status.dart' as _i9;
 import 'favorite_menu_item.dart' as _i10;
 import 'favorite_restaurant.dart' as _i11;
 import 'greetings/greeting.dart' as _i12;
-import 'menu_item.dart' as _i13;
-import 'restaurant.dart' as _i14;
-import 'restaurant_member.dart' as _i15;
-import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i16;
-import 'package:menu_assistant_server/src/generated/category.dart' as _i17;
-import 'package:menu_assistant_server/src/generated/menu_item.dart' as _i18;
+import 'llm_usage.dart' as _i13;
+import 'menu_item.dart' as _i14;
+import 'restaurant.dart' as _i15;
+import 'restaurant_member.dart' as _i16;
+import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i17;
+import 'package:menu_assistant_server/src/generated/category.dart' as _i18;
+import 'package:menu_assistant_server/src/generated/menu_item.dart' as _i19;
 export 'category.dart';
 export 'dish_catalog.dart';
 export 'dish_image.dart';
@@ -37,6 +38,7 @@ export 'dish_provider_status.dart';
 export 'favorite_menu_item.dart';
 export 'favorite_restaurant.dart';
 export 'greetings/greeting.dart';
+export 'llm_usage.dart';
 export 'menu_item.dart';
 export 'restaurant.dart';
 export 'restaurant_member.dart';
@@ -620,6 +622,122 @@ class Protocol extends _i1.SerializationManagerServer {
       managed: true,
     ),
     _i2.TableDefinition(
+      name: 'llm_usage',
+      dartName: 'LlmUsage',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'llm_usage_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'model',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'operation',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'inputTokens',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'outputTokens',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cacheCreationTokens',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cacheReadTokens',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'estimatedCostUsd',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'restaurantId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'llm_usage_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'llm_usage_created_at_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'createdAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'llm_usage_model_operation_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'model',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'operation',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
       name: 'menu_item',
       dartName: 'MenuItem',
       schema: 'public',
@@ -909,14 +1027,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i12.Greeting) {
       return _i12.Greeting.fromJson(data) as T;
     }
-    if (t == _i13.MenuItem) {
-      return _i13.MenuItem.fromJson(data) as T;
+    if (t == _i13.LlmUsage) {
+      return _i13.LlmUsage.fromJson(data) as T;
     }
-    if (t == _i14.Restaurant) {
-      return _i14.Restaurant.fromJson(data) as T;
+    if (t == _i14.MenuItem) {
+      return _i14.MenuItem.fromJson(data) as T;
     }
-    if (t == _i15.RestaurantMember) {
-      return _i15.RestaurantMember.fromJson(data) as T;
+    if (t == _i15.Restaurant) {
+      return _i15.Restaurant.fromJson(data) as T;
+    }
+    if (t == _i16.RestaurantMember) {
+      return _i16.RestaurantMember.fromJson(data) as T;
     }
     if (t == _i1.getType<_i6.Category?>()) {
       return (data != null ? _i6.Category.fromJson(data) : null) as T;
@@ -940,14 +1061,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i12.Greeting?>()) {
       return (data != null ? _i12.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.MenuItem?>()) {
-      return (data != null ? _i13.MenuItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.LlmUsage?>()) {
+      return (data != null ? _i13.LlmUsage.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.Restaurant?>()) {
-      return (data != null ? _i14.Restaurant.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i14.MenuItem?>()) {
+      return (data != null ? _i14.MenuItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i15.RestaurantMember?>()) {
-      return (data != null ? _i15.RestaurantMember.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.Restaurant?>()) {
+      return (data != null ? _i15.Restaurant.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i16.RestaurantMember?>()) {
+      return (data != null ? _i16.RestaurantMember.fromJson(data) : null) as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
@@ -961,16 +1085,16 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
     }
-    if (t == List<_i16.Restaurant>) {
-      return (data as List).map((e) => deserialize<_i16.Restaurant>(e)).toList()
+    if (t == List<_i17.Restaurant>) {
+      return (data as List).map((e) => deserialize<_i17.Restaurant>(e)).toList()
           as T;
     }
-    if (t == List<_i17.Category>) {
-      return (data as List).map((e) => deserialize<_i17.Category>(e)).toList()
+    if (t == List<_i18.Category>) {
+      return (data as List).map((e) => deserialize<_i18.Category>(e)).toList()
           as T;
     }
-    if (t == List<_i18.MenuItem>) {
-      return (data as List).map((e) => deserialize<_i18.MenuItem>(e)).toList()
+    if (t == List<_i19.MenuItem>) {
+      return (data as List).map((e) => deserialize<_i19.MenuItem>(e)).toList()
           as T;
     }
     try {
@@ -997,9 +1121,10 @@ class Protocol extends _i1.SerializationManagerServer {
       _i10.FavoriteMenuItem => 'FavoriteMenuItem',
       _i11.FavoriteRestaurant => 'FavoriteRestaurant',
       _i12.Greeting => 'Greeting',
-      _i13.MenuItem => 'MenuItem',
-      _i14.Restaurant => 'Restaurant',
-      _i15.RestaurantMember => 'RestaurantMember',
+      _i13.LlmUsage => 'LlmUsage',
+      _i14.MenuItem => 'MenuItem',
+      _i15.Restaurant => 'Restaurant',
+      _i16.RestaurantMember => 'RestaurantMember',
       _ => null,
     };
   }
@@ -1031,11 +1156,13 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'FavoriteRestaurant';
       case _i12.Greeting():
         return 'Greeting';
-      case _i13.MenuItem():
+      case _i13.LlmUsage():
+        return 'LlmUsage';
+      case _i14.MenuItem():
         return 'MenuItem';
-      case _i14.Restaurant():
+      case _i15.Restaurant():
         return 'Restaurant';
-      case _i15.RestaurantMember():
+      case _i16.RestaurantMember():
         return 'RestaurantMember';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1084,14 +1211,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'Greeting') {
       return deserialize<_i12.Greeting>(data['data']);
     }
+    if (dataClassName == 'LlmUsage') {
+      return deserialize<_i13.LlmUsage>(data['data']);
+    }
     if (dataClassName == 'MenuItem') {
-      return deserialize<_i13.MenuItem>(data['data']);
+      return deserialize<_i14.MenuItem>(data['data']);
     }
     if (dataClassName == 'Restaurant') {
-      return deserialize<_i14.Restaurant>(data['data']);
+      return deserialize<_i15.Restaurant>(data['data']);
     }
     if (dataClassName == 'RestaurantMember') {
-      return deserialize<_i15.RestaurantMember>(data['data']);
+      return deserialize<_i16.RestaurantMember>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1151,12 +1281,14 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i10.FavoriteMenuItem.t;
       case _i11.FavoriteRestaurant:
         return _i11.FavoriteRestaurant.t;
-      case _i13.MenuItem:
-        return _i13.MenuItem.t;
-      case _i14.Restaurant:
-        return _i14.Restaurant.t;
-      case _i15.RestaurantMember:
-        return _i15.RestaurantMember.t;
+      case _i13.LlmUsage:
+        return _i13.LlmUsage.t;
+      case _i14.MenuItem:
+        return _i14.MenuItem.t;
+      case _i15.Restaurant:
+        return _i15.Restaurant.t;
+      case _i16.RestaurantMember:
+        return _i16.RestaurantMember.t;
     }
     return null;
   }
