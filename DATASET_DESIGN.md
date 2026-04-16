@@ -677,6 +677,448 @@ web/static/images/curated/
 
 ---
 
+## InferenceService — self-hosted ML микросервис
+
+Для Sprint 4.5 image generation (и опционально translations/descriptions)
+используется отдельный Python микросервис на **удалённой машине с GPU**.
+Serverpod обращается к нему по HTTP API, получает bytes сгенерированного
+изображения, сохраняет через `ImagePersistenceService` как обычно.
+
+### Почему отдельный сервис, а не in-process Python в Serverpod
+
+1. **Изоляция GPU hardware**: GPU на удалённой dev-машине (Ryzen 5950x +
+   RTX 3080 Ti 12GB), Serverpod backend может крутиться где угодно (локально,
+   Docker, prod ECS). Inference работает отдельно и реиспользуется
+2. **Language mismatch**: Serverpod — Dart, ML ecosystem — Python. Subprocess
+   spawn внутри Serverpod возможен, но грязно. HTTP API чище
+3. **Deploy independence**: сервис можно рестартовать/обновлять независимо
+   от Serverpod. Downtime InferenceService не падает Serverpod
+4. **Scale flexibility**: можно переместить на другое железо, cluster, или
+   поднять несколько instances за load balancer — без изменений в Serverpod
+5. **Pluggable models**: easy swap SDXL → Flux → другая модель без
+   перекомпиляции Serverpod
+
+### Архитектура
+
+```
+┌──────────────────┐      HTTP POST       ┌─────────────────────┐
+│   Serverpod      │ ──/generate/image──► │  InferenceService   │
+│   Backend        │                       │  (Python FastAPI)   │
+│   (Dart, Docker) │ ◄── image/jpeg ──────│  + SDXL/Flux pipe   │
+└──────────────────┘                       └─────────────────────┘
+        │                                           │
+        │                                           ▼
+        │                                    ┌──────────────┐
+        │                                    │  GPU         │
+        │                                    │  (3080 Ti)   │
+        │                                    └──────────────┘
+        ▼
+┌──────────────────┐
+│ ImagePersistence │ (dev: LocalFileImagePersistence → web/static/)
+│                  │ (prod: ImageServicePersistence → .NET → S3)
+└──────────────────┘
+```
+
+**Ключевой момент**: InferenceService **stateless** — возвращает bytes, не URL.
+Всё хранение image файлов остаётся в домене Serverpod (через
+`ImagePersistenceService`). Это позволяет InferenceService рестартовать,
+мигрировать, заменять без влияния на existing image URLs в БД.
+
+### Расположение в монорепо
+
+```
+MenuAssistant3/
+├── MenuAssistant/              # Flutter + Serverpod (Dart)
+├── ImageService/               # existing .NET (S3 storage)
+├── InferenceService/           # NEW — Python FastAPI + SDXL
+│   ├── README.md
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py             # FastAPI app entry
+│   │   ├── config.py           # env vars, secrets
+│   │   ├── auth.py             # shared secret middleware
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   ├── health.py       # GET /health, GET /models
+│   │   │   └── image.py        # POST /generate/image
+│   │   └── models/
+│   │       ├── __init__.py
+│   │       └── sdxl_pipeline.py # diffusers wrapper
+│   └── .gitignore              # models/, venv/, __pycache__
+└── (будущий) PaymentService/
+```
+
+### API спецификация
+
+**`POST /generate/image`** — генерация изображения из текста
+
+Request:
+```json
+{
+  "prompt": "Professional food photography of Spaghetti alla Carbonara, Italian cuisine, featuring spaghetti, egg, guanciale, pecorino, plated on white ceramic, soft natural lighting, shallow depth of field, appetizing, studio quality, no people, no text",
+  "negative_prompt": "blurry, low quality, cartoon, drawing, text, watermark, people, hands",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "guidance_scale": 7.5,
+  "seed": null,
+  "model": "sdxl"
+}
+```
+
+Response (success 200):
+- `Content-Type: image/jpeg`
+- Body: raw JPEG bytes
+- Headers:
+  - `X-Inference-Time-Ms: 4523`
+  - `X-Model: sdxl-base-1.0`
+  - `X-Seed: 12345`
+
+Response (error 4xx/5xx):
+```json
+{
+  "error": "CUDA out of memory",
+  "details": "..."
+}
+```
+
+**`GET /health`** — liveness check, ничего не делает кроме "200 OK"
+
+**`GET /models`** — список доступных моделей
+```json
+{
+  "available": [
+    {"id": "sdxl", "name": "Stable Diffusion XL 1.0", "vram_gb": 8},
+    {"id": "flux-schnell-nf4", "name": "Flux.1 Schnell (NF4)", "vram_gb": 7}
+  ],
+  "loaded": "sdxl",
+  "gpu": "NVIDIA GeForce RTX 3080 Ti",
+  "vram_free_gb": 4.2,
+  "vram_total_gb": 12.0
+}
+```
+
+### Authentication
+
+Простой **shared secret в Bearer header**. MVP-level, достаточно для internal service.
+
+```
+Authorization: Bearer {INFERENCE_SERVICE_SECRET}
+```
+
+Секрет генерируется при deploy (`openssl rand -hex 32`), хранится:
+- В `config/passwords.yaml` Serverpod как `inferenceServiceSecret`
+- В env variable `INFERENCE_SERVICE_SECRET` на InferenceService
+- **Не** в git
+
+Middleware в FastAPI проверяет header, возвращает 401 при mismatch.
+
+**Upgrade path**: когда понадобится (Sprint 6 multi-service), заменить на
+internal JWT с issuer/audience (тот же pattern что `InternalJwt:*` в
+ImageService).
+
+### Deployment
+
+**Вариант A: Docker (рекомендую)**
+
+```yaml
+# InferenceService/docker-compose.yml
+services:
+  inference:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - INFERENCE_SERVICE_SECRET=${INFERENCE_SERVICE_SECRET}
+      - MODEL_CACHE_DIR=/models
+      - DEFAULT_MODEL=sdxl
+    volumes:
+      - ./models_cache:/models    # persistent model weights (~10GB)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+```
+
+Запуск:
+```bash
+# На remote GPU машине, один раз
+cd InferenceService
+echo "INFERENCE_SERVICE_SECRET=$(openssl rand -hex 32)" > .env
+docker compose up -d --build
+
+# Проверка
+curl http://localhost:8000/health
+```
+
+Требуется [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/) на host машине для GPU passthrough в Docker.
+
+**Вариант B: systemd service (без Docker)**
+
+Если не хочется связываться с Docker + nvidia-runtime:
+1. `python -m venv venv && source venv/bin/activate`
+2. `pip install -r requirements.txt`
+3. `/etc/systemd/system/inference.service` с `uvicorn app.main:app --host 0.0.0.0 --port 8000`
+4. `systemctl enable --now inference`
+
+Проще в setup, сложнее в cleanup / updates.
+
+### Network connectivity
+
+Serverpod (dev laptop) должен достучаться до InferenceService (remote GPU).
+
+**Текущий вариант: Keenetic роутер + KeenDNS reverse proxy (HTTPS → HTTP)**
+
+GPU машина стоит за роутером Keenetic. Наружу выдаётся HTTPS URL через
+KeenDNS (встроенный DDNS + Let's Encrypt). Keenetic делает TLS termination
+и перенаправляет трафик на internal `http://<lan-ip>:8000`.
+
+```
+Serverpod dev         Internet         Keenetic Router         GPU Machine
+ laptop              (HTTPS)           (TLS termination)       (HTTP internal)
+    │                   │                    │                       │
+    └── HTTPS ─────────►│───► port 443 ──────►│──── HTTP :8000 ──────►│
+        https://xxx.keenetic.pro               192.168.x.x:8000
+```
+
+**Настройка Keenetic**:
+1. **KeenDNS** → "Сетевые правила → Доменное имя" — получаешь
+   `yourname.keenetic.pro` (бесплатно) с auto Let's Encrypt SSL
+2. **Port forwarding** → "Переадресация портов":
+   внешний HTTPS (443) → внутренний `http://<GPU-LAN-IP>:8000`
+3. **Dynamic IP** → KeenDNS авто-обновляет DNS при смене внешнего IP
+
+**Config в Serverpod `passwords.yaml`**:
+```yaml
+shared:
+  inferenceServiceBaseUrl: 'https://yourname.keenetic.pro'
+  inferenceServiceSecret: '<secret>'
+```
+
+**Security**: Bearer token передаётся внутри HTTPS → encrypted in transit.
+Без секрета — 401.
+
+**Gotchas**:
+- **NAT hairpin**: если Serverpod и GPU в одной LAN, обращение по
+  `yourname.keenetic.pro` может не работать (NAT loopback). Обходить
+  через `http://192.168.x.x:8000` напрямую (в passwords.yaml менять URL
+  в зависимости от того откуда запускаешь)
+- **Keenetic timeout**: default ~60 sec на HTTP connection. SDXL inference
+  5-25 sec — обычно ок, но Flux Dev NF4 может занять 30+ sec. Если 504
+  Gateway Timeout — увеличить timeout в настройках Keenetic
+- **Keenetic restart**: port forwarding persistent, KeenDNS cert auto-renew
+
+**Альтернативные варианты** (если KeenDNS не подойдёт):
+1. **SSH port forwarding**: `ssh -N -L 8000:localhost:8000 user@gpu` — если есть SSH доступ к GPU машине
+2. **Tailscale mesh VPN**: обе машины в private `100.x.x.x` — persistent, zero-config
+3. **Cloudflare Tunnel**: outbound-only, никаких открытых портов. Бесплатно
+
+### Config в Serverpod
+
+**`config/passwords.yaml`**:
+```yaml
+shared:
+  # ── Sprint 4.5: InferenceService (self-hosted GPU machine) ─────────
+  inferenceServiceBaseUrl: 'http://localhost:8000'    # или Tailscale/LAN IP
+  inferenceServiceSecret: '<generated-secret>'
+```
+
+**`lib/src/services/inference/inference_service_client.dart`** (новый файл):
+```dart
+import 'package:http/http.dart' as http;
+import '../../service_registry.dart';
+
+class InferenceServiceClient {
+  final String _baseUrl;
+  final String _secret;
+  final http.Client _httpClient;
+  static const _timeout = Duration(minutes: 3);  // long-running inference
+
+  InferenceServiceClient({
+    required String baseUrl,
+    required String secret,
+    http.Client? httpClient,
+  })  : _baseUrl = baseUrl,
+        _secret = secret,
+        _httpClient = httpClient ?? http.Client();
+
+  /// Generates an image from [prompt]. Returns raw JPEG bytes.
+  /// Throws on non-200 or timeout.
+  Future<List<int>> generateImage({
+    required String prompt,
+    String? negativePrompt,
+    int width = 1024,
+    int height = 1024,
+    int steps = 30,
+    double guidanceScale = 7.5,
+    String model = 'sdxl',
+  }) async {
+    final response = await _httpClient
+        .post(
+          Uri.parse('$_baseUrl/generate/image'),
+          headers: {
+            'Authorization': 'Bearer $_secret',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'prompt': prompt,
+            if (negativePrompt != null) 'negative_prompt': negativePrompt,
+            'width': width,
+            'height': height,
+            'steps': steps,
+            'guidance_scale': guidanceScale,
+            'model': model,
+          }),
+        )
+        .timeout(_timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'InferenceService error ${response.statusCode}: ${response.body}',
+      );
+    }
+    return response.bodyBytes;
+  }
+
+  Future<bool> isHealthy() async {
+    try {
+      final response = await _httpClient
+          .get(Uri.parse('$_baseUrl/health'))
+          .timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+```
+
+### Интеграция с bootstrap pipeline
+
+В `bin/generate_images.dart` вместо прямых HTTP calls к fal.ai:
+
+```dart
+final client = InferenceServiceClient(
+  baseUrl: Serverpod.instance.getPassword('inferenceServiceBaseUrl')!,
+  secret: Serverpod.instance.getPassword('inferenceServiceSecret')!,
+);
+
+// Sanity check перед batch run
+if (!await client.isHealthy()) {
+  stderr.writeln('InferenceService not reachable');
+  exit(1);
+}
+
+// Для каждого dish без Commons hit:
+final bytes = await client.generateImage(
+  prompt: _buildFoodPrompt(dish),
+  negativePrompt: 'blurry, cartoon, text, watermark, people',
+  model: 'sdxl',
+);
+
+// Persist через ImagePersistenceService (локально в dev, S3 в prod)
+final url = await imagePersistence.persistBytes(
+  bytes: bytes,
+  contentType: 'image/jpeg',
+  source: 'inference_service',
+  dishCatalogId: dish.id!,
+);
+```
+
+**NB**: `ImagePersistenceService.persist()` сейчас принимает URL (fetch bytes
+from that URL). Для InferenceService добавить новый метод `persistBytes()`
+который принимает bytes напрямую. Обе реализации (`LocalFileImagePersistence`
+и `ImageServicePersistence`) поддерживают оба метода.
+
+### Экономика self-hosted vs cloud API
+
+**Setup one-time**:
+- Docker + NVIDIA Container Toolkit install: 30-60 минут
+- InferenceService code (~200 LOC Python): 2-3 часа
+- Model download (SDXL ~7GB): 10 минут
+- Docker build + first run: 10 минут
+- Total: **~3-4 часа**
+
+**Per-bootstrap run** (5000 images):
+- Electricity: ~400W × 8h × €0.35/kWh = **€1.12**
+- GPU wear/tear: минимальный
+- API cost: **€0**
+
+**Per live fallback** (user uploads menu, exotic dish не в catalog):
+- Inference time: ~5 sec for SDXL, ~10 sec for Flux NF4
+- Marginal cost: ~€0.0001 (electricity)
+- **vs fal.ai**: $0.008 per image — 80x дороже
+
+**Долгосрочная экономия**: при 1000+ images/месяц (bootstrap + live fallbacks),
+self-hosted окупает setup time за первый же месяц.
+
+### Opционально: добавить translation endpoint (Sprint 5)
+
+Тот же InferenceService может предоставлять и NLLB-200 translation:
+
+```
+POST /translate
+{
+  "text": "Spaghetti alla carbonara is a Roman pasta dish...",
+  "source_lang": "eng_Latn",
+  "target_lang": "rus_Cyrl"
+}
+
+Response:
+{
+  "translated": "Спагетти алла карбонара — римское блюдо..."
+}
+```
+
+NLLB-200 distilled 600M занимает ~2GB VRAM (осталось ~10GB для SDXL) —
+можно держать обе модели загруженными одновременно.
+
+**Решение отложить на Sprint 5** — для bootstrap translations Claude cloud
+стоит всего $21, не стоит добавлять complexity в начальный Sprint 4.5. Когда
+будем делать Sprint 5 i18n — добавим `/translate` endpoint к существующему
+InferenceService.
+
+### Ограничения и gotchas
+
+1. **Cold start**: первый запрос после старта сервиса грузит модель в VRAM
+   (~30 sec). Warm requests ~5 sec. Health check следует делать до batch runs
+2. **Single GPU = sequential**: один запрос за раз. Для concurrency
+   нужно queue front + batch processing. Для bootstrap (sequential) это ok
+3. **OOM на больших resolutions**: 1024×1024 ok для SDXL на 12GB, 2048×2048
+   OOM. Не менять default без тестов
+4. **Model switching expensive**: переключение между SDXL и Flux Schnell
+   выгружает/загружает веса (~20 sec). Для production лучше держать один
+   default model
+5. **Network latency**: через SSH tunnel или Tailscale — добавляет 10-50ms
+   на запрос, нерелевантно для 5-секундных generations
+6. **Disk space**: model cache ~10GB (SDXL) или ~15GB (SDXL + Flux). На
+   remote машине нужен SSD для приемлемого cold start
+
+### Чек-лист перед запуском Sprint 4.5 bootstrap
+
+- [ ] Remote GPU машина доступна (SSH / Tailscale / VPN)
+- [ ] NVIDIA driver + CUDA 12.x установлены
+- [ ] NVIDIA Container Toolkit (если Docker) или Python 3.11+ (если systemd)
+- [ ] Минимум 20GB свободного диска (models + Docker images + buffer)
+- [ ] Открыт порт 8000 для Serverpod (через tunnel или firewall rule)
+- [ ] `InferenceService/` deployed и `curl /health` возвращает 200
+- [ ] `inferenceServiceBaseUrl` + `inferenceServiceSecret` в Serverpod passwords.yaml
+- [ ] Test one image generation call через `InferenceServiceClient` из Serverpod script
+- [ ] Quality sample: 10 тестовых dishes через SDXL, визуально оценить результат
+
+Если quality не устраивает — переключиться на Flux Schnell NF4 (сложнее
+setup, но лучше качество). SDXL + food photography LoRA с civitai обычно
+достаточно для MVP.
+
+---
+
 ## Environment migration — seed dataset pattern
 
 Основная проблема при переносе curated dataset из dev в prod: у нас **два типа

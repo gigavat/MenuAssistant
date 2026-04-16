@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+venv/
+env/
+.venv/
+.env
+
+# Model cache (~10-15GB, never commit)
+models_cache/
+models/
+*.safetensors
+*.bin
+*.ckpt
+
+# Docker volumes
+volumes/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test outputs
+test_*.jpg
+test_*.png
+output/
