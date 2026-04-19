@@ -8,10 +8,12 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
+// ignore_for_file: unnecessary_null_comparison
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:menu_assistant_server/src/generated/protocol.dart' as _i2;
+import 'curated_dish.dart' as _i2;
+import 'package:menu_assistant_server/src/generated/protocol.dart' as _i3;
 
 abstract class DishCatalog
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
@@ -23,6 +25,8 @@ abstract class DishCatalog
     this.tags,
     this.description,
     this.spiceLevel,
+    this.curatedDishId,
+    this.curatedDish,
     required this.enrichmentStatus,
     required this.createdAt,
     required this.updatedAt,
@@ -36,6 +40,8 @@ abstract class DishCatalog
     List<String>? tags,
     String? description,
     int? spiceLevel,
+    int? curatedDishId,
+    _i2.CuratedDish? curatedDish,
     required String enrichmentStatus,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -49,9 +55,15 @@ abstract class DishCatalog
       cuisineType: jsonSerialization['cuisineType'] as String?,
       tags: jsonSerialization['tags'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
+          : _i3.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       description: jsonSerialization['description'] as String?,
       spiceLevel: jsonSerialization['spiceLevel'] as int?,
+      curatedDishId: jsonSerialization['curatedDishId'] as int?,
+      curatedDish: jsonSerialization['curatedDish'] == null
+          ? null
+          : _i3.Protocol().deserialize<_i2.CuratedDish>(
+              jsonSerialization['curatedDish'],
+            ),
       enrichmentStatus: jsonSerialization['enrichmentStatus'] as String,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -81,6 +93,10 @@ abstract class DishCatalog
 
   int? spiceLevel;
 
+  int? curatedDishId;
+
+  _i2.CuratedDish? curatedDish;
+
   String enrichmentStatus;
 
   DateTime createdAt;
@@ -101,6 +117,8 @@ abstract class DishCatalog
     List<String>? tags,
     String? description,
     int? spiceLevel,
+    int? curatedDishId,
+    _i2.CuratedDish? curatedDish,
     String? enrichmentStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -116,6 +134,8 @@ abstract class DishCatalog
       if (tags != null) 'tags': tags?.toJson(),
       if (description != null) 'description': description,
       if (spiceLevel != null) 'spiceLevel': spiceLevel,
+      if (curatedDishId != null) 'curatedDishId': curatedDishId,
+      if (curatedDish != null) 'curatedDish': curatedDish?.toJson(),
       'enrichmentStatus': enrichmentStatus,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
@@ -133,14 +153,16 @@ abstract class DishCatalog
       if (tags != null) 'tags': tags?.toJson(),
       if (description != null) 'description': description,
       if (spiceLevel != null) 'spiceLevel': spiceLevel,
+      if (curatedDishId != null) 'curatedDishId': curatedDishId,
+      if (curatedDish != null) 'curatedDish': curatedDish?.toJsonForProtocol(),
       'enrichmentStatus': enrichmentStatus,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
   }
 
-  static DishCatalogInclude include() {
-    return DishCatalogInclude._();
+  static DishCatalogInclude include({_i2.CuratedDishInclude? curatedDish}) {
+    return DishCatalogInclude._(curatedDish: curatedDish);
   }
 
   static DishCatalogIncludeList includeList({
@@ -180,6 +202,8 @@ class _DishCatalogImpl extends DishCatalog {
     List<String>? tags,
     String? description,
     int? spiceLevel,
+    int? curatedDishId,
+    _i2.CuratedDish? curatedDish,
     required String enrichmentStatus,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -191,6 +215,8 @@ class _DishCatalogImpl extends DishCatalog {
          tags: tags,
          description: description,
          spiceLevel: spiceLevel,
+         curatedDishId: curatedDishId,
+         curatedDish: curatedDish,
          enrichmentStatus: enrichmentStatus,
          createdAt: createdAt,
          updatedAt: updatedAt,
@@ -208,6 +234,8 @@ class _DishCatalogImpl extends DishCatalog {
     Object? tags = _Undefined,
     Object? description = _Undefined,
     Object? spiceLevel = _Undefined,
+    Object? curatedDishId = _Undefined,
+    Object? curatedDish = _Undefined,
     String? enrichmentStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -220,6 +248,10 @@ class _DishCatalogImpl extends DishCatalog {
       tags: tags is List<String>? ? tags : this.tags?.map((e0) => e0).toList(),
       description: description is String? ? description : this.description,
       spiceLevel: spiceLevel is int? ? spiceLevel : this.spiceLevel,
+      curatedDishId: curatedDishId is int? ? curatedDishId : this.curatedDishId,
+      curatedDish: curatedDish is _i2.CuratedDish?
+          ? curatedDish
+          : this.curatedDish?.copyWith(),
       enrichmentStatus: enrichmentStatus ?? this.enrichmentStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -260,6 +292,11 @@ class DishCatalogUpdateTable extends _i1.UpdateTable<DishCatalogTable> {
 
   _i1.ColumnValue<int, int> spiceLevel(int? value) => _i1.ColumnValue(
     table.spiceLevel,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> curatedDishId(int? value) => _i1.ColumnValue(
+    table.curatedDishId,
     value,
   );
 
@@ -309,6 +346,10 @@ class DishCatalogTable extends _i1.Table<int?> {
       'spiceLevel',
       this,
     );
+    curatedDishId = _i1.ColumnInt(
+      'curatedDishId',
+      this,
+    );
     enrichmentStatus = _i1.ColumnString(
       'enrichmentStatus',
       this,
@@ -337,11 +378,28 @@ class DishCatalogTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt spiceLevel;
 
+  late final _i1.ColumnInt curatedDishId;
+
+  _i2.CuratedDishTable? _curatedDish;
+
   late final _i1.ColumnString enrichmentStatus;
 
   late final _i1.ColumnDateTime createdAt;
 
   late final _i1.ColumnDateTime updatedAt;
+
+  _i2.CuratedDishTable get curatedDish {
+    if (_curatedDish != null) return _curatedDish!;
+    _curatedDish = _i1.createRelationTable(
+      relationFieldName: 'curatedDish',
+      field: DishCatalog.t.curatedDishId,
+      foreignField: _i2.CuratedDish.t.id,
+      tableRelation: tableRelation,
+      createTable: (foreignTableRelation) =>
+          _i2.CuratedDishTable(tableRelation: foreignTableRelation),
+    );
+    return _curatedDish!;
+  }
 
   @override
   List<_i1.Column> get columns => [
@@ -352,17 +410,30 @@ class DishCatalogTable extends _i1.Table<int?> {
     tags,
     description,
     spiceLevel,
+    curatedDishId,
     enrichmentStatus,
     createdAt,
     updatedAt,
   ];
+
+  @override
+  _i1.Table? getRelationTable(String relationField) {
+    if (relationField == 'curatedDish') {
+      return curatedDish;
+    }
+    return null;
+  }
 }
 
 class DishCatalogInclude extends _i1.IncludeObject {
-  DishCatalogInclude._();
+  DishCatalogInclude._({_i2.CuratedDishInclude? curatedDish}) {
+    _curatedDish = curatedDish;
+  }
+
+  _i2.CuratedDishInclude? _curatedDish;
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _i1.Include?> get includes => {'curatedDish': _curatedDish};
 
   @override
   _i1.Table<int?> get table => DishCatalog.t;
@@ -390,6 +461,10 @@ class DishCatalogIncludeList extends _i1.IncludeList {
 
 class DishCatalogRepository {
   const DishCatalogRepository._();
+
+  final attachRow = const DishCatalogAttachRowRepository._();
+
+  final detachRow = const DishCatalogDetachRowRepository._();
 
   /// Returns a list of [DishCatalog]s matching the given query parameters.
   ///
@@ -422,6 +497,7 @@ class DishCatalogRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<DishCatalogTable>? orderByList,
     _i1.Transaction? transaction,
+    DishCatalogInclude? include,
     _i1.LockMode? lockMode,
     _i1.LockBehavior? lockBehavior,
   }) async {
@@ -433,6 +509,7 @@ class DishCatalogRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      include: include,
       lockMode: lockMode,
       lockBehavior: lockBehavior,
     );
@@ -463,6 +540,7 @@ class DishCatalogRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<DishCatalogTable>? orderByList,
     _i1.Transaction? transaction,
+    DishCatalogInclude? include,
     _i1.LockMode? lockMode,
     _i1.LockBehavior? lockBehavior,
   }) async {
@@ -473,6 +551,7 @@ class DishCatalogRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      include: include,
       lockMode: lockMode,
       lockBehavior: lockBehavior,
     );
@@ -483,12 +562,14 @@ class DishCatalogRepository {
     _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    DishCatalogInclude? include,
     _i1.LockMode? lockMode,
     _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<DishCatalog>(
       id,
       transaction: transaction,
+      include: include,
       lockMode: lockMode,
       lockBehavior: lockBehavior,
     );
@@ -670,6 +751,59 @@ class DishCatalogRepository {
       where: where(DishCatalog.t),
       lockMode: lockMode,
       lockBehavior: lockBehavior,
+      transaction: transaction,
+    );
+  }
+}
+
+class DishCatalogAttachRowRepository {
+  const DishCatalogAttachRowRepository._();
+
+  /// Creates a relation between the given [DishCatalog] and [CuratedDish]
+  /// by setting the [DishCatalog]'s foreign key `curatedDishId` to refer to the [CuratedDish].
+  Future<void> curatedDish(
+    _i1.DatabaseSession session,
+    DishCatalog dishCatalog,
+    _i2.CuratedDish curatedDish, {
+    _i1.Transaction? transaction,
+  }) async {
+    if (dishCatalog.id == null) {
+      throw ArgumentError.notNull('dishCatalog.id');
+    }
+    if (curatedDish.id == null) {
+      throw ArgumentError.notNull('curatedDish.id');
+    }
+
+    var $dishCatalog = dishCatalog.copyWith(curatedDishId: curatedDish.id);
+    await session.db.updateRow<DishCatalog>(
+      $dishCatalog,
+      columns: [DishCatalog.t.curatedDishId],
+      transaction: transaction,
+    );
+  }
+}
+
+class DishCatalogDetachRowRepository {
+  const DishCatalogDetachRowRepository._();
+
+  /// Detaches the relation between this [DishCatalog] and the [CuratedDish] set in `curatedDish`
+  /// by setting the [DishCatalog]'s foreign key `curatedDishId` to `null`.
+  ///
+  /// This removes the association between the two models without deleting
+  /// the related record.
+  Future<void> curatedDish(
+    _i1.DatabaseSession session,
+    DishCatalog dishCatalog, {
+    _i1.Transaction? transaction,
+  }) async {
+    if (dishCatalog.id == null) {
+      throw ArgumentError.notNull('dishCatalog.id');
+    }
+
+    var $dishCatalog = dishCatalog.copyWith(curatedDishId: null);
+    await session.db.updateRow<DishCatalog>(
+      $dishCatalog,
+      columns: [DishCatalog.t.curatedDishId],
       transaction: transaction,
     );
   }

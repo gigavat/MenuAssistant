@@ -1,0 +1,42 @@
+class: CuratedDish
+table: curated_dish
+fields:
+  # Lowercase, accent-stripped, no punctuation. Unique dedup key.
+  canonicalName: String
+  # Pretty display name, e.g. "Spaghetti alla Carbonara".
+  displayName: String
+  # Wikidata Q-id for cross-reference, e.g. "Q83218".
+  wikidataId: String?
+  # Controlled vocabulary: "italian", "japanese", "portuguese", etc.
+  cuisine: String?
+  # ISO 3166-1 alpha-2: "IT", "JP", "PT".
+  countryCode: String?
+  # "main", "appetizer", "dessert", "drink", "side", "soup", "salad", etc.
+  courseType: String?
+  # Multilingual + spelling variants for fuzzy matching.
+  aliases: List<String>?
+  # Tags from controlled vocabulary (cooking method, texture, flavor).
+  tags: List<String>?
+  # Top 3-5 primary ingredients.
+  primaryIngredients: List<String>?
+  # Diet flags: "vegetarian", "contains_pork", "gluten_free", etc.
+  dietFlags: List<String>?
+  # 1-3 factual sentences in English.
+  description: String?
+  # Optional origin/history text.
+  origin: String?
+  # "draft" | "approved" | "rejected"
+  status: String
+  approvedBy: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  curated_dish_canonical_idx:
+    fields: canonicalName
+    unique: true
+  curated_dish_wikidata_idx:
+    fields: wikidataId
+  curated_dish_cuisine_idx:
+    fields: cuisine
+  curated_dish_status_idx:
+    fields: status

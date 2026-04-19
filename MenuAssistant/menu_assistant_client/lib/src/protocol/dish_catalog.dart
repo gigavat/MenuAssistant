@@ -11,7 +11,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:menu_assistant_client/src/protocol/protocol.dart' as _i2;
+import 'curated_dish.dart' as _i2;
+import 'package:menu_assistant_client/src/protocol/protocol.dart' as _i3;
 
 abstract class DishCatalog implements _i1.SerializableModel {
   DishCatalog._({
@@ -22,6 +23,8 @@ abstract class DishCatalog implements _i1.SerializableModel {
     this.tags,
     this.description,
     this.spiceLevel,
+    this.curatedDishId,
+    this.curatedDish,
     required this.enrichmentStatus,
     required this.createdAt,
     required this.updatedAt,
@@ -35,6 +38,8 @@ abstract class DishCatalog implements _i1.SerializableModel {
     List<String>? tags,
     String? description,
     int? spiceLevel,
+    int? curatedDishId,
+    _i2.CuratedDish? curatedDish,
     required String enrichmentStatus,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -48,9 +53,15 @@ abstract class DishCatalog implements _i1.SerializableModel {
       cuisineType: jsonSerialization['cuisineType'] as String?,
       tags: jsonSerialization['tags'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
+          : _i3.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       description: jsonSerialization['description'] as String?,
       spiceLevel: jsonSerialization['spiceLevel'] as int?,
+      curatedDishId: jsonSerialization['curatedDishId'] as int?,
+      curatedDish: jsonSerialization['curatedDish'] == null
+          ? null
+          : _i3.Protocol().deserialize<_i2.CuratedDish>(
+              jsonSerialization['curatedDish'],
+            ),
       enrichmentStatus: jsonSerialization['enrichmentStatus'] as String,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -78,6 +89,10 @@ abstract class DishCatalog implements _i1.SerializableModel {
 
   int? spiceLevel;
 
+  int? curatedDishId;
+
+  _i2.CuratedDish? curatedDish;
+
   String enrichmentStatus;
 
   DateTime createdAt;
@@ -95,6 +110,8 @@ abstract class DishCatalog implements _i1.SerializableModel {
     List<String>? tags,
     String? description,
     int? spiceLevel,
+    int? curatedDishId,
+    _i2.CuratedDish? curatedDish,
     String? enrichmentStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -110,6 +127,8 @@ abstract class DishCatalog implements _i1.SerializableModel {
       if (tags != null) 'tags': tags?.toJson(),
       if (description != null) 'description': description,
       if (spiceLevel != null) 'spiceLevel': spiceLevel,
+      if (curatedDishId != null) 'curatedDishId': curatedDishId,
+      if (curatedDish != null) 'curatedDish': curatedDish?.toJson(),
       'enrichmentStatus': enrichmentStatus,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
@@ -133,6 +152,8 @@ class _DishCatalogImpl extends DishCatalog {
     List<String>? tags,
     String? description,
     int? spiceLevel,
+    int? curatedDishId,
+    _i2.CuratedDish? curatedDish,
     required String enrichmentStatus,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -144,6 +165,8 @@ class _DishCatalogImpl extends DishCatalog {
          tags: tags,
          description: description,
          spiceLevel: spiceLevel,
+         curatedDishId: curatedDishId,
+         curatedDish: curatedDish,
          enrichmentStatus: enrichmentStatus,
          createdAt: createdAt,
          updatedAt: updatedAt,
@@ -161,6 +184,8 @@ class _DishCatalogImpl extends DishCatalog {
     Object? tags = _Undefined,
     Object? description = _Undefined,
     Object? spiceLevel = _Undefined,
+    Object? curatedDishId = _Undefined,
+    Object? curatedDish = _Undefined,
     String? enrichmentStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -173,6 +198,10 @@ class _DishCatalogImpl extends DishCatalog {
       tags: tags is List<String>? ? tags : this.tags?.map((e0) => e0).toList(),
       description: description is String? ? description : this.description,
       spiceLevel: spiceLevel is int? ? spiceLevel : this.spiceLevel,
+      curatedDishId: curatedDishId is int? ? curatedDishId : this.curatedDishId,
+      curatedDish: curatedDish is _i2.CuratedDish?
+          ? curatedDish
+          : this.curatedDish?.copyWith(),
       enrichmentStatus: enrichmentStatus ?? this.enrichmentStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -1,0 +1,17 @@
+class: DishTranslation
+table: dish_translation
+fields:
+  curatedDish: CuratedDish?, relation
+  # ISO 639-1 language code: "ru", "pt", "es", "it", "fr", "de".
+  language: String
+  # Translated display name.
+  name: String
+  # Translated description.
+  description: String
+  # "claude_auto" | "manual"
+  source: String
+  createdAt: DateTime
+indexes:
+  dish_translation_lookup_idx:
+    fields: curatedDishId, language
+    unique: true

@@ -18,23 +18,31 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i5;
 import 'category.dart' as _i6;
-import 'dish_catalog.dart' as _i7;
-import 'dish_image.dart' as _i8;
-import 'dish_provider_status.dart' as _i9;
-import 'favorite_menu_item.dart' as _i10;
-import 'favorite_restaurant.dart' as _i11;
-import 'greetings/greeting.dart' as _i12;
-import 'llm_usage.dart' as _i13;
-import 'menu_item.dart' as _i14;
-import 'restaurant.dart' as _i15;
-import 'restaurant_member.dart' as _i16;
-import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i17;
-import 'package:menu_assistant_server/src/generated/category.dart' as _i18;
-import 'package:menu_assistant_server/src/generated/menu_item.dart' as _i19;
+import 'curated_dish.dart' as _i7;
+import 'curated_dish_image.dart' as _i8;
+import 'dataset_version.dart' as _i9;
+import 'dish_catalog.dart' as _i10;
+import 'dish_image.dart' as _i11;
+import 'dish_provider_status.dart' as _i12;
+import 'dish_translation.dart' as _i13;
+import 'favorite_menu_item.dart' as _i14;
+import 'favorite_restaurant.dart' as _i15;
+import 'greetings/greeting.dart' as _i16;
+import 'llm_usage.dart' as _i17;
+import 'menu_item.dart' as _i18;
+import 'restaurant.dart' as _i19;
+import 'restaurant_member.dart' as _i20;
+import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i21;
+import 'package:menu_assistant_server/src/generated/category.dart' as _i22;
+import 'package:menu_assistant_server/src/generated/menu_item.dart' as _i23;
 export 'category.dart';
+export 'curated_dish.dart';
+export 'curated_dish_image.dart';
+export 'dataset_version.dart';
 export 'dish_catalog.dart';
 export 'dish_image.dart';
 export 'dish_provider_status.dart';
+export 'dish_translation.dart';
 export 'favorite_menu_item.dart';
 export 'favorite_restaurant.dart';
 export 'greetings/greeting.dart';
@@ -113,6 +121,408 @@ class Protocol extends _i1.SerializationManagerServer {
       managed: true,
     ),
     _i2.TableDefinition(
+      name: 'curated_dish',
+      dartName: 'CuratedDish',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'curated_dish_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'canonicalName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'displayName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'wikidataId',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cuisine',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'countryCode',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'courseType',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'aliases',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tags',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'primaryIngredients',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'dietFlags',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'description',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'origin',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'status',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'approvedBy',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_canonical_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'canonicalName',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_wikidata_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'wikidataId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_cuisine_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'cuisine',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_status_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'status',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'curated_dish_image',
+      dartName: 'CuratedDishImage',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'curated_dish_image_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'curatedDishId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'imageUrl',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'source',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'sourceUrl',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'license',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'attribution',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'attributionUrl',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'qualityScore',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'styleTags',
+          columnType: _i2.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isPrimary',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+        ),
+        _i2.ColumnDefinition(
+          name: 'width',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'height',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _i2.ForeignKeyDefinition(
+          constraintName: 'curated_dish_image_fk_0',
+          columns: ['curatedDishId'],
+          referenceTable: 'curated_dish',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _i2.ForeignKeyAction.noAction,
+          onDelete: _i2.ForeignKeyAction.noAction,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_image_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_image_dish_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'curatedDishId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'curated_dish_image_quality_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'qualityScore',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'dataset_version',
+      dartName: 'DatasetVersion',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'dataset_version_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'name',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'version',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'appliedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'dishCount',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'imageCount',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'dataset_version_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'dataset_version_name_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'name',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
       name: 'dish_catalog',
       dartName: 'DishCatalog',
       schema: 'public',
@@ -162,6 +572,12 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'int?',
         ),
         _i2.ColumnDefinition(
+          name: 'curatedDishId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
           name: 'enrichmentStatus',
           columnType: _i2.ColumnType.text,
           isNullable: false,
@@ -180,7 +596,18 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'DateTime',
         ),
       ],
-      foreignKeys: [],
+      foreignKeys: [
+        _i2.ForeignKeyDefinition(
+          constraintName: 'dish_catalog_fk_0',
+          columns: ['curatedDishId'],
+          referenceTable: 'curated_dish',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _i2.ForeignKeyAction.noAction,
+          onDelete: _i2.ForeignKeyAction.noAction,
+          matchType: null,
+        ),
+      ],
       indexes: [
         _i2.IndexDefinition(
           indexName: 'dish_catalog_pkey',
@@ -460,6 +887,102 @@ class Protocol extends _i1.SerializationManagerServer {
           ],
           type: 'btree',
           isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'dish_translation',
+      dartName: 'DishTranslation',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'dish_translation_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'curatedDishId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'language',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'name',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'description',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'source',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _i2.ForeignKeyDefinition(
+          constraintName: 'dish_translation_fk_0',
+          columns: ['curatedDishId'],
+          referenceTable: 'curated_dish',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _i2.ForeignKeyAction.noAction,
+          onDelete: _i2.ForeignKeyAction.noAction,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'dish_translation_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'dish_translation_lookup_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'curatedDishId',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'language',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
           isPrimary: false,
         ),
       ],
@@ -1009,69 +1532,94 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i6.Category) {
       return _i6.Category.fromJson(data) as T;
     }
-    if (t == _i7.DishCatalog) {
-      return _i7.DishCatalog.fromJson(data) as T;
+    if (t == _i7.CuratedDish) {
+      return _i7.CuratedDish.fromJson(data) as T;
     }
-    if (t == _i8.DishImage) {
-      return _i8.DishImage.fromJson(data) as T;
+    if (t == _i8.CuratedDishImage) {
+      return _i8.CuratedDishImage.fromJson(data) as T;
     }
-    if (t == _i9.DishProviderStatus) {
-      return _i9.DishProviderStatus.fromJson(data) as T;
+    if (t == _i9.DatasetVersion) {
+      return _i9.DatasetVersion.fromJson(data) as T;
     }
-    if (t == _i10.FavoriteMenuItem) {
-      return _i10.FavoriteMenuItem.fromJson(data) as T;
+    if (t == _i10.DishCatalog) {
+      return _i10.DishCatalog.fromJson(data) as T;
     }
-    if (t == _i11.FavoriteRestaurant) {
-      return _i11.FavoriteRestaurant.fromJson(data) as T;
+    if (t == _i11.DishImage) {
+      return _i11.DishImage.fromJson(data) as T;
     }
-    if (t == _i12.Greeting) {
-      return _i12.Greeting.fromJson(data) as T;
+    if (t == _i12.DishProviderStatus) {
+      return _i12.DishProviderStatus.fromJson(data) as T;
     }
-    if (t == _i13.LlmUsage) {
-      return _i13.LlmUsage.fromJson(data) as T;
+    if (t == _i13.DishTranslation) {
+      return _i13.DishTranslation.fromJson(data) as T;
     }
-    if (t == _i14.MenuItem) {
-      return _i14.MenuItem.fromJson(data) as T;
+    if (t == _i14.FavoriteMenuItem) {
+      return _i14.FavoriteMenuItem.fromJson(data) as T;
     }
-    if (t == _i15.Restaurant) {
-      return _i15.Restaurant.fromJson(data) as T;
+    if (t == _i15.FavoriteRestaurant) {
+      return _i15.FavoriteRestaurant.fromJson(data) as T;
     }
-    if (t == _i16.RestaurantMember) {
-      return _i16.RestaurantMember.fromJson(data) as T;
+    if (t == _i16.Greeting) {
+      return _i16.Greeting.fromJson(data) as T;
+    }
+    if (t == _i17.LlmUsage) {
+      return _i17.LlmUsage.fromJson(data) as T;
+    }
+    if (t == _i18.MenuItem) {
+      return _i18.MenuItem.fromJson(data) as T;
+    }
+    if (t == _i19.Restaurant) {
+      return _i19.Restaurant.fromJson(data) as T;
+    }
+    if (t == _i20.RestaurantMember) {
+      return _i20.RestaurantMember.fromJson(data) as T;
     }
     if (t == _i1.getType<_i6.Category?>()) {
       return (data != null ? _i6.Category.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i7.DishCatalog?>()) {
-      return (data != null ? _i7.DishCatalog.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i7.CuratedDish?>()) {
+      return (data != null ? _i7.CuratedDish.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.DishImage?>()) {
-      return (data != null ? _i8.DishImage.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.CuratedDishImage?>()) {
+      return (data != null ? _i8.CuratedDishImage.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.DishProviderStatus?>()) {
-      return (data != null ? _i9.DishProviderStatus.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.DatasetVersion?>()) {
+      return (data != null ? _i9.DatasetVersion.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.FavoriteMenuItem?>()) {
-      return (data != null ? _i10.FavoriteMenuItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.DishCatalog?>()) {
+      return (data != null ? _i10.DishCatalog.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.FavoriteRestaurant?>()) {
-      return (data != null ? _i11.FavoriteRestaurant.fromJson(data) : null)
+    if (t == _i1.getType<_i11.DishImage?>()) {
+      return (data != null ? _i11.DishImage.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i12.DishProviderStatus?>()) {
+      return (data != null ? _i12.DishProviderStatus.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i12.Greeting?>()) {
-      return (data != null ? _i12.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.DishTranslation?>()) {
+      return (data != null ? _i13.DishTranslation.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.LlmUsage?>()) {
-      return (data != null ? _i13.LlmUsage.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i14.FavoriteMenuItem?>()) {
+      return (data != null ? _i14.FavoriteMenuItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.MenuItem?>()) {
-      return (data != null ? _i14.MenuItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.FavoriteRestaurant?>()) {
+      return (data != null ? _i15.FavoriteRestaurant.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i15.Restaurant?>()) {
-      return (data != null ? _i15.Restaurant.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.Greeting?>()) {
+      return (data != null ? _i16.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i16.RestaurantMember?>()) {
-      return (data != null ? _i16.RestaurantMember.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i17.LlmUsage?>()) {
+      return (data != null ? _i17.LlmUsage.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i18.MenuItem?>()) {
+      return (data != null ? _i18.MenuItem.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i19.Restaurant?>()) {
+      return (data != null ? _i19.Restaurant.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i20.RestaurantMember?>()) {
+      return (data != null ? _i20.RestaurantMember.fromJson(data) : null) as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
@@ -1085,16 +1633,16 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
     }
-    if (t == List<_i17.Restaurant>) {
-      return (data as List).map((e) => deserialize<_i17.Restaurant>(e)).toList()
+    if (t == List<_i21.Restaurant>) {
+      return (data as List).map((e) => deserialize<_i21.Restaurant>(e)).toList()
           as T;
     }
-    if (t == List<_i18.Category>) {
-      return (data as List).map((e) => deserialize<_i18.Category>(e)).toList()
+    if (t == List<_i22.Category>) {
+      return (data as List).map((e) => deserialize<_i22.Category>(e)).toList()
           as T;
     }
-    if (t == List<_i19.MenuItem>) {
-      return (data as List).map((e) => deserialize<_i19.MenuItem>(e)).toList()
+    if (t == List<_i23.MenuItem>) {
+      return (data as List).map((e) => deserialize<_i23.MenuItem>(e)).toList()
           as T;
     }
     try {
@@ -1115,16 +1663,20 @@ class Protocol extends _i1.SerializationManagerServer {
   static String? getClassNameForType(Type type) {
     return switch (type) {
       _i6.Category => 'Category',
-      _i7.DishCatalog => 'DishCatalog',
-      _i8.DishImage => 'DishImage',
-      _i9.DishProviderStatus => 'DishProviderStatus',
-      _i10.FavoriteMenuItem => 'FavoriteMenuItem',
-      _i11.FavoriteRestaurant => 'FavoriteRestaurant',
-      _i12.Greeting => 'Greeting',
-      _i13.LlmUsage => 'LlmUsage',
-      _i14.MenuItem => 'MenuItem',
-      _i15.Restaurant => 'Restaurant',
-      _i16.RestaurantMember => 'RestaurantMember',
+      _i7.CuratedDish => 'CuratedDish',
+      _i8.CuratedDishImage => 'CuratedDishImage',
+      _i9.DatasetVersion => 'DatasetVersion',
+      _i10.DishCatalog => 'DishCatalog',
+      _i11.DishImage => 'DishImage',
+      _i12.DishProviderStatus => 'DishProviderStatus',
+      _i13.DishTranslation => 'DishTranslation',
+      _i14.FavoriteMenuItem => 'FavoriteMenuItem',
+      _i15.FavoriteRestaurant => 'FavoriteRestaurant',
+      _i16.Greeting => 'Greeting',
+      _i17.LlmUsage => 'LlmUsage',
+      _i18.MenuItem => 'MenuItem',
+      _i19.Restaurant => 'Restaurant',
+      _i20.RestaurantMember => 'RestaurantMember',
       _ => null,
     };
   }
@@ -1144,25 +1696,33 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (data) {
       case _i6.Category():
         return 'Category';
-      case _i7.DishCatalog():
+      case _i7.CuratedDish():
+        return 'CuratedDish';
+      case _i8.CuratedDishImage():
+        return 'CuratedDishImage';
+      case _i9.DatasetVersion():
+        return 'DatasetVersion';
+      case _i10.DishCatalog():
         return 'DishCatalog';
-      case _i8.DishImage():
+      case _i11.DishImage():
         return 'DishImage';
-      case _i9.DishProviderStatus():
+      case _i12.DishProviderStatus():
         return 'DishProviderStatus';
-      case _i10.FavoriteMenuItem():
+      case _i13.DishTranslation():
+        return 'DishTranslation';
+      case _i14.FavoriteMenuItem():
         return 'FavoriteMenuItem';
-      case _i11.FavoriteRestaurant():
+      case _i15.FavoriteRestaurant():
         return 'FavoriteRestaurant';
-      case _i12.Greeting():
+      case _i16.Greeting():
         return 'Greeting';
-      case _i13.LlmUsage():
+      case _i17.LlmUsage():
         return 'LlmUsage';
-      case _i14.MenuItem():
+      case _i18.MenuItem():
         return 'MenuItem';
-      case _i15.Restaurant():
+      case _i19.Restaurant():
         return 'Restaurant';
-      case _i16.RestaurantMember():
+      case _i20.RestaurantMember():
         return 'RestaurantMember';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1193,35 +1753,47 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'Category') {
       return deserialize<_i6.Category>(data['data']);
     }
+    if (dataClassName == 'CuratedDish') {
+      return deserialize<_i7.CuratedDish>(data['data']);
+    }
+    if (dataClassName == 'CuratedDishImage') {
+      return deserialize<_i8.CuratedDishImage>(data['data']);
+    }
+    if (dataClassName == 'DatasetVersion') {
+      return deserialize<_i9.DatasetVersion>(data['data']);
+    }
     if (dataClassName == 'DishCatalog') {
-      return deserialize<_i7.DishCatalog>(data['data']);
+      return deserialize<_i10.DishCatalog>(data['data']);
     }
     if (dataClassName == 'DishImage') {
-      return deserialize<_i8.DishImage>(data['data']);
+      return deserialize<_i11.DishImage>(data['data']);
     }
     if (dataClassName == 'DishProviderStatus') {
-      return deserialize<_i9.DishProviderStatus>(data['data']);
+      return deserialize<_i12.DishProviderStatus>(data['data']);
+    }
+    if (dataClassName == 'DishTranslation') {
+      return deserialize<_i13.DishTranslation>(data['data']);
     }
     if (dataClassName == 'FavoriteMenuItem') {
-      return deserialize<_i10.FavoriteMenuItem>(data['data']);
+      return deserialize<_i14.FavoriteMenuItem>(data['data']);
     }
     if (dataClassName == 'FavoriteRestaurant') {
-      return deserialize<_i11.FavoriteRestaurant>(data['data']);
+      return deserialize<_i15.FavoriteRestaurant>(data['data']);
     }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i12.Greeting>(data['data']);
+      return deserialize<_i16.Greeting>(data['data']);
     }
     if (dataClassName == 'LlmUsage') {
-      return deserialize<_i13.LlmUsage>(data['data']);
+      return deserialize<_i17.LlmUsage>(data['data']);
     }
     if (dataClassName == 'MenuItem') {
-      return deserialize<_i14.MenuItem>(data['data']);
+      return deserialize<_i18.MenuItem>(data['data']);
     }
     if (dataClassName == 'Restaurant') {
-      return deserialize<_i15.Restaurant>(data['data']);
+      return deserialize<_i19.Restaurant>(data['data']);
     }
     if (dataClassName == 'RestaurantMember') {
-      return deserialize<_i16.RestaurantMember>(data['data']);
+      return deserialize<_i20.RestaurantMember>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1271,24 +1843,32 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (t) {
       case _i6.Category:
         return _i6.Category.t;
-      case _i7.DishCatalog:
-        return _i7.DishCatalog.t;
-      case _i8.DishImage:
-        return _i8.DishImage.t;
-      case _i9.DishProviderStatus:
-        return _i9.DishProviderStatus.t;
-      case _i10.FavoriteMenuItem:
-        return _i10.FavoriteMenuItem.t;
-      case _i11.FavoriteRestaurant:
-        return _i11.FavoriteRestaurant.t;
-      case _i13.LlmUsage:
-        return _i13.LlmUsage.t;
-      case _i14.MenuItem:
-        return _i14.MenuItem.t;
-      case _i15.Restaurant:
-        return _i15.Restaurant.t;
-      case _i16.RestaurantMember:
-        return _i16.RestaurantMember.t;
+      case _i7.CuratedDish:
+        return _i7.CuratedDish.t;
+      case _i8.CuratedDishImage:
+        return _i8.CuratedDishImage.t;
+      case _i9.DatasetVersion:
+        return _i9.DatasetVersion.t;
+      case _i10.DishCatalog:
+        return _i10.DishCatalog.t;
+      case _i11.DishImage:
+        return _i11.DishImage.t;
+      case _i12.DishProviderStatus:
+        return _i12.DishProviderStatus.t;
+      case _i13.DishTranslation:
+        return _i13.DishTranslation.t;
+      case _i14.FavoriteMenuItem:
+        return _i14.FavoriteMenuItem.t;
+      case _i15.FavoriteRestaurant:
+        return _i15.FavoriteRestaurant.t;
+      case _i17.LlmUsage:
+        return _i17.LlmUsage.t;
+      case _i18.MenuItem:
+        return _i18.MenuItem.t;
+      case _i19.Restaurant:
+        return _i19.Restaurant.t;
+      case _i20.RestaurantMember:
+        return _i20.RestaurantMember.t;
     }
     return null;
   }

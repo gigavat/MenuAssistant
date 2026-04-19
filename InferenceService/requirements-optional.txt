@@ -1,0 +1,5 @@
+# Optional: xformers for memory-efficient attention (~10-20% VRAM savings).
+# On Windows it often fails to build from source — install only if prebuilt
+# wheel is available for your CUDA + Python version.
+# If install fails, skip it — SDXL falls back to attention slicing automatically.
+xformers==0.0.28

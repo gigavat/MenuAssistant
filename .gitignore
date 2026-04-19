@@ -512,6 +512,14 @@ doc/api/
 # Serverpod secrets — contains DB/Redis passwords, JWT keys, API keys
 **/config/passwords.yaml
 
+# Dev-only curated dish images (~500MB, content-addressable)
+**/web/static/images/curated/
+
+# InferenceService model cache (~10GB)
+InferenceService/models_cache/
+InferenceService/models/
+InferenceService/.env
+
 # Avoid committing generated Javascript files:
 *.dart.js
 # Produced by the --dump-info flag.

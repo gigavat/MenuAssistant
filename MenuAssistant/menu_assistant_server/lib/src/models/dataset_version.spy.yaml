@@ -1,0 +1,14 @@
+class: DatasetVersion
+table: dataset_version
+fields:
+  # e.g. "curated_dataset"
+  name: String
+  # Semver, e.g. "1.0.0"
+  version: String
+  appliedAt: DateTime
+  dishCount: int
+  imageCount: int
+indexes:
+  dataset_version_name_idx:
+    fields: name
+    unique: true

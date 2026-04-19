@@ -15,4 +15,14 @@ abstract class ImagePersistenceService {
     required String source,
     required int dishCatalogId,
   });
+
+  /// Persists raw [bytes] directly (no download step). Used when the source
+  /// provides bytes in-memory (e.g. InferenceService, Wikimedia Commons
+  /// download). Returns the permanent URL for the stored image.
+  Future<String> persistBytes({
+    required List<int> bytes,
+    required String contentType,
+    required String source,
+    required int dishCatalogId,
+  });
 }

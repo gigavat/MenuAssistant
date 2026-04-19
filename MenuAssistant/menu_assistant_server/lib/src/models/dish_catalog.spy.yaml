@@ -9,6 +9,8 @@ fields:
   tags: List<String>?
   description: String?
   spiceLevel: int?
+  # Link to curated knowledge base (null if not yet matched).
+  curatedDish: CuratedDish?, relation(optional)
   # Enrichment status: "partial" (basic) or "full" (all providers attempted)
   enrichmentStatus: String
   createdAt: DateTime

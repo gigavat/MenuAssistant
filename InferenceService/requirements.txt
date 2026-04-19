@@ -1,0 +1,29 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-multipart==0.0.9
+
+# PyTorch — install via:
+#   pip install torch==2.4.1 torchvision==0.19.1 --extra-index-url https://download.pytorch.org/whl/cu121
+# (listed here without index-url so pip doesn't fail on bare pip install -r; the
+# Dockerfile and run_windows.ps1 add --extra-index-url explicitly)
+torch==2.4.1
+torchvision==0.19.1
+
+diffusers==0.33.1
+transformers==4.46.3
+accelerate==1.2.1
+safetensors==0.4.5
+
+# hf_xet speeds up HF downloads 2-3x using the Xet protocol.
+# Skip silently if wheel unavailable for the platform.
+hf_xet==1.1.0
+
+# Flux requires these — T5XXL tokenizer needs sentencepiece + protobuf,
+# GGUF loading needs gguf lib.
+sentencepiece==0.2.0
+protobuf==5.28.3
+gguf==0.10.0
+
+Pillow==10.4.0

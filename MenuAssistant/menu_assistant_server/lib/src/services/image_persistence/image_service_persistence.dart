@@ -62,4 +62,20 @@ class ImageServicePersistence implements ImagePersistenceService {
       return sourceUrl;
     }
   }
+
+  @override
+  Future<String> persistBytes({
+    required List<int> bytes,
+    required String contentType,
+    required String source,
+    required int dishCatalogId,
+  }) async {
+    // TODO(sprint6): upload bytes to .NET ImageService via multipart POST.
+    // For now, bytes-based persistence is only supported by
+    // LocalFileImagePersistence (dev mode).
+    throw UnimplementedError(
+      'ImageServicePersistence.persistBytes not yet implemented — '
+      'use LocalFileImagePersistence in development mode.',
+    );
+  }
 }

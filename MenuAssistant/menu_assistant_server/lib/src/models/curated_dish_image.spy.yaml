@@ -1,0 +1,26 @@
+class: CuratedDishImage
+table: curated_dish_image
+fields:
+  curatedDish: CuratedDish?, relation
+  imageUrl: String
+  # "wikimedia" | "inference_service" | "fal_ai_generated" | "user_uploaded" | "manual"
+  source: String
+  # Original source URL for license tracking.
+  sourceUrl: String?
+  # "cc0" | "cc-by-2.0" | "cc-by-3.0" | "cc-by-4.0" | "pd" | "owned"
+  license: String
+  attribution: String?
+  attributionUrl: String?
+  # Quality grade 1-5 (5 = hero shot, 1 = last resort).
+  qualityScore: int
+  # Style tags for variety rotation: ["topdown", "plate", "bright"].
+  styleTags: List<String>?
+  isPrimary: bool
+  width: int?
+  height: int?
+  createdAt: DateTime
+indexes:
+  curated_dish_image_dish_idx:
+    fields: curatedDishId
+  curated_dish_image_quality_idx:
+    fields: qualityScore

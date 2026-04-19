@@ -9,14 +9,17 @@ import 'package:serverpod_auth_idp_server/providers/google.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/service_registry.dart';
+import 'src/services/curated/curated_dish_service.dart';
 import 'src/services/enrichment/dish_catalog_service.dart';
 import 'src/services/enrichment/wikidata_service.dart';
 import 'src/services/image_persistence/image_persistence_service.dart';
 import 'src/services/image_persistence/image_service_persistence.dart';
+import 'src/services/image_persistence/local_file_image_persistence.dart';
 import 'src/services/image_search/fal_ai_image_service.dart';
 import 'src/services/image_search/image_search_service.dart';
 import 'src/services/image_search/pexels_image_search_service.dart';
 import 'src/services/image_search/unsplash_image_search_service.dart';
+import 'src/services/inference/inference_service_client.dart';
 import 'src/services/llm/claude_llm_service.dart';
 import 'src/services/llm/llm_service.dart';
 import 'src/services/llm/mock_llm_service.dart';
@@ -121,13 +124,35 @@ void _configureServices(Serverpod pod) {
     imageProviders.add(FalAiImageService(apiKey: falKey));
   }
 
-  // Image persistence — used for ephemeral sources (fal.ai). Stock providers
-  // (Unsplash, Pexels) bypass this and hotlink directly per their ToS.
-  // The base URL is currently a placeholder; the real upload to ImageService
-  // is wired in Sprint 4.
-  final ImagePersistenceService imagePersistence = ImageServicePersistence(
-    baseUrl: key('imageServiceBaseUrl') ?? 'http://localhost:5000',
-  );
+  // Image persistence — dev uses local filesystem via Serverpod's static
+  // route, staging/prod uses .NET ImageService → S3.
+  final ImagePersistenceService imagePersistence;
+  if (pod.runMode == 'development') {
+    final apiConfig = pod.config.apiServer;
+    imagePersistence = LocalFileImagePersistence(
+      storageDir: 'web/static/images/curated',
+      publicBaseUrl:
+          '${apiConfig.publicScheme}://${apiConfig.publicHost}:${apiConfig.publicPort}/static/images/curated',
+    );
+  } else {
+    imagePersistence = ImageServicePersistence(
+      baseUrl: key('imageServiceBaseUrl') ?? 'http://localhost:5000',
+    );
+  }
+
+  // InferenceService — self-hosted GPU for image generation (optional).
+  InferenceServiceClient? inferenceClient;
+  final inferenceUrl = key('inferenceServiceBaseUrl');
+  final inferenceSecret = key('inferenceServiceSecret');
+  if (inferenceUrl != null &&
+      inferenceUrl.isNotEmpty &&
+      inferenceSecret != null &&
+      inferenceSecret.isNotEmpty) {
+    inferenceClient = InferenceServiceClient(
+      baseUrl: inferenceUrl,
+      secret: inferenceSecret,
+    );
+  }
 
   final catalogService = DishCatalogService(
     llm: llmService,
@@ -136,6 +161,8 @@ void _configureServices(Serverpod pod) {
     imagePersistence: imagePersistence,
   );
 
+  final curatedDishService = CuratedDishService();
+
   final providersById = <String, ImageSearchService>{
     for (final p in imageProviders) p.providerId: p,
   };
@@ -143,6 +170,9 @@ void _configureServices(Serverpod pod) {
   ServiceRegistry.configure(
     llmService: llmService,
     dishCatalogService: catalogService,
+    curatedDishService: curatedDishService,
+    imagePersistence: imagePersistence,
+    inferenceClient: inferenceClient,
     imageProvidersById: providersById,
   );
 
