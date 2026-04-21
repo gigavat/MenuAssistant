@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../curated/curated_dish_service.dart';
 import '../image_persistence/image_persistence_service.dart';
 import '../image_search/image_search_service.dart';
 import '../llm/llm_service.dart';
@@ -22,6 +23,7 @@ import 'wikidata_service.dart';
 class DishCatalogService {
   final LlmService _llm;
   final WikidataService _wikidata;
+  final CuratedDishService _curated;
   final List<ImageSearchService> _syncImageProviders;
   final ImagePersistenceService _imagePersistence;
 
@@ -31,22 +33,32 @@ class DishCatalogService {
   /// [imagePersistence] is invoked for any provider whose
   /// `producesEphemeralUrls == true` (currently fal.ai). For hotlink sources
   /// (Unsplash, Pexels) the URL is stored as-is to comply with their ToS.
+  ///
+  /// [curated] is the curated dataset lookup service — tried first in
+  /// [findOrCreate] before falling back to the live enrichment chain.
   DishCatalogService({
     required LlmService llm,
     required WikidataService wikidata,
+    required CuratedDishService curated,
     required List<ImageSearchService> syncImageProviders,
     required ImagePersistenceService imagePersistence,
   })  : _llm = llm,
         _wikidata = wikidata,
+        _curated = curated,
         _syncImageProviders = syncImageProviders,
         _imagePersistence = imagePersistence;
 
-  /// Find-or-create a catalog entry for [parsedItem], enriching it
-  /// synchronously if newly created. Returns the catalog id.
+  /// Find-or-create a catalog entry for [parsedItem].
+  ///
+  /// Lookup order:
+  /// 1. Existing `dish_catalog` row by normalizedName → reuse as-is.
+  /// 2. [CuratedDishService] match → create row linked to the curated entry,
+  ///    carry over description + image. No live enrichment needed.
+  /// 3. Neither → create row with status='partial' and run live enrichment
+  ///    (Wikidata description, Unsplash/Pexels/fal.ai image).
   Future<int> findOrCreate(Session session, MenuItem parsedItem) async {
     final normalized = normalizeName(parsedItem.name);
     if (normalized.isEmpty) {
-      // Degenerate name — skip catalog, leave dish without shared metadata.
       return _createOrphan(session, parsedItem, normalized);
     }
 
@@ -56,6 +68,13 @@ class DishCatalogService {
     );
     if (existing != null) return existing.id!;
 
+    // Curated-first: cheap DB lookup, no external API calls.
+    final curatedMatch = await _curated.findMatch(session, parsedItem.name);
+    if (curatedMatch != null) {
+      return _createFromCurated(session, parsedItem, normalized, curatedMatch);
+    }
+
+    // Fallback: create partial entry and run live enrichment.
     final now = DateTime.now();
     final catalog = await DishCatalog.db.insertRow(
       session,
@@ -71,6 +90,56 @@ class DishCatalogService {
     );
 
     await _enrichSync(session, catalog, parsedItem);
+    return catalog.id!;
+  }
+
+  /// Creates a dish_catalog row pre-populated from a curated dataset match.
+  /// Skips live enrichment entirely — we already have a better description
+  /// and image than any live provider would give us.
+  Future<int> _createFromCurated(
+    Session session,
+    MenuItem parsedItem,
+    String normalized,
+    CuratedDishMatch match,
+  ) async {
+    final now = DateTime.now();
+    final curated = match.dish;
+
+    final catalog = await DishCatalog.db.insertRow(
+      session,
+      DishCatalog(
+        normalizedName: normalized,
+        canonicalName: parsedItem.name,
+        cuisineType: curated.cuisine,
+        tags: parsedItem.tags ?? curated.tags,
+        description: curated.description,
+        spiceLevel: parsedItem.spicyLevel,
+        curatedDishId: curated.id,
+        enrichmentStatus: 'full',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    // Copy primary image from curated_dish_image to dish_image so the live
+    // menu query path (which reads dish_image only) stays uniform.
+    final img = match.primaryImage;
+    if (img != null) {
+      await DishImage.db.insertRow(
+        session,
+        DishImage(
+          dishCatalogId: catalog.id!,
+          imageUrl: img.imageUrl,
+          source: 'curated',
+          attribution: img.attribution,
+          attributionUrl: img.attributionUrl,
+          isPrimary: true,
+          createdAt: now,
+        ),
+      );
+    }
+
+    await _recordProvider(session, catalog.id!, 'curated', 'success');
     return catalog.id!;
   }
 

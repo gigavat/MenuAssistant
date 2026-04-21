@@ -1,0 +1,11 @@
+{
+  "version": "1.0.1",
+  "exportedAt": "2026-04-21T07:42:31.557946Z",
+  "dishCount": 4131,
+  "imageCount": 6035,
+  "translationCount": 24756,
+  "jsonHashes": {
+    "curated_dishes.json": "sha256:288a30af761d2d7f521f341de0a541a159f03e82f1f40105ba6073e31a1f3fd8",
+    "curated_dish_images.json": "sha256:8b784987a280480f07e8b1aeb8cf24226bfdd02ad760543c72641a41c1618d83"
+  }
+}

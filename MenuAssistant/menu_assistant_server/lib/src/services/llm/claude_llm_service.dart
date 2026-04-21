@@ -147,6 +147,59 @@ class ClaudeLlmService implements LlmService {
         1000000.0;
   }
 
+  /// Claude Sonnet 4.6 price sheet (April 2026):
+  /// - input:        $3.00 per 1M tokens
+  /// - output:       $15.00 per 1M tokens
+  /// - cache write:  $3.75 per 1M tokens
+  /// - cache read:   $0.30 per 1M tokens
+  ///
+  /// ~3x Haiku pricing. Used by bootstrap scripts (e.g.
+  /// generate_descriptions.dart fallback for obscure dishes Haiku doesn't know).
+  static double computeSonnetCostUsd({
+    required int inputTokens,
+    required int outputTokens,
+    int cacheCreationTokens = 0,
+    int cacheReadTokens = 0,
+  }) {
+    const double inputPerMillion = 3.00;
+    const double outputPerMillion = 15.00;
+    const double cacheWritePerMillion = 3.75;
+    const double cacheReadPerMillion = 0.30;
+
+    return (inputTokens * inputPerMillion +
+            outputTokens * outputPerMillion +
+            cacheCreationTokens * cacheWritePerMillion +
+            cacheReadTokens * cacheReadPerMillion) /
+        1000000.0;
+  }
+
+  /// Claude Opus 4.7 price sheet (April 2026):
+  /// - input:        $5.00 per 1M tokens
+  /// - output:       $25.00 per 1M tokens
+  /// - cache write:  $6.25 per 1M tokens
+  /// - cache read:   $0.50 per 1M tokens
+  ///
+  /// ~5x Haiku / ~1.7x Sonnet. Opus 4.7 uses a new tokenizer that may
+  /// consume up to 35% more tokens than older models for the same input.
+  /// Used for obscure-dish descriptions where Sonnet/Haiku lack training data.
+  static double computeOpusCostUsd({
+    required int inputTokens,
+    required int outputTokens,
+    int cacheCreationTokens = 0,
+    int cacheReadTokens = 0,
+  }) {
+    const double inputPerMillion = 5.00;
+    const double outputPerMillion = 25.00;
+    const double cacheWritePerMillion = 6.25;
+    const double cacheReadPerMillion = 0.50;
+
+    return (inputTokens * inputPerMillion +
+            outputTokens * outputPerMillion +
+            cacheCreationTokens * cacheWritePerMillion +
+            cacheReadTokens * cacheReadPerMillion) /
+        1000000.0;
+  }
+
   @override
   Future<LlmDescriptionResult> generateDishDescription(String dishName) async {
     final body = jsonEncode({

@@ -16,6 +16,12 @@ class CuratedDishMatch {
 }
 
 class CuratedDishService {
+  /// Tries to match [extractedName] to a curated dish via 3-pass lookup.
+  /// Only returns dishes with a non-null description — low-quality entries
+  /// (where Claude refused) stay in the DB for admin review but never
+  /// surface to end users via live lookup.
+  ///
+  /// Returns null if no confident match found.
   Future<CuratedDishMatch?> findMatch(
     Session session,
     String extractedName,
@@ -27,18 +33,21 @@ class CuratedDishService {
     var dish = await CuratedDish.db.findFirstRow(
       session,
       where: (t) =>
-          t.canonicalName.equals(normalized) & t.status.equals('approved'),
+          t.canonicalName.equals(normalized) &
+          t.description.notEquals(null) &
+          t.status.notEquals('rejected'),
     );
     if (dish != null) return _withImage(session, dish, 1);
 
-    // Pass 2: alias match via LIKE on the serialized aliases column.
-    // Serverpod stores List<String> as JSON arrays, so we can search
-    // for the normalized name as a substring within the JSON text.
-    final aliasRows = await CuratedDish.db.find(
+    // Candidate set for alias/token search — all usable dishes.
+    final candidates = await CuratedDish.db.find(
       session,
-      where: (t) => t.status.equals('approved'),
+      where: (t) =>
+          t.description.notEquals(null) & t.status.notEquals('rejected'),
     );
-    for (final row in aliasRows) {
+
+    // Pass 2: alias match.
+    for (final row in candidates) {
       final aliases = row.aliases;
       if (aliases == null) continue;
       final normalizedAliases =
@@ -54,7 +63,7 @@ class CuratedDishService {
 
     CuratedDish? bestMatch;
     var bestScore = 0;
-    for (final row in aliasRows) {
+    for (final row in candidates) {
       var score = 0;
       final tags = row.tags ?? [];
       final ingredients = row.primaryIngredients ?? [];

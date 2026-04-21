@@ -154,14 +154,15 @@ void _configureServices(Serverpod pod) {
     );
   }
 
+  final curatedDishService = CuratedDishService();
+
   final catalogService = DishCatalogService(
     llm: llmService,
     wikidata: WikidataService(),
+    curated: curatedDishService,
     syncImageProviders: imageProviders,
     imagePersistence: imagePersistence,
   );
-
-  final curatedDishService = CuratedDishService();
 
   final providersById = <String, ImageSearchService>{
     for (final p in imageProviders) p.providerId: p,
