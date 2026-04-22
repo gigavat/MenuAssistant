@@ -27,7 +27,8 @@
       "Bash(\"C:/Users/andre/AppData/Local/Pub/Cache/bin/serverpod.bat\" generate *)",
       "Bash(\"C:/Users/andre/AppData/Local/Pub/Cache/bin/serverpod.bat\" create-migration *)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "mcp__postgres__query"
     ],
     "additionalDirectories": [
       "\\tmp"

@@ -560,7 +560,24 @@ indexes:
 - ClaudeLlmService принимает `List<Uint8List>` вместо single bytes
 - Cost implications в `llm_usage`: записываем total tokens per menu, не per page
 
-### 4.6.5 Критерии готовности Sprint 4.6
+### 4.6.5 Schema cleanup — убрать денормализованные URL snapshot'ы
+
+**Обнаружено 2026-04-22** при миграции URL с :8080 на :8082 (см. gotcha #20): `menu_item.imageUrl` хранит копию URL из `dish_image`/`curated_dish_image` на момент парсинга меню (ставится в [ai_processing_endpoint.dart:79](MenuAssistant/menu_assistant_server/lib/src/endpoints/ai_processing_endpoint.dart#L79)). При изменении URL в источнике `menu_item.imageUrl` остаётся stale. Нужен `UPDATE` в нескольких местах вместо одного.
+
+**Решение**: удалить `menu_item.imageUrl` field. Резолвить через JOIN в endpoint'ах, которые отдают меню клиенту:
+```
+menu_item → dish_catalog → dish_image (WHERE isPrimary=true) → imageUrl
+```
+
+Эквивалентно для описаний: `menu_item.description` сейчас тоже денормализовано (fallback'ается из `dish_catalog.description` при парсинге) — проверить и при необходимости тоже убрать.
+
+**Миграция**: `ALTER TABLE menu_item DROP COLUMN "imageUrl"` (+ аналогично для description если уберём). Endpoint'ы переписать на JOIN.
+
+Объём: 259 menu_items + 143 dish_images сейчас — overhead JOIN ничтожен. Scaling-wise: добавить индекс `dish_image_dishCatalogId_isPrimary_idx (dishCatalogId, isPrimary) WHERE isPrimary = true` для fast-lookup.
+
+**Делается в Sprint 4.6** вместе с перестройкой `restaurant` schema — одна миграция покрывает оба изменения.
+
+### 4.6.6 Критерии готовности Sprint 4.6
 
 - `design/tokens/tokens.json` + генератор работает, два target'а (`.css`, `.dart`) пересобираются идемпотентно
 - Шрифты подключены, `flutter run` собирается, старые экраны визуально используют Fraunces + terracotta (ожидаемый хаос до redesign экранов в Sprint 4.7)
@@ -569,6 +586,7 @@ indexes:
 - DB-IP mmdb скачивается cron'ом, `IpGeoService.lookup(ip)` возвращает city/country
 - `menu_source_page` таблица готова, `ClaudeLlmService` принимает multi-image
 - Landing `/legal` page (даже stub) содержит attribution DB-IP
+- `menu_item.imageUrl` (и возможно `description`) удалены из schema, endpoint'ы резолвят через JOIN на `dish_image`
 - `dart analyze` — 0 errors
 
 ---

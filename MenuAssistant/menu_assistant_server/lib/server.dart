@@ -57,7 +57,21 @@ void run(List<String> args) async {
   pod.webServer.addRoute(RootRoute(), '/index.html');
 
   final root = Directory(Uri(path: 'web/static').toFilePath());
-  pod.webServer.addRoute(StaticRoute.directory(root));
+  pod.webServer.addRoute(StaticRoute.directory(root), '/static');
+
+  // CORS for static assets — Flutter web loads images via fetch/XHR in
+  // CanvasKit mode, which requires explicit Access-Control-Allow-Origin.
+  // apiServer has this by default, webServer does not.
+  pod.webServer.addMiddleware(
+    createMiddleware(
+      onResponse: (response) => response.copyWith(
+        headers: response.headers.transform((h) {
+          h['Access-Control-Allow-Origin'] = ['*'];
+        }),
+      ),
+    ),
+    '/static',
+  );
 
   pod.webServer.addRoute(
     AppConfigRoute(apiConfig: pod.config.apiServer),
@@ -128,11 +142,16 @@ void _configureServices(Serverpod pod) {
   // route, staging/prod uses .NET ImageService → S3.
   final ImagePersistenceService imagePersistence;
   if (pod.runMode == 'development') {
-    final apiConfig = pod.config.apiServer;
+    // URLs must point to webServer (where StaticRoute is registered), not
+    // apiServer — see gotcha #20. In dev.yaml these are 8082 and 8080 respectively.
+    final webConfig = pod.config.webServer;
+    if (webConfig == null) {
+      throw StateError('webServer config is required for LocalFileImagePersistence in development mode');
+    }
     imagePersistence = LocalFileImagePersistence(
       storageDir: 'web/static/images/curated',
       publicBaseUrl:
-          '${apiConfig.publicScheme}://${apiConfig.publicHost}:${apiConfig.publicPort}/static/images/curated',
+          '${webConfig.publicScheme}://${webConfig.publicHost}:${webConfig.publicPort}/static/images/curated',
     );
   } else {
     imagePersistence = ImageServicePersistence(
