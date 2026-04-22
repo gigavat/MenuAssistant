@@ -452,11 +452,31 @@ indexes:
 
 ---
 
-## ⏳ Sprint 4.6 — Design Foundation + Restaurant dedup schema
+## ✅ Sprint 4.6 — Design Foundation + Restaurant dedup schema (DONE 2026-04-22)
 
 > **Цель**: подготовить фундамент для трёх треков redesign'а — дизайн-токены и шрифты едины для Flutter / landing / admin, + backend schema-миграция для глобальных ресторанов с fuzzy-match дедупом.
 
+### Итоги
+- `design/tokens/{tokens.json,generate.mjs,tokens.css,package.json}` — канонический источник + идемпотентный генератор (`.css` + `.dart`)
+- `lib/theme/{tokens.dart,typography.dart,app_theme.dart}` + Fraunces / Inter / JetBrainsMono self-hosted variable TTF (`assets/fonts/`)
+- [main.dart](MenuAssistant/menu_assistant_flutter/lib/main.dart): `buildTheme(AppTheme.warm)` / `AppTheme.midnight` вместо `seedColor: Colors.blueGrey`
+- `restaurant` schema перестроена: `normalizedName`, `latitude/longitude`, `cityHint`, `countryCode`, `addressRaw`. `pg_trgm` extension + GIN index `restaurant_name_trgm_idx` + geo index
+- Новое: `user_restaurant_visit`, `menu_source_page`. Удалено: `restaurant_member`
+- `menu_item.{imageUrl,descriptionRaw}` удалены; новый `MenuItemView` DTO + `MenuItemViewMapper` резолвит description из `dish_catalog`, imageUrl из `dish_image WHERE isPrimary=true` (+ partial index `dish_image_primary_idx`)
+- Новое: `RestaurantDedupService` (pg_trgm similarity ≥ 0.92 + ≤150m → auto-merge, 0.70–0.92 + ≤300m → ask user, иначе → new). Unit tests — 11/11
+- Новое: `IpGeoService` + `DbIpUpdateFutureCall` (DB-IP Lite country CSV, weekly refresh)
+- `ClaudeLlmService.parseMenu({required List<MenuPageBytes> pages})` — multi-image support
+- `RestaurantEndpoint.confirmMatch(pending, matchedId)` — сливает/отклоняет dedup кандидата
+- `docs/legal/db-ip-attribution.md` — обязательный CC-BY 4.0 текст для landing `/legal` (Sprint 4.8)
+- Migration: `migrations/20260422100510849/` применена локально. `dart analyze` + `flutter analyze` — 0 errors
+
+### Deferred в follow-up спринт (отмечено в коде)
+- **mmdb city-level парсинг** — сейчас `IpGeoResult.cityName/latitude/longitude = null`. Dedup city-scope fallback работает только когда мы добавим mmdb reader (~200 LOC binary-tree walker). Сценарий `similarity ≥ 0.92 + same city → ask user` дорм пока нет city-level данных.
+- Flutter UI переключатель тем (warm/sage/midnight) — `buildTheme()` готова, переключатель в 4.7
+
 Handoff для всех трёх треков: `design/` (prototype HTML/JSX + `design/README.md` с полным спектром tokens/typography/components). Дубль `design_handoff_menuassistant/` удалён 2026-04-22.
+
+### Ниже — оригинальный design документ (исторический reference)
 
 ### 4.6.1 Design tokens (source of truth)
 

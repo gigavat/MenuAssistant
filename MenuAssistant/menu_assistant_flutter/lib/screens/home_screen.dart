@@ -326,7 +326,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (restaurant.location != null) ...[
+                          if (restaurant.addressRaw != null ||
+                              restaurant.cityHint != null) ...[
                             const SizedBox(height: 4),
                             Row(
                               children: [
@@ -338,7 +339,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    restaurant.location!,
+                                    restaurant.addressRaw ??
+                                        restaurant.cityHint!,
                                     style: const TextStyle(
                                       color: Colors.grey,
                                       fontSize: 12,

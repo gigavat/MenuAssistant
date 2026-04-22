@@ -1,0 +1,13 @@
+### Returned by the dedup service when a restaurant upload needs user
+### confirmation against fuzzy-matched existing restaurants. Non-table.
+class: RestaurantMatchCandidate
+fields:
+  restaurantId: int
+  name: String
+  ### Normalized-name similarity from pg_trgm (0..1).
+  similarity: double
+  ### Haversine distance in metres; null when no precise geo was provided
+  ### for either side of the comparison.
+  distanceMeters: double?
+  addressRaw: String?
+  cityHint: String?

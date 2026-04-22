@@ -28,7 +28,7 @@ class AppState extends ChangeNotifier {
   // Data Caching
   List<Restaurant> recentRestaurants = [];
   List<Restaurant> favoriteRestaurants = [];
-  List<MenuItem> favoriteMenuItems = [];
+  List<MenuItemView> favoriteMenuItems = [];
   bool isDataLoaded = false;
   bool isGridMode = true;
 
@@ -120,7 +120,7 @@ class AppState extends ChangeNotifier {
       ]);
       recentRestaurants = futures[0] as List<Restaurant>;
       favoriteRestaurants = futures[1] as List<Restaurant>;
-      favoriteMenuItems = futures[2] as List<MenuItem>;
+      favoriteMenuItems = futures[2] as List<MenuItemView>;
       isDataLoaded = true;
       notifyListeners();
     } catch (e) {
@@ -160,10 +160,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> toggleMenuItemFavorite(MenuItem item) async {
+  Future<void> toggleMenuItemFavorite(MenuItemView item) async {
     final itemId = item.id;
-    if (itemId == null) return;
-
     final wasFavorite = isMenuItemFavorite(itemId);
     if (wasFavorite) {
       favoriteMenuItems.removeWhere((i) => i.id == itemId);

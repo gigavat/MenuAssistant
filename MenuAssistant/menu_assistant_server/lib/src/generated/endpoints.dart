@@ -17,7 +17,8 @@ import '../endpoints/ai_processing_endpoint.dart' as _i4;
 import '../endpoints/restaurant_endpoint.dart' as _i5;
 import '../endpoints/user_account_endpoint.dart' as _i6;
 import '../greetings/greeting_endpoint.dart' as _i7;
-import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i8;
+import 'package:menu_assistant_server/src/generated/menu_page_input.dart'
+    as _i8;
 import 'package:serverpod_auth_server/serverpod_auth_server.dart' as _i9;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i10;
@@ -300,18 +301,12 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['fileBytes'],
                   ),
         ),
-      },
-    );
-    connectors['restaurant'] = _i1.EndpointConnector(
-      name: 'restaurant',
-      endpoint: endpoints['restaurant']!,
-      methodConnectors: {
-        'createRestaurant': _i1.MethodConnector(
-          name: 'createRestaurant',
+        'processMultiPageMenu': _i1.MethodConnector(
+          name: 'processMultiPageMenu',
           params: {
-            'restaurant': _i1.ParameterDescription(
-              name: 'restaurant',
-              type: _i1.getType<_i8.Restaurant>(),
+            'pages': _i1.ParameterDescription(
+              name: 'pages',
+              type: _i1.getType<List<_i8.MenuPageInput>>(),
               nullable: false,
             ),
           },
@@ -319,12 +314,18 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
-                  .createRestaurant(
+              ) async => (endpoints['aiProcessing'] as _i4.AiProcessingEndpoint)
+                  .processMultiPageMenu(
                     session,
-                    params['restaurant'],
+                    params['pages'],
                   ),
         ),
+      },
+    );
+    connectors['restaurant'] = _i1.EndpointConnector(
+      name: 'restaurant',
+      endpoint: endpoints['restaurant']!,
+      methodConnectors: {
         'getAllRestaurants': _i1.MethodConnector(
           name: 'getAllRestaurants',
           params: {},
@@ -485,6 +486,31 @@ class Endpoints extends _i1.EndpointDispatch {
                   .isRestaurantFavorite(
                     session,
                     params['restaurantId'],
+                  ),
+        ),
+        'confirmMatch': _i1.MethodConnector(
+          name: 'confirmMatch',
+          params: {
+            'pendingRestaurantId': _i1.ParameterDescription(
+              name: 'pendingRestaurantId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'matchedId': _i1.ParameterDescription(
+              name: 'matchedId',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+                  .confirmMatch(
+                    session,
+                    params['pendingRestaurantId'],
+                    params['matchedId'],
                   ),
         ),
       },

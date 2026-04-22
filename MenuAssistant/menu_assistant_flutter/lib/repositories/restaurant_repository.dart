@@ -13,7 +13,7 @@ class RestaurantRepository {
     return _client.restaurant.getFavoriteRestaurants(limit: limit);
   }
 
-  Future<List<MenuItem>> getFavoriteMenuItems({int limit = 3}) async {
+  Future<List<MenuItemView>> getFavoriteMenuItems({int limit = 3}) async {
     return _client.restaurant.getFavoriteMenuItems(limit: limit);
   }
 
@@ -29,11 +29,14 @@ class RestaurantRepository {
     return _client.restaurant.getCategoriesForRestaurant(restaurantId);
   }
 
-  Future<List<MenuItem>> getMenuItemsForCategory(int categoryId) async {
+  Future<List<MenuItemView>> getMenuItemsForCategory(int categoryId) async {
     return _client.restaurant.getMenuItemsForCategory(categoryId);
   }
 
-  Future<Restaurant> processMenuUpload(String fileName, List<int> fileBytes) async {
+  Future<ProcessMenuResult> processMenuUpload(
+    String fileName,
+    List<int> fileBytes,
+  ) async {
     return _client.aiProcessing.processMenuUpload(fileName, fileBytes);
   }
 }

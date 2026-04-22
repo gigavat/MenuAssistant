@@ -11,8 +11,8 @@ jwtRefresh:
   - refreshAccessToken:
 aiProcessing:
   - processMenuUpload:
+  - processMultiPageMenu:
 restaurant:
-  - createRestaurant:
   - getAllRestaurants:
   - getRestaurantById:
   - getCategoriesForRestaurant:
@@ -22,6 +22,7 @@ restaurant:
   - getFavoriteRestaurants:
   - getFavoriteMenuItems:
   - isRestaurantFavorite:
+  - confirmMatch:
 userAccount:
   - checkEmailExists:
 greeting:

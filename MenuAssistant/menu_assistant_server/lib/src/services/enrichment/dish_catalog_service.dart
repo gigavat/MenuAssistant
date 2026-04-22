@@ -52,11 +52,11 @@ class DishCatalogService {
   ///
   /// Lookup order:
   /// 1. Existing `dish_catalog` row by normalizedName → reuse as-is.
-  /// 2. [CuratedDishService] match → create row linked to the curated entry,
-  ///    carry over description + image. No live enrichment needed.
+  ///    If the row has no description yet and the LLM emitted one, backfill it.
+  /// 2. [CuratedDishService] match → create row linked to the curated entry.
   /// 3. Neither → create row with status='partial' and run live enrichment
   ///    (Wikidata description, Unsplash/Pexels/fal.ai image).
-  Future<int> findOrCreate(Session session, MenuItem parsedItem) async {
+  Future<int> findOrCreate(Session session, ParsedMenuItem parsedItem) async {
     final normalized = normalizeName(parsedItem.name);
     if (normalized.isEmpty) {
       return _createOrphan(session, parsedItem, normalized);
@@ -66,7 +66,16 @@ class DishCatalogService {
       session,
       where: (t) => t.normalizedName.equals(normalized),
     );
-    if (existing != null) return existing.id!;
+    if (existing != null) {
+      if ((existing.description == null || existing.description!.isEmpty) &&
+          (parsedItem.description != null &&
+              parsedItem.description!.isNotEmpty)) {
+        existing.description = parsedItem.description;
+        existing.updatedAt = DateTime.now();
+        await DishCatalog.db.updateRow(session, existing);
+      }
+      return existing.id!;
+    }
 
     // Curated-first: cheap DB lookup, no external API calls.
     final curatedMatch = await _curated.findMatch(session, parsedItem.name);
@@ -83,6 +92,7 @@ class DishCatalogService {
         canonicalName: parsedItem.name,
         tags: parsedItem.tags,
         spiceLevel: parsedItem.spicyLevel,
+        description: parsedItem.description,
         enrichmentStatus: 'partial',
         createdAt: now,
         updatedAt: now,
@@ -98,7 +108,7 @@ class DishCatalogService {
   /// and image than any live provider would give us.
   Future<int> _createFromCurated(
     Session session,
-    MenuItem parsedItem,
+    ParsedMenuItem parsedItem,
     String normalized,
     CuratedDishMatch match,
   ) async {
@@ -148,7 +158,7 @@ class DishCatalogService {
   Future<void> _enrichSync(
     Session session,
     DishCatalog catalog,
-    MenuItem parsedItem,
+    ParsedMenuItem parsedItem,
   ) async {
     await _fillDescription(session, catalog);
     await _fillPrimaryImage(session, catalog);
@@ -373,7 +383,7 @@ class DishCatalogService {
   // ── Orphan fallback ────────────────────────────────────────────────────
 
   Future<int> _createOrphan(
-      Session session, MenuItem item, String normalized) async {
+      Session session, ParsedMenuItem item, String normalized) async {
     final now = DateTime.now();
     final catalog = await DishCatalog.db.insertRow(
       session,

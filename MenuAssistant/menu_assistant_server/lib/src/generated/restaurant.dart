@@ -17,8 +17,12 @@ abstract class Restaurant
   Restaurant._({
     this.id,
     required this.name,
-    this.location,
-    this.imageUrl,
+    required this.normalizedName,
+    this.latitude,
+    this.longitude,
+    this.cityHint,
+    this.countryCode,
+    this.addressRaw,
     required this.currency,
     required this.createdAt,
   });
@@ -26,8 +30,12 @@ abstract class Restaurant
   factory Restaurant({
     int? id,
     required String name,
-    String? location,
-    String? imageUrl,
+    required String normalizedName,
+    double? latitude,
+    double? longitude,
+    String? cityHint,
+    String? countryCode,
+    String? addressRaw,
     required String currency,
     required DateTime createdAt,
   }) = _RestaurantImpl;
@@ -36,8 +44,12 @@ abstract class Restaurant
     return Restaurant(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      location: jsonSerialization['location'] as String?,
-      imageUrl: jsonSerialization['imageUrl'] as String?,
+      normalizedName: jsonSerialization['normalizedName'] as String,
+      latitude: (jsonSerialization['latitude'] as num?)?.toDouble(),
+      longitude: (jsonSerialization['longitude'] as num?)?.toDouble(),
+      cityHint: jsonSerialization['cityHint'] as String?,
+      countryCode: jsonSerialization['countryCode'] as String?,
+      addressRaw: jsonSerialization['addressRaw'] as String?,
       currency: jsonSerialization['currency'] as String,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -54,9 +66,17 @@ abstract class Restaurant
 
   String name;
 
-  String? location;
+  String normalizedName;
 
-  String? imageUrl;
+  double? latitude;
+
+  double? longitude;
+
+  String? cityHint;
+
+  String? countryCode;
+
+  String? addressRaw;
 
   String currency;
 
@@ -71,8 +91,12 @@ abstract class Restaurant
   Restaurant copyWith({
     int? id,
     String? name,
-    String? location,
-    String? imageUrl,
+    String? normalizedName,
+    double? latitude,
+    double? longitude,
+    String? cityHint,
+    String? countryCode,
+    String? addressRaw,
     String? currency,
     DateTime? createdAt,
   });
@@ -82,8 +106,12 @@ abstract class Restaurant
       '__className__': 'Restaurant',
       if (id != null) 'id': id,
       'name': name,
-      if (location != null) 'location': location,
-      if (imageUrl != null) 'imageUrl': imageUrl,
+      'normalizedName': normalizedName,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (cityHint != null) 'cityHint': cityHint,
+      if (countryCode != null) 'countryCode': countryCode,
+      if (addressRaw != null) 'addressRaw': addressRaw,
       'currency': currency,
       'createdAt': createdAt.toJson(),
     };
@@ -95,8 +123,12 @@ abstract class Restaurant
       '__className__': 'Restaurant',
       if (id != null) 'id': id,
       'name': name,
-      if (location != null) 'location': location,
-      if (imageUrl != null) 'imageUrl': imageUrl,
+      'normalizedName': normalizedName,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (cityHint != null) 'cityHint': cityHint,
+      if (countryCode != null) 'countryCode': countryCode,
+      if (addressRaw != null) 'addressRaw': addressRaw,
       'currency': currency,
       'createdAt': createdAt.toJson(),
     };
@@ -138,15 +170,23 @@ class _RestaurantImpl extends Restaurant {
   _RestaurantImpl({
     int? id,
     required String name,
-    String? location,
-    String? imageUrl,
+    required String normalizedName,
+    double? latitude,
+    double? longitude,
+    String? cityHint,
+    String? countryCode,
+    String? addressRaw,
     required String currency,
     required DateTime createdAt,
   }) : super._(
          id: id,
          name: name,
-         location: location,
-         imageUrl: imageUrl,
+         normalizedName: normalizedName,
+         latitude: latitude,
+         longitude: longitude,
+         cityHint: cityHint,
+         countryCode: countryCode,
+         addressRaw: addressRaw,
          currency: currency,
          createdAt: createdAt,
        );
@@ -158,16 +198,24 @@ class _RestaurantImpl extends Restaurant {
   Restaurant copyWith({
     Object? id = _Undefined,
     String? name,
-    Object? location = _Undefined,
-    Object? imageUrl = _Undefined,
+    String? normalizedName,
+    Object? latitude = _Undefined,
+    Object? longitude = _Undefined,
+    Object? cityHint = _Undefined,
+    Object? countryCode = _Undefined,
+    Object? addressRaw = _Undefined,
     String? currency,
     DateTime? createdAt,
   }) {
     return Restaurant(
       id: id is int? ? id : this.id,
       name: name ?? this.name,
-      location: location is String? ? location : this.location,
-      imageUrl: imageUrl is String? ? imageUrl : this.imageUrl,
+      normalizedName: normalizedName ?? this.normalizedName,
+      latitude: latitude is double? ? latitude : this.latitude,
+      longitude: longitude is double? ? longitude : this.longitude,
+      cityHint: cityHint is String? ? cityHint : this.cityHint,
+      countryCode: countryCode is String? ? countryCode : this.countryCode,
+      addressRaw: addressRaw is String? ? addressRaw : this.addressRaw,
       currency: currency ?? this.currency,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -182,13 +230,34 @@ class RestaurantUpdateTable extends _i1.UpdateTable<RestaurantTable> {
     value,
   );
 
-  _i1.ColumnValue<String, String> location(String? value) => _i1.ColumnValue(
-    table.location,
+  _i1.ColumnValue<String, String> normalizedName(String value) =>
+      _i1.ColumnValue(
+        table.normalizedName,
+        value,
+      );
+
+  _i1.ColumnValue<double, double> latitude(double? value) => _i1.ColumnValue(
+    table.latitude,
     value,
   );
 
-  _i1.ColumnValue<String, String> imageUrl(String? value) => _i1.ColumnValue(
-    table.imageUrl,
+  _i1.ColumnValue<double, double> longitude(double? value) => _i1.ColumnValue(
+    table.longitude,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> cityHint(String? value) => _i1.ColumnValue(
+    table.cityHint,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> countryCode(String? value) => _i1.ColumnValue(
+    table.countryCode,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> addressRaw(String? value) => _i1.ColumnValue(
+    table.addressRaw,
     value,
   );
 
@@ -211,12 +280,28 @@ class RestaurantTable extends _i1.Table<int?> {
       'name',
       this,
     );
-    location = _i1.ColumnString(
-      'location',
+    normalizedName = _i1.ColumnString(
+      'normalizedName',
       this,
     );
-    imageUrl = _i1.ColumnString(
-      'imageUrl',
+    latitude = _i1.ColumnDouble(
+      'latitude',
+      this,
+    );
+    longitude = _i1.ColumnDouble(
+      'longitude',
+      this,
+    );
+    cityHint = _i1.ColumnString(
+      'cityHint',
+      this,
+    );
+    countryCode = _i1.ColumnString(
+      'countryCode',
+      this,
+    );
+    addressRaw = _i1.ColumnString(
+      'addressRaw',
       this,
     );
     currency = _i1.ColumnString(
@@ -233,9 +318,17 @@ class RestaurantTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString name;
 
-  late final _i1.ColumnString location;
+  late final _i1.ColumnString normalizedName;
 
-  late final _i1.ColumnString imageUrl;
+  late final _i1.ColumnDouble latitude;
+
+  late final _i1.ColumnDouble longitude;
+
+  late final _i1.ColumnString cityHint;
+
+  late final _i1.ColumnString countryCode;
+
+  late final _i1.ColumnString addressRaw;
 
   late final _i1.ColumnString currency;
 
@@ -245,8 +338,12 @@ class RestaurantTable extends _i1.Table<int?> {
   List<_i1.Column> get columns => [
     id,
     name,
-    location,
-    imageUrl,
+    normalizedName,
+    latitude,
+    longitude,
+    cityHint,
+    countryCode,
+    addressRaw,
     currency,
     createdAt,
   ];

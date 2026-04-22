@@ -1,4 +1,3 @@
-import '../../generated/protocol.dart';
 import 'llm_service.dart';
 
 /// Offline fallback — returns a hardcoded Portuguese tavern menu.
@@ -7,67 +6,43 @@ import 'llm_service.dart';
 /// developers can work without an API key.
 class MockLlmService implements LlmService {
   @override
-  Future<ParsedMenu> parseMenu({
-    required String fileName,
-    required List<int> fileBytes,
-  }) async {
+  Future<ParsedMenu> parseMenu({required List<MenuPageBytes> pages}) async {
     await Future.delayed(const Duration(seconds: 1));
-    final now = DateTime.now();
-
-    final restaurant = Restaurant(
-      name: 'A Tasca do Zé',
-      location: 'Lisbon, Portugal',
-      currency: 'EUR',
-      createdAt: now,
-    );
 
     return ParsedMenu(
-      restaurant: restaurant,
+      restaurant: ParsedRestaurant(
+        name: 'A Tasca do Zé',
+        currency: 'EUR',
+        addressRaw: 'Lisbon, Portugal',
+      ),
       categories: [
         ParsedCategory(
-          category: Category(
-            name: 'Entradas (Starters)',
-            restaurantId: 0,
-            createdAt: now,
-          ),
+          name: 'Entradas (Starters)',
           items: [
-            MenuItem(
+            ParsedMenuItem(
               name: 'Pão, Manteiga e Azeitonas',
-              descriptionRaw: 'Bread, butter and olives',
+              description: 'Bread, butter and olives',
               price: 3.50,
               tags: ['Vegetarian'],
-              categoryId: 0,
-              dishCatalogId: 0,
-              createdAt: now,
             ),
           ],
         ),
         ParsedCategory(
-          category: Category(
-            name: 'Pratos Principais (Main Dishes)',
-            restaurantId: 0,
-            createdAt: now,
-          ),
+          name: 'Pratos Principais (Main Dishes)',
           items: [
-            MenuItem(
+            ParsedMenuItem(
               name: 'Bacalhau à Brás',
-              descriptionRaw:
+              description:
                   'Shredded codfish with onions, thinly fried potatoes and eggs',
               price: 14.50,
               tags: ['Fish', 'Eggs'],
-              categoryId: 0,
-              dishCatalogId: 0,
-              createdAt: now,
             ),
-            MenuItem(
+            ParsedMenuItem(
               name: 'Bife da Casa',
-              descriptionRaw: 'House steak with garlic sauce and fries',
+              description: 'House steak with garlic sauce and fries',
               price: 16.00,
               tags: ['Beef', 'Lactose'],
               spicyLevel: 1,
-              categoryId: 0,
-              dishCatalogId: 0,
-              createdAt: now,
             ),
           ],
         ),
@@ -79,7 +54,6 @@ class MockLlmService implements LlmService {
   Future<LlmDescriptionResult> generateDishDescription(String dishName) async {
     return LlmDescriptionResult(
       description: 'A traditional dish — $dishName.',
-      // Mock doesn't call Claude, so no tokens to report.
       usage: null,
     );
   }

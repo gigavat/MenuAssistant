@@ -24,16 +24,23 @@ import 'favorite_restaurant.dart' as _i11;
 import 'greetings/greeting.dart' as _i12;
 import 'llm_usage.dart' as _i13;
 import 'menu_item.dart' as _i14;
-import 'restaurant.dart' as _i15;
-import 'restaurant_member.dart' as _i16;
-import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i17;
-import 'package:menu_assistant_client/src/protocol/category.dart' as _i18;
-import 'package:menu_assistant_client/src/protocol/menu_item.dart' as _i19;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i20;
-import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
-    as _i21;
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+import 'menu_item_view.dart' as _i15;
+import 'menu_page_input.dart' as _i16;
+import 'menu_source_page.dart' as _i17;
+import 'process_menu_result.dart' as _i18;
+import 'restaurant.dart' as _i19;
+import 'restaurant_match_candidate.dart' as _i20;
+import 'user_restaurant_visit.dart' as _i21;
+import 'package:menu_assistant_client/src/protocol/menu_page_input.dart'
     as _i22;
+import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i23;
+import 'package:menu_assistant_client/src/protocol/category.dart' as _i24;
+import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i25;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i26;
+import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
+    as _i27;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i28;
 export 'category.dart';
 export 'curated_dish.dart';
 export 'curated_dish_image.dart';
@@ -47,8 +54,13 @@ export 'favorite_restaurant.dart';
 export 'greetings/greeting.dart';
 export 'llm_usage.dart';
 export 'menu_item.dart';
+export 'menu_item_view.dart';
+export 'menu_page_input.dart';
+export 'menu_source_page.dart';
+export 'process_menu_result.dart';
 export 'restaurant.dart';
-export 'restaurant_member.dart';
+export 'restaurant_match_candidate.dart';
+export 'user_restaurant_visit.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -124,11 +136,26 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i14.MenuItem) {
       return _i14.MenuItem.fromJson(data) as T;
     }
-    if (t == _i15.Restaurant) {
-      return _i15.Restaurant.fromJson(data) as T;
+    if (t == _i15.MenuItemView) {
+      return _i15.MenuItemView.fromJson(data) as T;
     }
-    if (t == _i16.RestaurantMember) {
-      return _i16.RestaurantMember.fromJson(data) as T;
+    if (t == _i16.MenuPageInput) {
+      return _i16.MenuPageInput.fromJson(data) as T;
+    }
+    if (t == _i17.MenuSourcePage) {
+      return _i17.MenuSourcePage.fromJson(data) as T;
+    }
+    if (t == _i18.ProcessMenuResult) {
+      return _i18.ProcessMenuResult.fromJson(data) as T;
+    }
+    if (t == _i19.Restaurant) {
+      return _i19.Restaurant.fromJson(data) as T;
+    }
+    if (t == _i20.RestaurantMatchCandidate) {
+      return _i20.RestaurantMatchCandidate.fromJson(data) as T;
+    }
+    if (t == _i21.UserRestaurantVisit) {
+      return _i21.UserRestaurantVisit.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.Category?>()) {
       return (data != null ? _i2.Category.fromJson(data) : null) as T;
@@ -170,11 +197,30 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i1.getType<_i14.MenuItem?>()) {
       return (data != null ? _i14.MenuItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i15.Restaurant?>()) {
-      return (data != null ? _i15.Restaurant.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.MenuItemView?>()) {
+      return (data != null ? _i15.MenuItemView.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i16.RestaurantMember?>()) {
-      return (data != null ? _i16.RestaurantMember.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.MenuPageInput?>()) {
+      return (data != null ? _i16.MenuPageInput.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i17.MenuSourcePage?>()) {
+      return (data != null ? _i17.MenuSourcePage.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i18.ProcessMenuResult?>()) {
+      return (data != null ? _i18.ProcessMenuResult.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i19.Restaurant?>()) {
+      return (data != null ? _i19.Restaurant.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i20.RestaurantMatchCandidate?>()) {
+      return (data != null
+              ? _i20.RestaurantMatchCandidate.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _i1.getType<_i21.UserRestaurantVisit?>()) {
+      return (data != null ? _i21.UserRestaurantVisit.fromJson(data) : null)
+          as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
@@ -185,29 +231,51 @@ class Protocol extends _i1.SerializationManager {
               : null)
           as T;
     }
+    if (t == List<_i20.RestaurantMatchCandidate>) {
+      return (data as List)
+              .map((e) => deserialize<_i20.RestaurantMatchCandidate>(e))
+              .toList()
+          as T;
+    }
+    if (t == _i1.getType<List<_i20.RestaurantMatchCandidate>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i20.RestaurantMatchCandidate>(e))
+                    .toList()
+              : null)
+          as T;
+    }
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
     }
-    if (t == List<_i17.Restaurant>) {
-      return (data as List).map((e) => deserialize<_i17.Restaurant>(e)).toList()
+    if (t == List<_i22.MenuPageInput>) {
+      return (data as List)
+              .map((e) => deserialize<_i22.MenuPageInput>(e))
+              .toList()
           as T;
     }
-    if (t == List<_i18.Category>) {
-      return (data as List).map((e) => deserialize<_i18.Category>(e)).toList()
+    if (t == List<_i23.Restaurant>) {
+      return (data as List).map((e) => deserialize<_i23.Restaurant>(e)).toList()
           as T;
     }
-    if (t == List<_i19.MenuItem>) {
-      return (data as List).map((e) => deserialize<_i19.MenuItem>(e)).toList()
+    if (t == List<_i24.Category>) {
+      return (data as List).map((e) => deserialize<_i24.Category>(e)).toList()
+          as T;
+    }
+    if (t == List<_i25.MenuItemView>) {
+      return (data as List)
+              .map((e) => deserialize<_i25.MenuItemView>(e))
+              .toList()
           as T;
     }
     try {
-      return _i20.Protocol().deserialize<T>(data, t);
+      return _i26.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i21.Protocol().deserialize<T>(data, t);
+      return _i27.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i22.Protocol().deserialize<T>(data, t);
+      return _i28.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
@@ -227,8 +295,13 @@ class Protocol extends _i1.SerializationManager {
       _i12.Greeting => 'Greeting',
       _i13.LlmUsage => 'LlmUsage',
       _i14.MenuItem => 'MenuItem',
-      _i15.Restaurant => 'Restaurant',
-      _i16.RestaurantMember => 'RestaurantMember',
+      _i15.MenuItemView => 'MenuItemView',
+      _i16.MenuPageInput => 'MenuPageInput',
+      _i17.MenuSourcePage => 'MenuSourcePage',
+      _i18.ProcessMenuResult => 'ProcessMenuResult',
+      _i19.Restaurant => 'Restaurant',
+      _i20.RestaurantMatchCandidate => 'RestaurantMatchCandidate',
+      _i21.UserRestaurantVisit => 'UserRestaurantVisit',
       _ => null,
     };
   }
@@ -272,20 +345,30 @@ class Protocol extends _i1.SerializationManager {
         return 'LlmUsage';
       case _i14.MenuItem():
         return 'MenuItem';
-      case _i15.Restaurant():
+      case _i15.MenuItemView():
+        return 'MenuItemView';
+      case _i16.MenuPageInput():
+        return 'MenuPageInput';
+      case _i17.MenuSourcePage():
+        return 'MenuSourcePage';
+      case _i18.ProcessMenuResult():
+        return 'ProcessMenuResult';
+      case _i19.Restaurant():
         return 'Restaurant';
-      case _i16.RestaurantMember():
-        return 'RestaurantMember';
+      case _i20.RestaurantMatchCandidate():
+        return 'RestaurantMatchCandidate';
+      case _i21.UserRestaurantVisit():
+        return 'UserRestaurantVisit';
     }
-    className = _i20.Protocol().getClassNameForObject(data);
+    className = _i26.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth.$className';
     }
-    className = _i21.Protocol().getClassNameForObject(data);
+    className = _i27.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_idp.$className';
     }
-    className = _i22.Protocol().getClassNameForObject(data);
+    className = _i28.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -337,23 +420,38 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'MenuItem') {
       return deserialize<_i14.MenuItem>(data['data']);
     }
-    if (dataClassName == 'Restaurant') {
-      return deserialize<_i15.Restaurant>(data['data']);
+    if (dataClassName == 'MenuItemView') {
+      return deserialize<_i15.MenuItemView>(data['data']);
     }
-    if (dataClassName == 'RestaurantMember') {
-      return deserialize<_i16.RestaurantMember>(data['data']);
+    if (dataClassName == 'MenuPageInput') {
+      return deserialize<_i16.MenuPageInput>(data['data']);
+    }
+    if (dataClassName == 'MenuSourcePage') {
+      return deserialize<_i17.MenuSourcePage>(data['data']);
+    }
+    if (dataClassName == 'ProcessMenuResult') {
+      return deserialize<_i18.ProcessMenuResult>(data['data']);
+    }
+    if (dataClassName == 'Restaurant') {
+      return deserialize<_i19.Restaurant>(data['data']);
+    }
+    if (dataClassName == 'RestaurantMatchCandidate') {
+      return deserialize<_i20.RestaurantMatchCandidate>(data['data']);
+    }
+    if (dataClassName == 'UserRestaurantVisit') {
+      return deserialize<_i21.UserRestaurantVisit>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth.')) {
       data['className'] = dataClassName.substring(15);
-      return _i20.Protocol().deserializeByClassName(data);
+      return _i26.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i21.Protocol().deserializeByClassName(data);
+      return _i27.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i22.Protocol().deserializeByClassName(data);
+      return _i28.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -368,13 +466,13 @@ class Protocol extends _i1.SerializationManager {
       return null;
     }
     try {
-      return _i20.Protocol().mapRecordToJson(record);
+      return _i26.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i21.Protocol().mapRecordToJson(record);
+      return _i27.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i22.Protocol().mapRecordToJson(record);
+      return _i28.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

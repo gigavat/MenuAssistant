@@ -12,8 +12,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'dart:async' as _i2;
-import '../future_calls/enrichment_worker_future_call.dart' as _i3;
-import '../future_calls/image_health_check_future_call.dart' as _i4;
+import '../future_calls/db_ip_update_future_call.dart' as _i3;
+import '../future_calls/enrichment_worker_future_call.dart' as _i4;
+import '../future_calls/image_health_check_future_call.dart' as _i5;
 
 /// Invokes a future call.
 typedef _InvokeFutureCall =
@@ -57,6 +58,7 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
     String serverId,
   ) {
     var registeredFutureCalls = <String, _i1.FutureCall>{
+      'DbIpUpdateInvokeFutureCall': DbIpUpdateInvokeFutureCall(),
       'EnrichmentWorkerInvokeFutureCall': EnrichmentWorkerInvokeFutureCall(),
       'ImageHealthCheckInvokeFutureCall': ImageHealthCheckInvokeFutureCall(),
     };
@@ -114,6 +116,8 @@ class _FutureCallRef {
 
   final _InvokeFutureCall _invokeFutureCall;
 
+  late final dbIpUpdate = _DbIpUpdateFutureCallDispatcher(_invokeFutureCall);
+
   late final enrichmentWorker = _EnrichmentWorkerFutureCallDispatcher(
     _invokeFutureCall,
   );
@@ -121,6 +125,19 @@ class _FutureCallRef {
   late final imageHealthCheck = _ImageHealthCheckFutureCallDispatcher(
     _invokeFutureCall,
   );
+}
+
+class _DbIpUpdateFutureCallDispatcher {
+  _DbIpUpdateFutureCallDispatcher(this._invokeFutureCall);
+
+  final _InvokeFutureCall _invokeFutureCall;
+
+  Future<void> invoke(_i1.SerializableModel? object) {
+    return _invokeFutureCall(
+      'DbIpUpdateInvokeFutureCall',
+      object,
+    );
+  }
 }
 
 class _EnrichmentWorkerFutureCallDispatcher {
@@ -149,6 +166,19 @@ class _ImageHealthCheckFutureCallDispatcher {
   }
 }
 
+class DbIpUpdateInvokeFutureCall extends _i1.FutureCall<_i1.SerializableModel> {
+  @override
+  _i2.Future<void> invoke(
+    _i1.Session session,
+    _i1.SerializableModel? object,
+  ) async {
+    await _i3.DbIpUpdateFutureCall().invoke(
+      session,
+      object,
+    );
+  }
+}
+
 class EnrichmentWorkerInvokeFutureCall
     extends _i1.FutureCall<_i1.SerializableModel> {
   @override
@@ -156,7 +186,7 @@ class EnrichmentWorkerInvokeFutureCall
     _i1.Session session,
     _i1.SerializableModel? object,
   ) async {
-    await _i3.EnrichmentWorkerFutureCall().invoke(
+    await _i4.EnrichmentWorkerFutureCall().invoke(
       session,
       object,
     );
@@ -170,7 +200,7 @@ class ImageHealthCheckInvokeFutureCall
     _i1.Session session,
     _i1.SerializableModel? object,
   ) async {
-    await _i4.ImageHealthCheckFutureCall().invoke(
+    await _i5.ImageHealthCheckFutureCall().invoke(
       session,
       object,
     );

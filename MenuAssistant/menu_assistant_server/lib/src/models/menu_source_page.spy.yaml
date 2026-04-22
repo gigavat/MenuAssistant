@@ -1,0 +1,18 @@
+class: MenuSourcePage
+table: menu_source_page
+fields:
+  restaurant: Restaurant?, relation
+  # UUID of the upload batch; groups pages from a single multi-page menu submission.
+  uploadBatchId: String
+  # 0-based page index within the batch.
+  ordinal: int
+  # 'photo' | 'pdf_page' | 'link_screenshot'
+  sourceType: String
+  imageUrl: String
+  createdAt: DateTime
+indexes:
+  menu_source_page_batch_ordinal_idx:
+    fields: uploadBatchId, ordinal
+    unique: true
+  menu_source_page_restaurant_idx:
+    fields: restaurantId

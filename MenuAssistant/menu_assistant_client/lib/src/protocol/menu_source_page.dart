@@ -14,36 +14,42 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'restaurant.dart' as _i2;
 import 'package:menu_assistant_client/src/protocol/protocol.dart' as _i3;
 
-abstract class RestaurantMember implements _i1.SerializableModel {
-  RestaurantMember._({
+abstract class MenuSourcePage implements _i1.SerializableModel {
+  MenuSourcePage._({
     this.id,
-    required this.userId,
     required this.restaurantId,
     this.restaurant,
-    required this.role,
+    required this.uploadBatchId,
+    required this.ordinal,
+    required this.sourceType,
+    required this.imageUrl,
     required this.createdAt,
   });
 
-  factory RestaurantMember({
+  factory MenuSourcePage({
     int? id,
-    required String userId,
     required int restaurantId,
     _i2.Restaurant? restaurant,
-    required String role,
+    required String uploadBatchId,
+    required int ordinal,
+    required String sourceType,
+    required String imageUrl,
     required DateTime createdAt,
-  }) = _RestaurantMemberImpl;
+  }) = _MenuSourcePageImpl;
 
-  factory RestaurantMember.fromJson(Map<String, dynamic> jsonSerialization) {
-    return RestaurantMember(
+  factory MenuSourcePage.fromJson(Map<String, dynamic> jsonSerialization) {
+    return MenuSourcePage(
       id: jsonSerialization['id'] as int?,
-      userId: jsonSerialization['userId'] as String,
       restaurantId: jsonSerialization['restaurantId'] as int,
       restaurant: jsonSerialization['restaurant'] == null
           ? null
           : _i3.Protocol().deserialize<_i2.Restaurant>(
               jsonSerialization['restaurant'],
             ),
-      role: jsonSerialization['role'] as String,
+      uploadBatchId: jsonSerialization['uploadBatchId'] as String,
+      ordinal: jsonSerialization['ordinal'] as int,
+      sourceType: jsonSerialization['sourceType'] as String,
+      imageUrl: jsonSerialization['imageUrl'] as String,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -55,36 +61,44 @@ abstract class RestaurantMember implements _i1.SerializableModel {
   /// the id will be null.
   int? id;
 
-  String userId;
-
   int restaurantId;
 
   _i2.Restaurant? restaurant;
 
-  String role;
+  String uploadBatchId;
+
+  int ordinal;
+
+  String sourceType;
+
+  String imageUrl;
 
   DateTime createdAt;
 
-  /// Returns a shallow copy of this [RestaurantMember]
+  /// Returns a shallow copy of this [MenuSourcePage]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  RestaurantMember copyWith({
+  MenuSourcePage copyWith({
     int? id,
-    String? userId,
     int? restaurantId,
     _i2.Restaurant? restaurant,
-    String? role,
+    String? uploadBatchId,
+    int? ordinal,
+    String? sourceType,
+    String? imageUrl,
     DateTime? createdAt,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'RestaurantMember',
+      '__className__': 'MenuSourcePage',
       if (id != null) 'id': id,
-      'userId': userId,
       'restaurantId': restaurantId,
       if (restaurant != null) 'restaurant': restaurant?.toJson(),
-      'role': role,
+      'uploadBatchId': uploadBatchId,
+      'ordinal': ordinal,
+      'sourceType': sourceType,
+      'imageUrl': imageUrl,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -97,43 +111,51 @@ abstract class RestaurantMember implements _i1.SerializableModel {
 
 class _Undefined {}
 
-class _RestaurantMemberImpl extends RestaurantMember {
-  _RestaurantMemberImpl({
+class _MenuSourcePageImpl extends MenuSourcePage {
+  _MenuSourcePageImpl({
     int? id,
-    required String userId,
     required int restaurantId,
     _i2.Restaurant? restaurant,
-    required String role,
+    required String uploadBatchId,
+    required int ordinal,
+    required String sourceType,
+    required String imageUrl,
     required DateTime createdAt,
   }) : super._(
          id: id,
-         userId: userId,
          restaurantId: restaurantId,
          restaurant: restaurant,
-         role: role,
+         uploadBatchId: uploadBatchId,
+         ordinal: ordinal,
+         sourceType: sourceType,
+         imageUrl: imageUrl,
          createdAt: createdAt,
        );
 
-  /// Returns a shallow copy of this [RestaurantMember]
+  /// Returns a shallow copy of this [MenuSourcePage]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  RestaurantMember copyWith({
+  MenuSourcePage copyWith({
     Object? id = _Undefined,
-    String? userId,
     int? restaurantId,
     Object? restaurant = _Undefined,
-    String? role,
+    String? uploadBatchId,
+    int? ordinal,
+    String? sourceType,
+    String? imageUrl,
     DateTime? createdAt,
   }) {
-    return RestaurantMember(
+    return MenuSourcePage(
       id: id is int? ? id : this.id,
-      userId: userId ?? this.userId,
       restaurantId: restaurantId ?? this.restaurantId,
       restaurant: restaurant is _i2.Restaurant?
           ? restaurant
           : this.restaurant?.copyWith(),
-      role: role ?? this.role,
+      uploadBatchId: uploadBatchId ?? this.uploadBatchId,
+      ordinal: ordinal ?? this.ordinal,
+      sourceType: sourceType ?? this.sourceType,
+      imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
     );
   }

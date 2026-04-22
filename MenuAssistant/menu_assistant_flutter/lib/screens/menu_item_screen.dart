@@ -4,7 +4,7 @@ import '../core/service_locator.dart';
 import '../core/app_state.dart';
 
 class MenuItemScreen extends StatefulWidget {
-  final MenuItem menuItem;
+  final MenuItemView menuItem;
 
   const MenuItemScreen({super.key, required this.menuItem});
 
@@ -22,11 +22,10 @@ class _MenuItemScreenState extends State<MenuItemScreen> {
       appBar: AppBar(
         title: Text(widget.menuItem.name),
         actions: [
-          if (itemId != null)
-            ListenableBuilder(
-              listenable: _appState,
-              builder: (context, _) {
-                final isFav = _appState.isMenuItemFavorite(itemId);
+          ListenableBuilder(
+            listenable: _appState,
+            builder: (context, _) {
+              final isFav = _appState.isMenuItemFavorite(itemId);
                 return IconButton(
                   icon: Icon(
                     isFav ? Icons.favorite : Icons.favorite_border,
@@ -93,7 +92,7 @@ class _MenuItemScreenState extends State<MenuItemScreen> {
                     ),
                   ],
 
-                  if (widget.menuItem.descriptionRaw case final desc? when desc.isNotEmpty) ...[
+                  if (widget.menuItem.description case final desc? when desc.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Text('Состав:', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),

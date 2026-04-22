@@ -1,0 +1,15 @@
+### Client-facing menu item payload. Resolves `description` from
+### `dish_catalog.description` and `imageUrl` from the primary
+### `dish_image` row at read-time, so `menu_item` no longer needs to
+### carry denormalized snapshots.
+class: MenuItemView
+fields:
+  id: int
+  categoryId: int?
+  dishCatalogId: int?
+  name: String
+  price: double
+  tags: List<String>?
+  spicyLevel: int?
+  description: String?
+  imageUrl: String?

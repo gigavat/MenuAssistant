@@ -1,0 +1,10 @@
+### Result of AiProcessingEndpoint.processMenuUpload / processMultiPageMenu.
+### When requiresConfirmation=true the client shows a match-confirmation
+### modal (Sprint 4.7) and calls RestaurantEndpoint.confirmMatch with the
+### user's choice.
+class: ProcessMenuResult
+fields:
+  restaurantId: int
+  uploadBatchId: String
+  requiresConfirmation: bool
+  candidates: List<RestaurantMatchCandidate>?

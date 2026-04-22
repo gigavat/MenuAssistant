@@ -1,9 +1,11 @@
 import 'services/curated/curated_dish_service.dart';
 import 'services/enrichment/dish_catalog_service.dart';
+import 'services/geo/ip_geo_service.dart';
 import 'services/image_persistence/image_persistence_service.dart';
 import 'services/image_search/image_search_service.dart';
 import 'services/inference/inference_service_client.dart';
 import 'services/llm/llm_service.dart';
+import 'services/restaurant/restaurant_dedup_service.dart';
 
 /// Process-wide singleton holding the services built at boot in `server.dart`.
 ///
@@ -17,6 +19,8 @@ class ServiceRegistry {
   final ImagePersistenceService imagePersistence;
   final InferenceServiceClient? inferenceClient;
   final Map<String, ImageSearchService> imageProvidersById;
+  final RestaurantDedupService restaurantDedupService;
+  final IpGeoService ipGeoService;
 
   ServiceRegistry._({
     required this.llmService,
@@ -25,6 +29,8 @@ class ServiceRegistry {
     required this.imagePersistence,
     this.inferenceClient,
     required this.imageProvidersById,
+    required this.restaurantDedupService,
+    required this.ipGeoService,
   });
 
   static ServiceRegistry? _instance;
@@ -47,6 +53,8 @@ class ServiceRegistry {
     required ImagePersistenceService imagePersistence,
     InferenceServiceClient? inferenceClient,
     required Map<String, ImageSearchService> imageProvidersById,
+    required RestaurantDedupService restaurantDedupService,
+    required IpGeoService ipGeoService,
   }) {
     _instance = ServiceRegistry._(
       llmService: llmService,
@@ -55,6 +63,8 @@ class ServiceRegistry {
       imagePersistence: imagePersistence,
       inferenceClient: inferenceClient,
       imageProvidersById: imageProvidersById,
+      restaurantDedupService: restaurantDedupService,
+      ipGeoService: ipGeoService,
     );
   }
 }

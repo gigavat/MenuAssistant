@@ -5,6 +5,8 @@ import 'core/service_locator.dart';
 import 'core/app_state.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth_screen.dart';
+import 'theme/app_theme.dart';
+import 'theme/tokens.dart';
 
 Future<String> _loadApiUrl() async {
   final raw = await rootBundle.loadString('assets/config.json');
@@ -39,28 +41,8 @@ class MenuAssistantApp extends StatelessWidget {
         return MaterialApp(
           title: 'Menu Assistant',
           debugShowCheckedModeBanner: false,
-
-          // Standard Material 3 Light Theme (White/Neutral)
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blueGrey,
-              brightness: Brightness.light,
-              surface: Colors.white,
-              surfaceContainerHigh: Colors.grey.shade100,
-            ),
-            scaffoldBackgroundColor: Colors.white,
-          ),
-
-          // Standard Material 3 Dark Theme
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blueGrey,
-              brightness: Brightness.dark,
-            ),
-          ),
-
+          theme: buildTheme(AppTheme.warm),
+          darkTheme: buildTheme(AppTheme.midnight),
           themeMode: appState.themeMode,
 
           home: appState.isAuthenticated

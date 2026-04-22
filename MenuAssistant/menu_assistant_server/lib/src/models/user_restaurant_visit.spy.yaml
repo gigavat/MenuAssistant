@@ -1,0 +1,14 @@
+class: UserRestaurantVisit
+table: user_restaurant_visit
+fields:
+  userId: String
+  restaurant: Restaurant?, relation
+  firstVisitAt: DateTime
+  lastVisitAt: DateTime
+  liked: bool, default=false
+indexes:
+  user_restaurant_visit_unique_idx:
+    fields: userId, restaurantId
+    unique: true
+  user_restaurant_visit_user_idx:
+    fields: userId

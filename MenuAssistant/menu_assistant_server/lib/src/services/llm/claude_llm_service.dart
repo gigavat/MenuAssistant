@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../generated/protocol.dart';
 import 'llm_service.dart';
 
 /// Calls the Anthropic Messages API directly via HTTP.
@@ -18,11 +17,8 @@ class ClaudeLlmService implements LlmService {
   static const _apiVersion = '2023-06-01';
   static const _requestTimeout = Duration(seconds: 180);
 
-  /// Output token budget for menu extraction. `max_tokens` is an upper bound,
-  /// not a prepaid quota — Claude stops as soon as the menu is fully emitted
-  /// and we only pay for tokens actually generated. 64K is the current Haiku
-  /// 4.5 ceiling and covers even multi-page restaurant menus with hundreds
-  /// of items. Typical usage is 5–15K tokens per menu.
+  /// Output token budget for menu extraction. 64K is the current Haiku 4.5
+  /// ceiling and covers multi-page restaurant menus with hundreds of items.
   static const _menuExtractionMaxTokens = 64000;
 
   /// Short responses — 200 tokens is plenty for a one-sentence description.
@@ -38,12 +34,9 @@ class ClaudeLlmService implements LlmService {
         _httpClient = httpClient ?? http.Client();
 
   @override
-  Future<ParsedMenu> parseMenu({
-    required String fileName,
-    required List<int> fileBytes,
-  }) async {
+  Future<ParsedMenu> parseMenu({required List<MenuPageBytes> pages}) async {
     final systemPrompt = _menuExtractionSystemPrompt;
-    final userContent = _buildUserContent(fileName, fileBytes);
+    final userContent = _buildUserContent(pages);
 
     final body = jsonEncode({
       'model': _model,
@@ -86,16 +79,12 @@ class ClaudeLlmService implements LlmService {
         usage: usage,
       );
     } catch (e) {
-      // Surfacing the raw model output helps debug prompt regressions.
       throw Exception(
         'Failed to parse Claude menu JSON: $e\nRaw response: $text',
       );
     }
   }
 
-  /// Parses the Anthropic `usage` field and wraps it into [LlmUsageInfo]
-  /// with a precomputed cost. Returns null if the field is missing (very
-  /// unexpected, but we don't want to break parsing over telemetry).
   LlmUsageInfo? _parseUsage(Map<String, dynamic> decoded) {
     final usage = decoded['usage'];
     if (usage is! Map<String, dynamic>) return null;
@@ -125,10 +114,8 @@ class ClaudeLlmService implements LlmService {
   /// Claude Haiku 4.5 price sheet (April 2026):
   /// - input:        $1.00 per 1M tokens
   /// - output:       $5.00 per 1M tokens
-  /// - cache write:  $1.25 per 1M tokens (prompt caching, first write)
-  /// - cache read:   $0.10 per 1M tokens (prompt caching hits)
-  ///
-  /// Exposed as static so `AiProcessingEndpoint` and tests can reuse it.
+  /// - cache write:  $1.25 per 1M tokens
+  /// - cache read:   $0.10 per 1M tokens
   static double computeHaikuCostUsd({
     required int inputTokens,
     required int outputTokens,
@@ -147,14 +134,7 @@ class ClaudeLlmService implements LlmService {
         1000000.0;
   }
 
-  /// Claude Sonnet 4.6 price sheet (April 2026):
-  /// - input:        $3.00 per 1M tokens
-  /// - output:       $15.00 per 1M tokens
-  /// - cache write:  $3.75 per 1M tokens
-  /// - cache read:   $0.30 per 1M tokens
-  ///
-  /// ~3x Haiku pricing. Used by bootstrap scripts (e.g.
-  /// generate_descriptions.dart fallback for obscure dishes Haiku doesn't know).
+  /// Claude Sonnet 4.6 price sheet (April 2026).
   static double computeSonnetCostUsd({
     required int inputTokens,
     required int outputTokens,
@@ -173,15 +153,7 @@ class ClaudeLlmService implements LlmService {
         1000000.0;
   }
 
-  /// Claude Opus 4.7 price sheet (April 2026):
-  /// - input:        $5.00 per 1M tokens
-  /// - output:       $25.00 per 1M tokens
-  /// - cache write:  $6.25 per 1M tokens
-  /// - cache read:   $0.50 per 1M tokens
-  ///
-  /// ~5x Haiku / ~1.7x Sonnet. Opus 4.7 uses a new tokenizer that may
-  /// consume up to 35% more tokens than older models for the same input.
-  /// Used for obscure-dish descriptions where Sonnet/Haiku lack training data.
+  /// Claude Opus 4.7 price sheet (April 2026).
   static double computeOpusCostUsd({
     required int inputTokens,
     required int outputTokens,
@@ -249,15 +221,14 @@ class ClaudeLlmService implements LlmService {
         'anthropic-version': _apiVersion,
       };
 
-  /// For photo/PDF bytes we attach them as a base64 image block.
-  /// For URL-only uploads (empty bytes), we ask the model to use the URL
-  /// as the source description — real URL fetching would need a separate
-  /// web-fetch step that is out of scope for MVP.
-  List<Map<String, dynamic>> _buildUserContent(
-    String fileName,
-    List<int> fileBytes,
-  ) {
-    if (fileBytes.isEmpty) {
+  /// One image block per page plus a single trailing text prompt. If the
+  /// caller passes an empty byte list (URL-only submission) we degrade
+  /// gracefully to a text-only prompt.
+  List<Map<String, dynamic>> _buildUserContent(List<MenuPageBytes> pages) {
+    final nonEmpty = pages.where((p) => p.bytes.isNotEmpty).toList();
+
+    if (nonEmpty.isEmpty) {
+      final fileName = pages.isEmpty ? 'unknown' : pages.first.fileName;
       return [
         {
           'type': 'text',
@@ -269,23 +240,26 @@ class ClaudeLlmService implements LlmService {
       ];
     }
 
-    final mediaType = _detectMediaType(fileName);
-    final base64Data = base64Encode(fileBytes);
-
-    return [
-      {
+    final blocks = <Map<String, dynamic>>[];
+    for (final page in nonEmpty) {
+      blocks.add({
         'type': 'image',
         'source': {
           'type': 'base64',
-          'media_type': mediaType,
-          'data': base64Data,
+          'media_type': page.mediaType ?? _detectMediaType(page.fileName),
+          'data': base64Encode(page.bytes),
         },
-      },
-      {
-        'type': 'text',
-        'text': 'Extract the menu into the required JSON format.',
-      }
-    ];
+      });
+    }
+    blocks.add({
+      'type': 'text',
+      'text': nonEmpty.length == 1
+          ? 'Extract the menu into the required JSON format.'
+          : 'The ${nonEmpty.length} images above are pages of the same menu, '
+              'in order. Treat them as one document and extract the full menu '
+              'into the required JSON format.',
+    });
+    return blocks;
   }
 
   String _detectMediaType(String fileName) {
@@ -293,68 +267,59 @@ class ClaudeLlmService implements LlmService {
     if (lower.endsWith('.png')) return 'image/png';
     if (lower.endsWith('.webp')) return 'image/webp';
     if (lower.endsWith('.gif')) return 'image/gif';
-    // PDF files must be sent via a different content block type in real
-    // integration; for MVP we treat unknown as jpeg to keep the pipeline
-    // running — proper PDF handling is a follow-up.
     return 'image/jpeg';
   }
 
   ParsedMenu _parseMenuJson(String text) {
-    // Claude may wrap JSON in ```json ... ``` — strip fences if present.
     final cleaned = text
         .replaceAll(RegExp(r'^```(?:json)?\s*', multiLine: true), '')
         .replaceAll(RegExp(r'\s*```$', multiLine: true), '')
         .trim();
 
     final json = jsonDecode(cleaned) as Map<String, dynamic>;
-    final now = DateTime.now();
 
     final restaurantJson = json['restaurant'] as Map<String, dynamic>;
-    final restaurant = Restaurant(
+    final restaurant = ParsedRestaurant(
       name: restaurantJson['name'] as String? ?? 'Unknown',
-      location: restaurantJson['location'] as String?,
       currency: restaurantJson['currency'] as String? ?? 'EUR',
-      createdAt: now,
+      addressRaw: restaurantJson['location'] as String? ??
+          restaurantJson['address'] as String?,
     );
 
     final categoriesJson = (json['categories'] as List<dynamic>?) ?? [];
     final categories = <ParsedCategory>[];
     for (final catJson in categoriesJson) {
       final cat = catJson as Map<String, dynamic>;
-      final category = Category(
-        name: cat['name'] as String? ?? 'Untitled',
-        restaurantId: 0, // set by endpoint after insert
-        createdAt: now,
-      );
 
       final itemsJson = (cat['items'] as List<dynamic>?) ?? [];
-      final items = <MenuItem>[];
+      final items = <ParsedMenuItem>[];
       for (final itemJson in itemsJson) {
         final item = itemJson as Map<String, dynamic>;
-        items.add(MenuItem(
+        items.add(ParsedMenuItem(
           name: item['name'] as String? ?? '',
-          descriptionRaw: item['description'] as String?,
+          description: item['description'] as String?,
           price: (item['price'] as num?)?.toDouble() ?? 0.0,
           tags: (item['tags'] as List<dynamic>?)
               ?.map((t) => t.toString())
               .toList(),
           spicyLevel: (item['spiceLevel'] as num?)?.toInt(),
-          categoryId: 0, // set by endpoint after insert
-          dishCatalogId: 0, // set by endpoint after catalog lookup
-          createdAt: now,
         ));
       }
 
-      categories.add(ParsedCategory(category: category, items: items));
+      categories.add(ParsedCategory(
+        name: cat['name'] as String? ?? 'Untitled',
+        items: items,
+      ));
     }
 
     return ParsedMenu(restaurant: restaurant, categories: categories);
   }
 
   static const _menuExtractionSystemPrompt = '''
-You are a menu extraction assistant. Given a photo, PDF, or URL of a restaurant menu,
-extract the menu into strict JSON with the schema below. Return ONLY the JSON — no
-prose, no markdown fences.
+You are a menu extraction assistant. Given one or more photos / PDF pages
+of a restaurant menu (possibly split across pages of the same document),
+extract the complete menu into strict JSON with the schema below. Return
+ONLY the JSON — no prose, no markdown fences.
 
 Schema:
 {

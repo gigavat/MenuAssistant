@@ -19,7 +19,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   final _repo = getIt<RestaurantRepository>();
 
   List<Category> _categories = [];
-  final Map<int, List<MenuItem>> _categoryItems = {};
+  final Map<int, List<MenuItemView>> _categoryItems = {};
   Category? _selectedCategory;
   bool _isLoadingContent = true;
   String? _error;
@@ -225,8 +225,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (itemId != null)
-              ListenableBuilder(
+            ListenableBuilder(
                 listenable: _appState,
                 builder: (context, _) {
                   final isFav = _appState.isMenuItemFavorite(itemId);

@@ -15,28 +15,30 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import 'restaurant.dart' as _i2;
 import 'package:menu_assistant_server/src/generated/protocol.dart' as _i3;
 
-abstract class RestaurantMember
+abstract class UserRestaurantVisit
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
-  RestaurantMember._({
+  UserRestaurantVisit._({
     this.id,
     required this.userId,
     required this.restaurantId,
     this.restaurant,
-    required this.role,
-    required this.createdAt,
-  });
+    required this.firstVisitAt,
+    required this.lastVisitAt,
+    bool? liked,
+  }) : liked = liked ?? false;
 
-  factory RestaurantMember({
+  factory UserRestaurantVisit({
     int? id,
     required String userId,
     required int restaurantId,
     _i2.Restaurant? restaurant,
-    required String role,
-    required DateTime createdAt,
-  }) = _RestaurantMemberImpl;
+    required DateTime firstVisitAt,
+    required DateTime lastVisitAt,
+    bool? liked,
+  }) = _UserRestaurantVisitImpl;
 
-  factory RestaurantMember.fromJson(Map<String, dynamic> jsonSerialization) {
-    return RestaurantMember(
+  factory UserRestaurantVisit.fromJson(Map<String, dynamic> jsonSerialization) {
+    return UserRestaurantVisit(
       id: jsonSerialization['id'] as int?,
       userId: jsonSerialization['userId'] as String,
       restaurantId: jsonSerialization['restaurantId'] as int,
@@ -45,16 +47,21 @@ abstract class RestaurantMember
           : _i3.Protocol().deserialize<_i2.Restaurant>(
               jsonSerialization['restaurant'],
             ),
-      role: jsonSerialization['role'] as String,
-      createdAt: _i1.DateTimeJsonExtension.fromJson(
-        jsonSerialization['createdAt'],
+      firstVisitAt: _i1.DateTimeJsonExtension.fromJson(
+        jsonSerialization['firstVisitAt'],
       ),
+      lastVisitAt: _i1.DateTimeJsonExtension.fromJson(
+        jsonSerialization['lastVisitAt'],
+      ),
+      liked: jsonSerialization['liked'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['liked']),
     );
   }
 
-  static final t = RestaurantMemberTable();
+  static final t = UserRestaurantVisitTable();
 
-  static const db = RestaurantMemberRepository._();
+  static const db = UserRestaurantVisitRepository._();
 
   @override
   int? id;
@@ -65,70 +72,77 @@ abstract class RestaurantMember
 
   _i2.Restaurant? restaurant;
 
-  String role;
+  DateTime firstVisitAt;
 
-  DateTime createdAt;
+  DateTime lastVisitAt;
+
+  bool liked;
 
   @override
   _i1.Table<int?> get table => t;
 
-  /// Returns a shallow copy of this [RestaurantMember]
+  /// Returns a shallow copy of this [UserRestaurantVisit]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  RestaurantMember copyWith({
+  UserRestaurantVisit copyWith({
     int? id,
     String? userId,
     int? restaurantId,
     _i2.Restaurant? restaurant,
-    String? role,
-    DateTime? createdAt,
+    DateTime? firstVisitAt,
+    DateTime? lastVisitAt,
+    bool? liked,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'RestaurantMember',
+      '__className__': 'UserRestaurantVisit',
       if (id != null) 'id': id,
       'userId': userId,
       'restaurantId': restaurantId,
       if (restaurant != null) 'restaurant': restaurant?.toJson(),
-      'role': role,
-      'createdAt': createdAt.toJson(),
+      'firstVisitAt': firstVisitAt.toJson(),
+      'lastVisitAt': lastVisitAt.toJson(),
+      'liked': liked,
     };
   }
 
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'RestaurantMember',
+      '__className__': 'UserRestaurantVisit',
       if (id != null) 'id': id,
       'userId': userId,
       'restaurantId': restaurantId,
       if (restaurant != null) 'restaurant': restaurant?.toJsonForProtocol(),
-      'role': role,
-      'createdAt': createdAt.toJson(),
+      'firstVisitAt': firstVisitAt.toJson(),
+      'lastVisitAt': lastVisitAt.toJson(),
+      'liked': liked,
     };
   }
 
-  static RestaurantMemberInclude include({_i2.RestaurantInclude? restaurant}) {
-    return RestaurantMemberInclude._(restaurant: restaurant);
+  static UserRestaurantVisitInclude include({
+    _i2.RestaurantInclude? restaurant,
+  }) {
+    return UserRestaurantVisitInclude._(restaurant: restaurant);
   }
 
-  static RestaurantMemberIncludeList includeList({
-    _i1.WhereExpressionBuilder<RestaurantMemberTable>? where,
+  static UserRestaurantVisitIncludeList includeList({
+    _i1.WhereExpressionBuilder<UserRestaurantVisitTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<RestaurantMemberTable>? orderBy,
+    _i1.OrderByBuilder<UserRestaurantVisitTable>? orderBy,
     bool orderDescending = false,
-    _i1.OrderByListBuilder<RestaurantMemberTable>? orderByList,
-    RestaurantMemberInclude? include,
+    _i1.OrderByListBuilder<UserRestaurantVisitTable>? orderByList,
+    UserRestaurantVisitInclude? include,
   }) {
-    return RestaurantMemberIncludeList._(
+    return UserRestaurantVisitIncludeList._(
       where: where,
       limit: limit,
       offset: offset,
-      orderBy: orderBy?.call(RestaurantMember.t),
+      orderBy: orderBy?.call(UserRestaurantVisit.t),
       orderDescending: orderDescending,
-      orderByList: orderByList?.call(RestaurantMember.t),
+      orderByList: orderByList?.call(UserRestaurantVisit.t),
       include: include,
     );
   }
@@ -141,51 +155,55 @@ abstract class RestaurantMember
 
 class _Undefined {}
 
-class _RestaurantMemberImpl extends RestaurantMember {
-  _RestaurantMemberImpl({
+class _UserRestaurantVisitImpl extends UserRestaurantVisit {
+  _UserRestaurantVisitImpl({
     int? id,
     required String userId,
     required int restaurantId,
     _i2.Restaurant? restaurant,
-    required String role,
-    required DateTime createdAt,
+    required DateTime firstVisitAt,
+    required DateTime lastVisitAt,
+    bool? liked,
   }) : super._(
          id: id,
          userId: userId,
          restaurantId: restaurantId,
          restaurant: restaurant,
-         role: role,
-         createdAt: createdAt,
+         firstVisitAt: firstVisitAt,
+         lastVisitAt: lastVisitAt,
+         liked: liked,
        );
 
-  /// Returns a shallow copy of this [RestaurantMember]
+  /// Returns a shallow copy of this [UserRestaurantVisit]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  RestaurantMember copyWith({
+  UserRestaurantVisit copyWith({
     Object? id = _Undefined,
     String? userId,
     int? restaurantId,
     Object? restaurant = _Undefined,
-    String? role,
-    DateTime? createdAt,
+    DateTime? firstVisitAt,
+    DateTime? lastVisitAt,
+    bool? liked,
   }) {
-    return RestaurantMember(
+    return UserRestaurantVisit(
       id: id is int? ? id : this.id,
       userId: userId ?? this.userId,
       restaurantId: restaurantId ?? this.restaurantId,
       restaurant: restaurant is _i2.Restaurant?
           ? restaurant
           : this.restaurant?.copyWith(),
-      role: role ?? this.role,
-      createdAt: createdAt ?? this.createdAt,
+      firstVisitAt: firstVisitAt ?? this.firstVisitAt,
+      lastVisitAt: lastVisitAt ?? this.lastVisitAt,
+      liked: liked ?? this.liked,
     );
   }
 }
 
-class RestaurantMemberUpdateTable
-    extends _i1.UpdateTable<RestaurantMemberTable> {
-  RestaurantMemberUpdateTable(super.table);
+class UserRestaurantVisitUpdateTable
+    extends _i1.UpdateTable<UserRestaurantVisitTable> {
+  UserRestaurantVisitUpdateTable(super.table);
 
   _i1.ColumnValue<String, String> userId(String value) => _i1.ColumnValue(
     table.userId,
@@ -197,22 +215,28 @@ class RestaurantMemberUpdateTable
     value,
   );
 
-  _i1.ColumnValue<String, String> role(String value) => _i1.ColumnValue(
-    table.role,
-    value,
-  );
-
-  _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
+  _i1.ColumnValue<DateTime, DateTime> firstVisitAt(DateTime value) =>
       _i1.ColumnValue(
-        table.createdAt,
+        table.firstVisitAt,
         value,
       );
+
+  _i1.ColumnValue<DateTime, DateTime> lastVisitAt(DateTime value) =>
+      _i1.ColumnValue(
+        table.lastVisitAt,
+        value,
+      );
+
+  _i1.ColumnValue<bool, bool> liked(bool value) => _i1.ColumnValue(
+    table.liked,
+    value,
+  );
 }
 
-class RestaurantMemberTable extends _i1.Table<int?> {
-  RestaurantMemberTable({super.tableRelation})
-    : super(tableName: 'restaurant_member') {
-    updateTable = RestaurantMemberUpdateTable(this);
+class UserRestaurantVisitTable extends _i1.Table<int?> {
+  UserRestaurantVisitTable({super.tableRelation})
+    : super(tableName: 'user_restaurant_visit') {
+    updateTable = UserRestaurantVisitUpdateTable(this);
     userId = _i1.ColumnString(
       'userId',
       this,
@@ -221,17 +245,22 @@ class RestaurantMemberTable extends _i1.Table<int?> {
       'restaurantId',
       this,
     );
-    role = _i1.ColumnString(
-      'role',
+    firstVisitAt = _i1.ColumnDateTime(
+      'firstVisitAt',
       this,
     );
-    createdAt = _i1.ColumnDateTime(
-      'createdAt',
+    lastVisitAt = _i1.ColumnDateTime(
+      'lastVisitAt',
       this,
+    );
+    liked = _i1.ColumnBool(
+      'liked',
+      this,
+      hasDefault: true,
     );
   }
 
-  late final RestaurantMemberUpdateTable updateTable;
+  late final UserRestaurantVisitUpdateTable updateTable;
 
   late final _i1.ColumnString userId;
 
@@ -239,15 +268,17 @@ class RestaurantMemberTable extends _i1.Table<int?> {
 
   _i2.RestaurantTable? _restaurant;
 
-  late final _i1.ColumnString role;
+  late final _i1.ColumnDateTime firstVisitAt;
 
-  late final _i1.ColumnDateTime createdAt;
+  late final _i1.ColumnDateTime lastVisitAt;
+
+  late final _i1.ColumnBool liked;
 
   _i2.RestaurantTable get restaurant {
     if (_restaurant != null) return _restaurant!;
     _restaurant = _i1.createRelationTable(
       relationFieldName: 'restaurant',
-      field: RestaurantMember.t.restaurantId,
+      field: UserRestaurantVisit.t.restaurantId,
       foreignField: _i2.Restaurant.t.id,
       tableRelation: tableRelation,
       createTable: (foreignTableRelation) =>
@@ -261,8 +292,9 @@ class RestaurantMemberTable extends _i1.Table<int?> {
     id,
     userId,
     restaurantId,
-    role,
-    createdAt,
+    firstVisitAt,
+    lastVisitAt,
+    liked,
   ];
 
   @override
@@ -274,8 +306,8 @@ class RestaurantMemberTable extends _i1.Table<int?> {
   }
 }
 
-class RestaurantMemberInclude extends _i1.IncludeObject {
-  RestaurantMemberInclude._({_i2.RestaurantInclude? restaurant}) {
+class UserRestaurantVisitInclude extends _i1.IncludeObject {
+  UserRestaurantVisitInclude._({_i2.RestaurantInclude? restaurant}) {
     _restaurant = restaurant;
   }
 
@@ -285,12 +317,12 @@ class RestaurantMemberInclude extends _i1.IncludeObject {
   Map<String, _i1.Include?> get includes => {'restaurant': _restaurant};
 
   @override
-  _i1.Table<int?> get table => RestaurantMember.t;
+  _i1.Table<int?> get table => UserRestaurantVisit.t;
 }
 
-class RestaurantMemberIncludeList extends _i1.IncludeList {
-  RestaurantMemberIncludeList._({
-    _i1.WhereExpressionBuilder<RestaurantMemberTable>? where,
+class UserRestaurantVisitIncludeList extends _i1.IncludeList {
+  UserRestaurantVisitIncludeList._({
+    _i1.WhereExpressionBuilder<UserRestaurantVisitTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
@@ -298,22 +330,22 @@ class RestaurantMemberIncludeList extends _i1.IncludeList {
     super.orderByList,
     super.include,
   }) {
-    super.where = where?.call(RestaurantMember.t);
+    super.where = where?.call(UserRestaurantVisit.t);
   }
 
   @override
   Map<String, _i1.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => RestaurantMember.t;
+  _i1.Table<int?> get table => UserRestaurantVisit.t;
 }
 
-class RestaurantMemberRepository {
-  const RestaurantMemberRepository._();
+class UserRestaurantVisitRepository {
+  const UserRestaurantVisitRepository._();
 
-  final attachRow = const RestaurantMemberAttachRowRepository._();
+  final attachRow = const UserRestaurantVisitAttachRowRepository._();
 
-  /// Returns a list of [RestaurantMember]s matching the given query parameters.
+  /// Returns a list of [UserRestaurantVisit]s matching the given query parameters.
   ///
   /// Use [where] to specify which items to include in the return value.
   /// If none is specified, all items will be returned.
@@ -335,23 +367,23 @@ class RestaurantMemberRepository {
   ///   limit: 100,
   /// );
   /// ```
-  Future<List<RestaurantMember>> find(
+  Future<List<UserRestaurantVisit>> find(
     _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<RestaurantMemberTable>? where,
+    _i1.WhereExpressionBuilder<UserRestaurantVisitTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<RestaurantMemberTable>? orderBy,
+    _i1.OrderByBuilder<UserRestaurantVisitTable>? orderBy,
     bool orderDescending = false,
-    _i1.OrderByListBuilder<RestaurantMemberTable>? orderByList,
+    _i1.OrderByListBuilder<UserRestaurantVisitTable>? orderByList,
     _i1.Transaction? transaction,
-    RestaurantMemberInclude? include,
+    UserRestaurantVisitInclude? include,
     _i1.LockMode? lockMode,
     _i1.LockBehavior? lockBehavior,
   }) async {
-    return session.db.find<RestaurantMember>(
-      where: where?.call(RestaurantMember.t),
-      orderBy: orderBy?.call(RestaurantMember.t),
-      orderByList: orderByList?.call(RestaurantMember.t),
+    return session.db.find<UserRestaurantVisit>(
+      where: where?.call(UserRestaurantVisit.t),
+      orderBy: orderBy?.call(UserRestaurantVisit.t),
+      orderByList: orderByList?.call(UserRestaurantVisit.t),
       orderDescending: orderDescending,
       limit: limit,
       offset: offset,
@@ -362,7 +394,7 @@ class RestaurantMemberRepository {
     );
   }
 
-  /// Returns the first matching [RestaurantMember] matching the given query parameters.
+  /// Returns the first matching [UserRestaurantVisit] matching the given query parameters.
   ///
   /// Use [where] to specify which items to include in the return value.
   /// If none is specified, all items will be returned.
@@ -379,22 +411,22 @@ class RestaurantMemberRepository {
   ///   orderBy: (t) => t.age,
   /// );
   /// ```
-  Future<RestaurantMember?> findFirstRow(
+  Future<UserRestaurantVisit?> findFirstRow(
     _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<RestaurantMemberTable>? where,
+    _i1.WhereExpressionBuilder<UserRestaurantVisitTable>? where,
     int? offset,
-    _i1.OrderByBuilder<RestaurantMemberTable>? orderBy,
+    _i1.OrderByBuilder<UserRestaurantVisitTable>? orderBy,
     bool orderDescending = false,
-    _i1.OrderByListBuilder<RestaurantMemberTable>? orderByList,
+    _i1.OrderByListBuilder<UserRestaurantVisitTable>? orderByList,
     _i1.Transaction? transaction,
-    RestaurantMemberInclude? include,
+    UserRestaurantVisitInclude? include,
     _i1.LockMode? lockMode,
     _i1.LockBehavior? lockBehavior,
   }) async {
-    return session.db.findFirstRow<RestaurantMember>(
-      where: where?.call(RestaurantMember.t),
-      orderBy: orderBy?.call(RestaurantMember.t),
-      orderByList: orderByList?.call(RestaurantMember.t),
+    return session.db.findFirstRow<UserRestaurantVisit>(
+      where: where?.call(UserRestaurantVisit.t),
+      orderBy: orderBy?.call(UserRestaurantVisit.t),
+      orderByList: orderByList?.call(UserRestaurantVisit.t),
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
@@ -404,16 +436,16 @@ class RestaurantMemberRepository {
     );
   }
 
-  /// Finds a single [RestaurantMember] by its [id] or null if no such row exists.
-  Future<RestaurantMember?> findById(
+  /// Finds a single [UserRestaurantVisit] by its [id] or null if no such row exists.
+  Future<UserRestaurantVisit?> findById(
     _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
-    RestaurantMemberInclude? include,
+    UserRestaurantVisitInclude? include,
     _i1.LockMode? lockMode,
     _i1.LockBehavior? lockBehavior,
   }) async {
-    return session.db.findById<RestaurantMember>(
+    return session.db.findById<UserRestaurantVisit>(
       id,
       transaction: transaction,
       include: include,
@@ -422,9 +454,9 @@ class RestaurantMemberRepository {
     );
   }
 
-  /// Inserts all [RestaurantMember]s in the list and returns the inserted rows.
+  /// Inserts all [UserRestaurantVisit]s in the list and returns the inserted rows.
   ///
-  /// The returned [RestaurantMember]s will have their `id` fields set.
+  /// The returned [UserRestaurantVisit]s will have their `id` fields set.
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
@@ -432,143 +464,143 @@ class RestaurantMemberRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
-  Future<List<RestaurantMember>> insert(
+  Future<List<UserRestaurantVisit>> insert(
     _i1.DatabaseSession session,
-    List<RestaurantMember> rows, {
+    List<UserRestaurantVisit> rows, {
     _i1.Transaction? transaction,
     bool ignoreConflicts = false,
   }) async {
-    return session.db.insert<RestaurantMember>(
+    return session.db.insert<UserRestaurantVisit>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
     );
   }
 
-  /// Inserts a single [RestaurantMember] and returns the inserted row.
+  /// Inserts a single [UserRestaurantVisit] and returns the inserted row.
   ///
-  /// The returned [RestaurantMember] will have its `id` field set.
-  Future<RestaurantMember> insertRow(
+  /// The returned [UserRestaurantVisit] will have its `id` field set.
+  Future<UserRestaurantVisit> insertRow(
     _i1.DatabaseSession session,
-    RestaurantMember row, {
+    UserRestaurantVisit row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<RestaurantMember>(
+    return session.db.insertRow<UserRestaurantVisit>(
       row,
       transaction: transaction,
     );
   }
 
-  /// Updates all [RestaurantMember]s in the list and returns the updated rows. If
+  /// Updates all [UserRestaurantVisit]s in the list and returns the updated rows. If
   /// [columns] is provided, only those columns will be updated. Defaults to
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
-  Future<List<RestaurantMember>> update(
+  Future<List<UserRestaurantVisit>> update(
     _i1.DatabaseSession session,
-    List<RestaurantMember> rows, {
-    _i1.ColumnSelections<RestaurantMemberTable>? columns,
+    List<UserRestaurantVisit> rows, {
+    _i1.ColumnSelections<UserRestaurantVisitTable>? columns,
     _i1.Transaction? transaction,
   }) async {
-    return session.db.update<RestaurantMember>(
+    return session.db.update<UserRestaurantVisit>(
       rows,
-      columns: columns?.call(RestaurantMember.t),
+      columns: columns?.call(UserRestaurantVisit.t),
       transaction: transaction,
     );
   }
 
-  /// Updates a single [RestaurantMember]. The row needs to have its id set.
+  /// Updates a single [UserRestaurantVisit]. The row needs to have its id set.
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
-  Future<RestaurantMember> updateRow(
+  Future<UserRestaurantVisit> updateRow(
     _i1.DatabaseSession session,
-    RestaurantMember row, {
-    _i1.ColumnSelections<RestaurantMemberTable>? columns,
+    UserRestaurantVisit row, {
+    _i1.ColumnSelections<UserRestaurantVisitTable>? columns,
     _i1.Transaction? transaction,
   }) async {
-    return session.db.updateRow<RestaurantMember>(
+    return session.db.updateRow<UserRestaurantVisit>(
       row,
-      columns: columns?.call(RestaurantMember.t),
+      columns: columns?.call(UserRestaurantVisit.t),
       transaction: transaction,
     );
   }
 
-  /// Updates a single [RestaurantMember] by its [id] with the specified [columnValues].
+  /// Updates a single [UserRestaurantVisit] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
-  Future<RestaurantMember?> updateById(
+  Future<UserRestaurantVisit?> updateById(
     _i1.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<RestaurantMemberUpdateTable>
+    required _i1.ColumnValueListBuilder<UserRestaurantVisitUpdateTable>
     columnValues,
     _i1.Transaction? transaction,
   }) async {
-    return session.db.updateById<RestaurantMember>(
+    return session.db.updateById<UserRestaurantVisit>(
       id,
-      columnValues: columnValues(RestaurantMember.t.updateTable),
+      columnValues: columnValues(UserRestaurantVisit.t.updateTable),
       transaction: transaction,
     );
   }
 
-  /// Updates all [RestaurantMember]s matching the [where] expression with the specified [columnValues].
+  /// Updates all [UserRestaurantVisit]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
-  Future<List<RestaurantMember>> updateWhere(
+  Future<List<UserRestaurantVisit>> updateWhere(
     _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<RestaurantMemberUpdateTable>
+    required _i1.ColumnValueListBuilder<UserRestaurantVisitUpdateTable>
     columnValues,
-    required _i1.WhereExpressionBuilder<RestaurantMemberTable> where,
+    required _i1.WhereExpressionBuilder<UserRestaurantVisitTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<RestaurantMemberTable>? orderBy,
-    _i1.OrderByListBuilder<RestaurantMemberTable>? orderByList,
+    _i1.OrderByBuilder<UserRestaurantVisitTable>? orderBy,
+    _i1.OrderByListBuilder<UserRestaurantVisitTable>? orderByList,
     bool orderDescending = false,
     _i1.Transaction? transaction,
   }) async {
-    return session.db.updateWhere<RestaurantMember>(
-      columnValues: columnValues(RestaurantMember.t.updateTable),
-      where: where(RestaurantMember.t),
+    return session.db.updateWhere<UserRestaurantVisit>(
+      columnValues: columnValues(UserRestaurantVisit.t.updateTable),
+      where: where(UserRestaurantVisit.t),
       limit: limit,
       offset: offset,
-      orderBy: orderBy?.call(RestaurantMember.t),
-      orderByList: orderByList?.call(RestaurantMember.t),
+      orderBy: orderBy?.call(UserRestaurantVisit.t),
+      orderByList: orderByList?.call(UserRestaurantVisit.t),
       orderDescending: orderDescending,
       transaction: transaction,
     );
   }
 
-  /// Deletes all [RestaurantMember]s in the list and returns the deleted rows.
+  /// Deletes all [UserRestaurantVisit]s in the list and returns the deleted rows.
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
-  Future<List<RestaurantMember>> delete(
+  Future<List<UserRestaurantVisit>> delete(
     _i1.DatabaseSession session,
-    List<RestaurantMember> rows, {
+    List<UserRestaurantVisit> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<RestaurantMember>(
+    return session.db.delete<UserRestaurantVisit>(
       rows,
       transaction: transaction,
     );
   }
 
-  /// Deletes a single [RestaurantMember].
-  Future<RestaurantMember> deleteRow(
+  /// Deletes a single [UserRestaurantVisit].
+  Future<UserRestaurantVisit> deleteRow(
     _i1.DatabaseSession session,
-    RestaurantMember row, {
+    UserRestaurantVisit row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<RestaurantMember>(
+    return session.db.deleteRow<UserRestaurantVisit>(
       row,
       transaction: transaction,
     );
   }
 
   /// Deletes all rows matching the [where] expression.
-  Future<List<RestaurantMember>> deleteWhere(
+  Future<List<UserRestaurantVisit>> deleteWhere(
     _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<RestaurantMemberTable> where,
+    required _i1.WhereExpressionBuilder<UserRestaurantVisitTable> where,
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteWhere<RestaurantMember>(
-      where: where(RestaurantMember.t),
+    return session.db.deleteWhere<UserRestaurantVisit>(
+      where: where(UserRestaurantVisit.t),
       transaction: transaction,
     );
   }
@@ -577,27 +609,27 @@ class RestaurantMemberRepository {
   /// will return the count of all rows in the table.
   Future<int> count(
     _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<RestaurantMemberTable>? where,
+    _i1.WhereExpressionBuilder<UserRestaurantVisitTable>? where,
     int? limit,
     _i1.Transaction? transaction,
   }) async {
-    return session.db.count<RestaurantMember>(
-      where: where?.call(RestaurantMember.t),
+    return session.db.count<UserRestaurantVisit>(
+      where: where?.call(UserRestaurantVisit.t),
       limit: limit,
       transaction: transaction,
     );
   }
 
-  /// Acquires row-level locks on [RestaurantMember] rows matching the [where] expression.
+  /// Acquires row-level locks on [UserRestaurantVisit] rows matching the [where] expression.
   Future<void> lockRows(
     _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<RestaurantMemberTable> where,
+    required _i1.WhereExpressionBuilder<UserRestaurantVisitTable> where,
     required _i1.LockMode lockMode,
     required _i1.Transaction transaction,
     _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
   }) async {
-    return session.db.lockRows<RestaurantMember>(
-      where: where(RestaurantMember.t),
+    return session.db.lockRows<UserRestaurantVisit>(
+      where: where(UserRestaurantVisit.t),
       lockMode: lockMode,
       lockBehavior: lockBehavior,
       transaction: transaction,
@@ -605,30 +637,30 @@ class RestaurantMemberRepository {
   }
 }
 
-class RestaurantMemberAttachRowRepository {
-  const RestaurantMemberAttachRowRepository._();
+class UserRestaurantVisitAttachRowRepository {
+  const UserRestaurantVisitAttachRowRepository._();
 
-  /// Creates a relation between the given [RestaurantMember] and [Restaurant]
-  /// by setting the [RestaurantMember]'s foreign key `restaurantId` to refer to the [Restaurant].
+  /// Creates a relation between the given [UserRestaurantVisit] and [Restaurant]
+  /// by setting the [UserRestaurantVisit]'s foreign key `restaurantId` to refer to the [Restaurant].
   Future<void> restaurant(
     _i1.DatabaseSession session,
-    RestaurantMember restaurantMember,
+    UserRestaurantVisit userRestaurantVisit,
     _i2.Restaurant restaurant, {
     _i1.Transaction? transaction,
   }) async {
-    if (restaurantMember.id == null) {
-      throw ArgumentError.notNull('restaurantMember.id');
+    if (userRestaurantVisit.id == null) {
+      throw ArgumentError.notNull('userRestaurantVisit.id');
     }
     if (restaurant.id == null) {
       throw ArgumentError.notNull('restaurant.id');
     }
 
-    var $restaurantMember = restaurantMember.copyWith(
+    var $userRestaurantVisit = userRestaurantVisit.copyWith(
       restaurantId: restaurant.id,
     );
-    await session.db.updateRow<RestaurantMember>(
-      $restaurantMember,
-      columns: [RestaurantMember.t.restaurantId],
+    await session.db.updateRow<UserRestaurantVisit>(
+      $userRestaurantVisit,
+      columns: [UserRestaurantVisit.t.restaurantId],
       transaction: transaction,
     );
   }

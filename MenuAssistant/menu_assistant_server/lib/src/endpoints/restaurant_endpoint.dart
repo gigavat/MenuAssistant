@@ -1,71 +1,57 @@
 import 'package:serverpod/serverpod.dart';
+
 import '../generated/protocol.dart';
+import '../services/menu/menu_item_view_mapper.dart';
 
 class RestaurantEndpoint extends Endpoint {
   @override
   bool get requireLogin => true;
 
-  /// Create a new restaurant and make the current user the owner
-  Future<Restaurant> createRestaurant(Session session, Restaurant restaurant) async {
-    final userId = session.authenticated!.userIdentifier;
-
-    // 1. Create the restaurant
-    final created = await Restaurant.db.insertRow(session, restaurant);
-
-    // 2. Create the membership link
-    await RestaurantMember.db.insertRow(
-      session,
-      RestaurantMember(
-        userId: userId,
-        restaurantId: created.id!,
-        role: 'owner',
-        createdAt: DateTime.now(),
-      ),
-    );
-
-    return created;
-  }
-
-  /// Get all restaurants where the current user is a member
+  /// Returns every restaurant the current user has ever uploaded a menu
+  /// for — tracked via `user_restaurant_visit`.
   Future<List<Restaurant>> getAllRestaurants(Session session) async {
     final userId = session.authenticated!.userIdentifier;
 
-    final members = await RestaurantMember.db.find(
+    final visits = await UserRestaurantVisit.db.find(
       session,
       where: (t) => t.userId.equals(userId),
-      include: RestaurantMember.include(restaurant: Restaurant.include()),
+      orderBy: (t) => t.lastVisitAt,
+      orderDescending: true,
+      include: UserRestaurantVisit.include(restaurant: Restaurant.include()),
     );
 
-    return members
-        .map((m) => m.restaurant)
+    return visits
+        .map((v) => v.restaurant)
         .whereType<Restaurant>()
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        .toList();
   }
 
-  /// Get a single restaurant by ID (verify membership)
+  /// Returns a single restaurant by id — only if the current user has
+  /// visited it. Restaurants are global, but access is still per-user.
   Future<Restaurant?> getRestaurantById(Session session, int id) async {
     final userId = session.authenticated!.userIdentifier;
-
-    final member = await RestaurantMember.db.findFirstRow(
+    final visit = await UserRestaurantVisit.db.findFirstRow(
       session,
       where: (t) => t.userId.equals(userId) & t.restaurantId.equals(id),
-      include: RestaurantMember.include(restaurant: Restaurant.include()),
+      include: UserRestaurantVisit.include(restaurant: Restaurant.include()),
     );
-
-    return member?.restaurant;
+    return visit?.restaurant;
   }
 
-  /// Get Categories for a restaurant
-  Future<List<Category>> getCategoriesForRestaurant(Session session, int restaurantId) async {
+  /// Get Categories for a restaurant. Gated on the user having visited it.
+  Future<List<Category>> getCategoriesForRestaurant(
+    Session session,
+    int restaurantId,
+  ) async {
     final userId = session.authenticated!.userIdentifier;
-    final isMember = await RestaurantMember.db.count(
+    final hasVisit = await UserRestaurantVisit.db.count(
           session,
-          where: (t) => t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
+          where: (t) =>
+              t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
         ) >
         0;
 
-    if (!isMember) return [];
+    if (!hasVisit) return [];
 
     return await Category.db.find(
       session,
@@ -75,23 +61,33 @@ class RestaurantEndpoint extends Endpoint {
     );
   }
 
-  /// Get MenuItems for a category
-  Future<List<MenuItem>> getMenuItemsForCategory(Session session, int categoryId) async {
-    return await MenuItem.db.find(
+  /// Get MenuItems for a category. Returns client-facing [MenuItemView]
+  /// payloads with `description` and `imageUrl` resolved via JOIN on
+  /// `dish_catalog` and `dish_image` (denorm snapshots removed in 4.6).
+  Future<List<MenuItemView>> getMenuItemsForCategory(
+    Session session,
+    int categoryId,
+  ) async {
+    final items = await MenuItem.db.find(
       session,
       where: (t) => t.categoryId.equals(categoryId),
       orderBy: (t) => t.createdAt,
       orderDescending: false,
     );
+    return MenuItemViewMapper.hydrateAll(session, items);
   }
 
-  /// Toggle Favorite status for a restaurant
-  Future<bool> toggleRestaurantFavorite(Session session, int restaurantId) async {
+  /// Toggle Favorite status for a restaurant.
+  Future<bool> toggleRestaurantFavorite(
+    Session session,
+    int restaurantId,
+  ) async {
     final userId = session.authenticated!.userIdentifier;
 
     final existing = await FavoriteRestaurant.db.findFirstRow(
       session,
-      where: (t) => t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
+      where: (t) =>
+          t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
     );
 
     if (existing != null) {
@@ -110,8 +106,11 @@ class RestaurantEndpoint extends Endpoint {
     }
   }
 
-  /// Toggle Favorite status for a menu item
-  Future<bool> toggleMenuItemFavorite(Session session, int menuItemId) async {
+  /// Toggle Favorite status for a menu item.
+  Future<bool> toggleMenuItemFavorite(
+    Session session,
+    int menuItemId,
+  ) async {
     final userId = session.authenticated!.userIdentifier;
 
     final existing = await FavoriteMenuItem.db.findFirstRow(
@@ -135,8 +134,11 @@ class RestaurantEndpoint extends Endpoint {
     }
   }
 
-  /// Get favorite restaurants
-  Future<List<Restaurant>> getFavoriteRestaurants(Session session, {int limit = 10}) async {
+  /// Get favorite restaurants.
+  Future<List<Restaurant>> getFavoriteRestaurants(
+    Session session, {
+    int limit = 10,
+  }) async {
     final userId = session.authenticated!.userIdentifier;
 
     final favorites = await FavoriteRestaurant.db.find(
@@ -149,8 +151,11 @@ class RestaurantEndpoint extends Endpoint {
     return favorites.map((f) => f.restaurant).whereType<Restaurant>().toList();
   }
 
-  /// Get favorite menu items
-  Future<List<MenuItem>> getFavoriteMenuItems(Session session, {int limit = 10}) async {
+  /// Get favorite menu items as hydrated views.
+  Future<List<MenuItemView>> getFavoriteMenuItems(
+    Session session, {
+    int limit = 10,
+  }) async {
     final userId = session.authenticated!.userIdentifier;
 
     final favorites = await FavoriteMenuItem.db.find(
@@ -160,16 +165,110 @@ class RestaurantEndpoint extends Endpoint {
       limit: limit,
     );
 
-    return favorites.map((f) => f.menuItem).whereType<MenuItem>().toList();
+    final items = favorites
+        .map((f) => f.menuItem)
+        .whereType<MenuItem>()
+        .toList();
+    return MenuItemViewMapper.hydrateAll(session, items);
   }
 
-  /// Checks if a restaurant is favorited by the current user
-  Future<bool> isRestaurantFavorite(Session session, int restaurantId) async {
+  /// Checks if a restaurant is favorited by the current user.
+  Future<bool> isRestaurantFavorite(
+    Session session,
+    int restaurantId,
+  ) async {
     final userId = session.authenticated!.userIdentifier;
     return await FavoriteRestaurant.db.count(
           session,
-          where: (t) => t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
+          where: (t) =>
+              t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
         ) >
         0;
+  }
+
+  /// Confirms whether the freshly uploaded [pendingRestaurantId] should be
+  /// merged into an existing [matchedRestaurantId] candidate. Called by the
+  /// client after it shows the "is this the same place?" modal with the
+  /// dedup candidates returned from [AiProcessingEndpoint.processMenuUpload].
+  ///
+  /// - `matchedId == null` → user rejected the match; keep the pending row.
+  /// - `matchedId != null` → migrate this user's visit to the existing
+  ///   restaurant, reassign categories/menu items, and delete the pending row.
+  Future<int> confirmMatch(
+    Session session,
+    int pendingRestaurantId,
+    int? matchedId,
+  ) async {
+    final userId = session.authenticated!.userIdentifier;
+
+    if (matchedId == null || matchedId == pendingRestaurantId) {
+      return pendingRestaurantId;
+    }
+
+    await session.db.transaction((tx) async {
+      // Move categories (and their menu items) onto the matched restaurant.
+      await session.db.unsafeExecute(
+        'UPDATE category SET "restaurantId" = @to '
+        'WHERE "restaurantId" = @from',
+        parameters: QueryParameters.named({
+          'from': pendingRestaurantId,
+          'to': matchedId,
+        }),
+        transaction: tx,
+      );
+      await session.db.unsafeExecute(
+        'UPDATE menu_source_page SET "restaurantId" = @to '
+        'WHERE "restaurantId" = @from',
+        parameters: QueryParameters.named({
+          'from': pendingRestaurantId,
+          'to': matchedId,
+        }),
+        transaction: tx,
+      );
+
+      // Upsert the visit record against the matched restaurant and drop the
+      // pending one. Two visits (pending + matched) may exist if the user
+      // had visited the matched restaurant before.
+      final now = DateTime.now();
+      final existingVisit = await UserRestaurantVisit.db.findFirstRow(
+        session,
+        where: (t) =>
+            t.userId.equals(userId) & t.restaurantId.equals(matchedId),
+        transaction: tx,
+      );
+      if (existingVisit == null) {
+        await UserRestaurantVisit.db.insertRow(
+          session,
+          UserRestaurantVisit(
+            userId: userId,
+            restaurantId: matchedId,
+            firstVisitAt: now,
+            lastVisitAt: now,
+            liked: false,
+          ),
+          transaction: tx,
+        );
+      } else {
+        existingVisit.lastVisitAt = now;
+        await UserRestaurantVisit.db.updateRow(
+          session,
+          existingVisit,
+          transaction: tx,
+        );
+      }
+
+      await UserRestaurantVisit.db.deleteWhere(
+        session,
+        where: (t) => t.restaurantId.equals(pendingRestaurantId),
+        transaction: tx,
+      );
+      await Restaurant.db.deleteWhere(
+        session,
+        where: (t) => t.id.equals(pendingRestaurantId),
+        transaction: tx,
+      );
+    });
+
+    return matchedId;
   }
 }

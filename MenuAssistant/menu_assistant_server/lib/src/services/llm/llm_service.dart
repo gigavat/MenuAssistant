@@ -1,18 +1,58 @@
+import 'dart:typed_data';
+
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 
-/// Structured result of parsing a menu file.
-///
-/// The LLM extracts a tree: Restaurant → Categories → MenuItems.
-/// Each entity is a plain Dart object without DB ids — the endpoint
-/// will persist them and wire up the relations.
-///
-/// [usage] carries token counts + estimated cost from the LLM response.
-/// It's always populated for real LLM backends (e.g. Claude) and left null
-/// for the offline mock.
+/// Plain DTOs emitted by the LLM — intentionally decoupled from the
+/// Serverpod-generated `Restaurant` / `MenuItem` classes so we can shape
+/// persistence independently (geo dedup, dish-catalog description
+/// backfill, multi-page batches).
+class ParsedRestaurant {
+  final String name;
+  final String currency;
+  final String? addressRaw;
+  final double? latitude;
+  final double? longitude;
+
+  ParsedRestaurant({
+    required this.name,
+    required this.currency,
+    this.addressRaw,
+    this.latitude,
+    this.longitude,
+  });
+}
+
+class ParsedMenuItem {
+  final String name;
+  final double price;
+  final List<String>? tags;
+  final int? spicyLevel;
+
+  /// Transient description extracted by the LLM. Used to backfill
+  /// `dish_catalog.description` when that row doesn't yet have one.
+  /// Never persisted on `menu_item` (Sprint 4.6 removed that field).
+  final String? description;
+
+  ParsedMenuItem({
+    required this.name,
+    required this.price,
+    this.tags,
+    this.spicyLevel,
+    this.description,
+  });
+}
+
+class ParsedCategory {
+  final String name;
+  final List<ParsedMenuItem> items;
+
+  ParsedCategory({required this.name, required this.items});
+}
+
 class ParsedMenu {
-  final Restaurant restaurant;
+  final ParsedRestaurant restaurant;
   final List<ParsedCategory> categories;
   final LlmUsageInfo? usage;
 
@@ -20,6 +60,21 @@ class ParsedMenu {
     required this.restaurant,
     required this.categories,
     this.usage,
+  });
+}
+
+/// Raw page input for multi-page menu parsing. The Serverpod-transported
+/// counterpart is `MenuPageInput` (generated); this is the server-internal
+/// shape used by the LLM service.
+class MenuPageBytes {
+  final String fileName;
+  final Uint8List bytes;
+  final String? mediaType;
+
+  MenuPageBytes({
+    required this.fileName,
+    required this.bytes,
+    this.mediaType,
   });
 }
 
@@ -44,15 +99,7 @@ class LlmUsageInfo {
   });
 }
 
-class ParsedCategory {
-  final Category category;
-  final List<MenuItem> items;
-
-  ParsedCategory({required this.category, required this.items});
-}
-
-/// Result of a one-shot dish description call. Mirrors the shape of
-/// [ParsedMenu] so every LLM entry point emits [LlmUsageInfo] the same way.
+/// Result of a one-shot dish description call.
 class LlmDescriptionResult {
   final String? description;
   final LlmUsageInfo? usage;
@@ -64,26 +111,18 @@ class LlmDescriptionResult {
 ///
 /// Implementations: [ClaudeLlmService] (real), [MockLlmService] (offline fallback).
 abstract class LlmService {
-  /// Parse a menu file (image/PDF) or URL into a structured [ParsedMenu].
-  /// The returned [ParsedMenu.usage] is non-null for real backends and null
-  /// for the mock.
-  Future<ParsedMenu> parseMenu({
-    required String fileName,
-    required List<int> fileBytes,
-  });
+  /// Parse one or more pages (image/PDF) of a menu into a structured
+  /// [ParsedMenu]. Pages are sent to the model in order; tokens are
+  /// charged as one request regardless of page count.
+  Future<ParsedMenu> parseMenu({required List<MenuPageBytes> pages});
 
   /// Generate a 1-2 sentence dish description when external sources
-  /// (Wikidata/Spoonacular) have nothing to offer. Returns both the text
-  /// and the token usage so callers can persist it via [recordLlmUsage].
+  /// (Wikidata/Spoonacular) have nothing to offer.
   Future<LlmDescriptionResult> generateDishDescription(String dishName);
 }
 
 /// Persists an [LlmUsageInfo] record to the `llm_usage` table. All Claude
 /// calls funnel through this helper so cost tracking stays consistent.
-///
-/// Call sites:
-///   - [AiProcessingEndpoint.processMenuUpload] for `menu_extraction`
-///   - [DishCatalogService._fillDescription] for `dish_description`
 ///
 /// Failures are swallowed with a warning log — metrics must never break the
 /// primary flow.

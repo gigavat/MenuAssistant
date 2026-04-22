@@ -12,6 +12,7 @@ import 'src/service_registry.dart';
 import 'src/services/curated/curated_dish_service.dart';
 import 'src/services/enrichment/dish_catalog_service.dart';
 import 'src/services/enrichment/wikidata_service.dart';
+import 'src/services/geo/ip_geo_service.dart';
 import 'src/services/image_persistence/image_persistence_service.dart';
 import 'src/services/image_persistence/image_service_persistence.dart';
 import 'src/services/image_persistence/local_file_image_persistence.dart';
@@ -23,6 +24,7 @@ import 'src/services/inference/inference_service_client.dart';
 import 'src/services/llm/claude_llm_service.dart';
 import 'src/services/llm/llm_service.dart';
 import 'src/services/llm/mock_llm_service.dart';
+import 'src/services/restaurant/restaurant_dedup_service.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/root.dart';
 
@@ -187,6 +189,9 @@ void _configureServices(Serverpod pod) {
     for (final p in imageProviders) p.providerId: p,
   };
 
+  final dedupService = RestaurantDedupService();
+  final ipGeoService = IpGeoService();
+
   ServiceRegistry.configure(
     llmService: llmService,
     dishCatalogService: catalogService,
@@ -194,6 +199,8 @@ void _configureServices(Serverpod pod) {
     imagePersistence: imagePersistence,
     inferenceClient: inferenceClient,
     imageProvidersById: providersById,
+    restaurantDedupService: dedupService,
+    ipGeoService: ipGeoService,
   );
 
   // Note: EnrichmentWorkerFutureCall and ImageHealthCheckFutureCall are
@@ -210,6 +217,21 @@ void _configureServices(Serverpod pod) {
     await pod.futureCalls
         .callAtTime(DateTime.now().add(const Duration(minutes: 1)))
         .imageHealthCheck
+        .invoke(null);
+
+    // Bootstrap DB-IP country CSV if missing — subsequent ticks self-reschedule
+    // at a 7-day cadence. When the data file already exists we kick off the
+    // job soon-ish just to refresh stale content on server restart.
+    final ipGeoAvailable = ipGeoService.isDataAvailable;
+    await pod.futureCalls
+        .callAtTime(
+          DateTime.now().add(
+            ipGeoAvailable
+                ? const Duration(minutes: 5)
+                : const Duration(seconds: 30),
+          ),
+        )
+        .dbIpUpdate
         .invoke(null);
   });
 }

@@ -2,7 +2,20 @@ class: Restaurant
 table: restaurant
 fields:
   name: String
-  location: String?
-  imageUrl: String?
+  # Lowercased, unicode-NFD stripped of diacritics, punctuation removed.
+  # Used for pg_trgm fuzzy match + restaurant_name_trgm_idx (GIN) added in up.sql.
+  normalizedName: String
+  latitude: double?
+  longitude: double?
+  # City-level hint derived from client IP when precise geo is absent.
+  cityHint: String?
+  # ISO 3166-1 alpha-2.
+  countryCode: String?
+  addressRaw: String?
   currency: String
   createdAt: DateTime
+indexes:
+  restaurant_geo_idx:
+    fields: latitude, longitude
+  restaurant_normalized_name_idx:
+    fields: normalizedName

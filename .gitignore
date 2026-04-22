@@ -654,3 +654,5 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+# Sprint 4.6: offline IP-geo data (DB-IP Lite country CSV, ~10MB) — downloaded at runtime.
+MenuAssistant/menu_assistant_server/data/

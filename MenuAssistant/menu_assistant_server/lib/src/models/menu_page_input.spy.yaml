@@ -1,0 +1,11 @@
+### Single page of a menu upload. Sent by the client when submitting a
+### multi-page menu (photo / PDF page / link screenshot). Not persisted
+### as-is — the bytes are parsed by the LLM and a `MenuSourcePage` row
+### is written per page.
+class: MenuPageInput
+fields:
+  fileName: String
+  fileBytes: ByteData
+  ### Optional explicit MIME hint. Server falls back to extension-based
+  ### detection when null.
+  mediaType: String?

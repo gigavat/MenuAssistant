@@ -21,10 +21,8 @@ abstract class MenuItem
   MenuItem._({
     this.id,
     required this.name,
-    this.descriptionRaw,
     required this.price,
     this.tags,
-    this.imageUrl,
     this.spicyLevel,
     required this.categoryId,
     this.category,
@@ -36,10 +34,8 @@ abstract class MenuItem
   factory MenuItem({
     int? id,
     required String name,
-    String? descriptionRaw,
     required double price,
     List<String>? tags,
-    String? imageUrl,
     int? spicyLevel,
     required int categoryId,
     _i2.Category? category,
@@ -52,12 +48,10 @@ abstract class MenuItem
     return MenuItem(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      descriptionRaw: jsonSerialization['descriptionRaw'] as String?,
       price: (jsonSerialization['price'] as num).toDouble(),
       tags: jsonSerialization['tags'] == null
           ? null
           : _i4.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
-      imageUrl: jsonSerialization['imageUrl'] as String?,
       spicyLevel: jsonSerialization['spicyLevel'] as int?,
       categoryId: jsonSerialization['categoryId'] as int,
       category: jsonSerialization['category'] == null
@@ -86,13 +80,9 @@ abstract class MenuItem
 
   String name;
 
-  String? descriptionRaw;
-
   double price;
 
   List<String>? tags;
-
-  String? imageUrl;
 
   int? spicyLevel;
 
@@ -115,10 +105,8 @@ abstract class MenuItem
   MenuItem copyWith({
     int? id,
     String? name,
-    String? descriptionRaw,
     double? price,
     List<String>? tags,
-    String? imageUrl,
     int? spicyLevel,
     int? categoryId,
     _i2.Category? category,
@@ -132,10 +120,8 @@ abstract class MenuItem
       '__className__': 'MenuItem',
       if (id != null) 'id': id,
       'name': name,
-      if (descriptionRaw != null) 'descriptionRaw': descriptionRaw,
       'price': price,
       if (tags != null) 'tags': tags?.toJson(),
-      if (imageUrl != null) 'imageUrl': imageUrl,
       if (spicyLevel != null) 'spicyLevel': spicyLevel,
       'categoryId': categoryId,
       if (category != null) 'category': category?.toJson(),
@@ -151,10 +137,8 @@ abstract class MenuItem
       '__className__': 'MenuItem',
       if (id != null) 'id': id,
       'name': name,
-      if (descriptionRaw != null) 'descriptionRaw': descriptionRaw,
       'price': price,
       if (tags != null) 'tags': tags?.toJson(),
-      if (imageUrl != null) 'imageUrl': imageUrl,
       if (spicyLevel != null) 'spicyLevel': spicyLevel,
       'categoryId': categoryId,
       if (category != null) 'category': category?.toJsonForProtocol(),
@@ -206,10 +190,8 @@ class _MenuItemImpl extends MenuItem {
   _MenuItemImpl({
     int? id,
     required String name,
-    String? descriptionRaw,
     required double price,
     List<String>? tags,
-    String? imageUrl,
     int? spicyLevel,
     required int categoryId,
     _i2.Category? category,
@@ -219,10 +201,8 @@ class _MenuItemImpl extends MenuItem {
   }) : super._(
          id: id,
          name: name,
-         descriptionRaw: descriptionRaw,
          price: price,
          tags: tags,
-         imageUrl: imageUrl,
          spicyLevel: spicyLevel,
          categoryId: categoryId,
          category: category,
@@ -238,10 +218,8 @@ class _MenuItemImpl extends MenuItem {
   MenuItem copyWith({
     Object? id = _Undefined,
     String? name,
-    Object? descriptionRaw = _Undefined,
     double? price,
     Object? tags = _Undefined,
-    Object? imageUrl = _Undefined,
     Object? spicyLevel = _Undefined,
     int? categoryId,
     Object? category = _Undefined,
@@ -252,12 +230,8 @@ class _MenuItemImpl extends MenuItem {
     return MenuItem(
       id: id is int? ? id : this.id,
       name: name ?? this.name,
-      descriptionRaw: descriptionRaw is String?
-          ? descriptionRaw
-          : this.descriptionRaw,
       price: price ?? this.price,
       tags: tags is List<String>? ? tags : this.tags?.map((e0) => e0).toList(),
-      imageUrl: imageUrl is String? ? imageUrl : this.imageUrl,
       spicyLevel: spicyLevel is int? ? spicyLevel : this.spicyLevel,
       categoryId: categoryId ?? this.categoryId,
       category: category is _i2.Category?
@@ -280,12 +254,6 @@ class MenuItemUpdateTable extends _i1.UpdateTable<MenuItemTable> {
     value,
   );
 
-  _i1.ColumnValue<String, String> descriptionRaw(String? value) =>
-      _i1.ColumnValue(
-        table.descriptionRaw,
-        value,
-      );
-
   _i1.ColumnValue<double, double> price(double value) => _i1.ColumnValue(
     table.price,
     value,
@@ -296,11 +264,6 @@ class MenuItemUpdateTable extends _i1.UpdateTable<MenuItemTable> {
         table.tags,
         value,
       );
-
-  _i1.ColumnValue<String, String> imageUrl(String? value) => _i1.ColumnValue(
-    table.imageUrl,
-    value,
-  );
 
   _i1.ColumnValue<int, int> spicyLevel(int? value) => _i1.ColumnValue(
     table.spicyLevel,
@@ -331,20 +294,12 @@ class MenuItemTable extends _i1.Table<int?> {
       'name',
       this,
     );
-    descriptionRaw = _i1.ColumnString(
-      'descriptionRaw',
-      this,
-    );
     price = _i1.ColumnDouble(
       'price',
       this,
     );
     tags = _i1.ColumnSerializable<List<String>>(
       'tags',
-      this,
-    );
-    imageUrl = _i1.ColumnString(
-      'imageUrl',
       this,
     );
     spicyLevel = _i1.ColumnInt(
@@ -369,13 +324,9 @@ class MenuItemTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString name;
 
-  late final _i1.ColumnString descriptionRaw;
-
   late final _i1.ColumnDouble price;
 
   late final _i1.ColumnSerializable<List<String>> tags;
-
-  late final _i1.ColumnString imageUrl;
 
   late final _i1.ColumnInt spicyLevel;
 
@@ -419,10 +370,8 @@ class MenuItemTable extends _i1.Table<int?> {
   List<_i1.Column> get columns => [
     id,
     name,
-    descriptionRaw,
     price,
     tags,
-    imageUrl,
     spicyLevel,
     categoryId,
     dishCatalogId,

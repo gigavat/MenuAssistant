@@ -42,7 +42,7 @@ class FavoriteRestaurantsScreen extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(child: Text(restaurant.name[0])),
                 title: Text(restaurant.name),
-                subtitle: Text(restaurant.location ?? ''),
+                subtitle: Text(restaurant.addressRaw ?? restaurant.cityHint ?? ''),
                 trailing: IconButton(
                   icon: const Icon(Icons.favorite, color: Colors.red),
                   onPressed: () {

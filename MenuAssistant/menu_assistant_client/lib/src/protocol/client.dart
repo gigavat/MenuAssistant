@@ -16,13 +16,16 @@ import 'package:serverpod_client/serverpod_client.dart' as _i2;
 import 'dart:async' as _i3;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _i4;
-import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i5;
-import 'package:menu_assistant_client/src/protocol/category.dart' as _i6;
-import 'package:menu_assistant_client/src/protocol/menu_item.dart' as _i7;
+import 'package:menu_assistant_client/src/protocol/process_menu_result.dart'
+    as _i5;
+import 'package:menu_assistant_client/src/protocol/menu_page_input.dart' as _i6;
+import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i7;
+import 'package:menu_assistant_client/src/protocol/category.dart' as _i8;
+import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i9;
 import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
-    as _i8;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i9;
-import 'protocol.dart' as _i10;
+    as _i10;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i11;
+import 'protocol.dart' as _i12;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -252,19 +255,32 @@ class EndpointAiProcessing extends _i2.EndpointRef {
   @override
   String get name => 'aiProcessing';
 
-  /// Uploads a menu file (photo/PDF/URL) and returns the restaurant that
-  /// was created. Menu items are linked to the shared DishCatalog so
-  /// subsequent uploads of the same dishes reuse images/descriptions.
-  _i3.Future<_i5.Restaurant> processMenuUpload(
+  /// Backward-compat single-page wrapper — the existing Flutter client
+  /// (pre-4.7) still calls this.
+  _i3.Future<_i5.ProcessMenuResult> processMenuUpload(
     String fileName,
     List<int> fileBytes,
-  ) => caller.callServerEndpoint<_i5.Restaurant>(
+  ) => caller.callServerEndpoint<_i5.ProcessMenuResult>(
     'aiProcessing',
     'processMenuUpload',
     {
       'fileName': fileName,
       'fileBytes': fileBytes,
     },
+  );
+
+  /// Multi-page menu upload. Pages are parsed as a single document, then
+  /// - the restaurant is dedup'd against existing rows (pg_trgm + geo),
+  /// - a [UserRestaurantVisit] is recorded for the current user,
+  /// - a [MenuSourcePage] is stored per page,
+  /// - menu items are linked to the shared [DishCatalog],
+  /// - one [LlmUsage] row is written covering all pages.
+  _i3.Future<_i5.ProcessMenuResult> processMultiPageMenu(
+    List<_i6.MenuPageInput> pages,
+  ) => caller.callServerEndpoint<_i5.ProcessMenuResult>(
+    'aiProcessing',
+    'processMultiPageMenu',
+    {'pages': pages},
   );
 }
 
@@ -275,47 +291,43 @@ class EndpointRestaurant extends _i2.EndpointRef {
   @override
   String get name => 'restaurant';
 
-  /// Create a new restaurant and make the current user the owner
-  _i3.Future<_i5.Restaurant> createRestaurant(_i5.Restaurant restaurant) =>
-      caller.callServerEndpoint<_i5.Restaurant>(
-        'restaurant',
-        'createRestaurant',
-        {'restaurant': restaurant},
-      );
-
-  /// Get all restaurants where the current user is a member
-  _i3.Future<List<_i5.Restaurant>> getAllRestaurants() =>
-      caller.callServerEndpoint<List<_i5.Restaurant>>(
+  /// Returns every restaurant the current user has ever uploaded a menu
+  /// for — tracked via `user_restaurant_visit`.
+  _i3.Future<List<_i7.Restaurant>> getAllRestaurants() =>
+      caller.callServerEndpoint<List<_i7.Restaurant>>(
         'restaurant',
         'getAllRestaurants',
         {},
       );
 
-  /// Get a single restaurant by ID (verify membership)
-  _i3.Future<_i5.Restaurant?> getRestaurantById(int id) =>
-      caller.callServerEndpoint<_i5.Restaurant?>(
+  /// Returns a single restaurant by id — only if the current user has
+  /// visited it. Restaurants are global, but access is still per-user.
+  _i3.Future<_i7.Restaurant?> getRestaurantById(int id) =>
+      caller.callServerEndpoint<_i7.Restaurant?>(
         'restaurant',
         'getRestaurantById',
         {'id': id},
       );
 
-  /// Get Categories for a restaurant
-  _i3.Future<List<_i6.Category>> getCategoriesForRestaurant(int restaurantId) =>
-      caller.callServerEndpoint<List<_i6.Category>>(
+  /// Get Categories for a restaurant. Gated on the user having visited it.
+  _i3.Future<List<_i8.Category>> getCategoriesForRestaurant(int restaurantId) =>
+      caller.callServerEndpoint<List<_i8.Category>>(
         'restaurant',
         'getCategoriesForRestaurant',
         {'restaurantId': restaurantId},
       );
 
-  /// Get MenuItems for a category
-  _i3.Future<List<_i7.MenuItem>> getMenuItemsForCategory(int categoryId) =>
-      caller.callServerEndpoint<List<_i7.MenuItem>>(
+  /// Get MenuItems for a category. Returns client-facing [MenuItemView]
+  /// payloads with `description` and `imageUrl` resolved via JOIN on
+  /// `dish_catalog` and `dish_image` (denorm snapshots removed in 4.6).
+  _i3.Future<List<_i9.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
+      caller.callServerEndpoint<List<_i9.MenuItemView>>(
         'restaurant',
         'getMenuItemsForCategory',
         {'categoryId': categoryId},
       );
 
-  /// Toggle Favorite status for a restaurant
+  /// Toggle Favorite status for a restaurant.
   _i3.Future<bool> toggleRestaurantFavorite(int restaurantId) =>
       caller.callServerEndpoint<bool>(
         'restaurant',
@@ -323,7 +335,7 @@ class EndpointRestaurant extends _i2.EndpointRef {
         {'restaurantId': restaurantId},
       );
 
-  /// Toggle Favorite status for a menu item
+  /// Toggle Favorite status for a menu item.
   _i3.Future<bool> toggleMenuItemFavorite(int menuItemId) =>
       caller.callServerEndpoint<bool>(
         'restaurant',
@@ -331,30 +343,51 @@ class EndpointRestaurant extends _i2.EndpointRef {
         {'menuItemId': menuItemId},
       );
 
-  /// Get favorite restaurants
-  _i3.Future<List<_i5.Restaurant>> getFavoriteRestaurants({
+  /// Get favorite restaurants.
+  _i3.Future<List<_i7.Restaurant>> getFavoriteRestaurants({
     required int limit,
-  }) => caller.callServerEndpoint<List<_i5.Restaurant>>(
+  }) => caller.callServerEndpoint<List<_i7.Restaurant>>(
     'restaurant',
     'getFavoriteRestaurants',
     {'limit': limit},
   );
 
-  /// Get favorite menu items
-  _i3.Future<List<_i7.MenuItem>> getFavoriteMenuItems({required int limit}) =>
-      caller.callServerEndpoint<List<_i7.MenuItem>>(
-        'restaurant',
-        'getFavoriteMenuItems',
-        {'limit': limit},
-      );
+  /// Get favorite menu items as hydrated views.
+  _i3.Future<List<_i9.MenuItemView>> getFavoriteMenuItems({
+    required int limit,
+  }) => caller.callServerEndpoint<List<_i9.MenuItemView>>(
+    'restaurant',
+    'getFavoriteMenuItems',
+    {'limit': limit},
+  );
 
-  /// Checks if a restaurant is favorited by the current user
+  /// Checks if a restaurant is favorited by the current user.
   _i3.Future<bool> isRestaurantFavorite(int restaurantId) =>
       caller.callServerEndpoint<bool>(
         'restaurant',
         'isRestaurantFavorite',
         {'restaurantId': restaurantId},
       );
+
+  /// Confirms whether the freshly uploaded [pendingRestaurantId] should be
+  /// merged into an existing [matchedRestaurantId] candidate. Called by the
+  /// client after it shows the "is this the same place?" modal with the
+  /// dedup candidates returned from [AiProcessingEndpoint.processMenuUpload].
+  ///
+  /// - `matchedId == null` → user rejected the match; keep the pending row.
+  /// - `matchedId != null` → migrate this user's visit to the existing
+  ///   restaurant, reassign categories/menu items, and delete the pending row.
+  _i3.Future<int> confirmMatch(
+    int pendingRestaurantId,
+    int? matchedId,
+  ) => caller.callServerEndpoint<int>(
+    'restaurant',
+    'confirmMatch',
+    {
+      'pendingRestaurantId': pendingRestaurantId,
+      'matchedId': matchedId,
+    },
+  );
 }
 
 /// {@category Endpoint}
@@ -383,8 +416,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i8.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i8.Greeting>(
+  _i3.Future<_i10.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i10.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -393,12 +426,12 @@ class EndpointGreeting extends _i2.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    auth = _i9.Caller(client);
+    auth = _i11.Caller(client);
     serverpod_auth_idp = _i1.Caller(client);
     serverpod_auth_core = _i4.Caller(client);
   }
 
-  late final _i9.Caller auth;
+  late final _i11.Caller auth;
 
   late final _i1.Caller serverpod_auth_idp;
 
@@ -425,7 +458,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i10.Protocol(),
+         _i12.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
