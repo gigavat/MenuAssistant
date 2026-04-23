@@ -1,0 +1,11 @@
+### KPI-блок для admin Dashboard. Значения считаются на лету в
+### `AdminEndpoint.getMetrics()` — кэширование добавим если запрос станет
+### тяжёлым (Dashboard вызывается часто, но пока счётчики дешёвые).
+class: AdminMetrics
+fields:
+  totalRestaurants: int
+  totalUsers: int
+  totalMenus: int
+  totalDishesInCatalog: int
+  totalCuratedDishes: int
+  totalLlmCostUsd: double

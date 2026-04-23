@@ -1,0 +1,9 @@
+### DTO для admin Users screen — join B2C `EmailAccount` с `AppUserProfile`.
+### Именуется `AdminUserRow` (а не `UserRow`), чтобы ни с чем не пересекаться.
+class: AdminUserRow
+fields:
+  userId: String
+  email: String?
+  displayName: String?
+  createdAt: DateTime
+  lastSignInAt: DateTime?

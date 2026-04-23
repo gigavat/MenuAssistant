@@ -13,18 +13,19 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import '../auth/email_idp_endpoint.dart' as _i2;
 import '../auth/jwt_refresh_endpoint.dart' as _i3;
-import '../endpoints/ai_processing_endpoint.dart' as _i4;
-import '../endpoints/restaurant_endpoint.dart' as _i5;
-import '../endpoints/user_account_endpoint.dart' as _i6;
-import '../greetings/greeting_endpoint.dart' as _i7;
+import '../endpoints/admin_endpoint.dart' as _i4;
+import '../endpoints/ai_processing_endpoint.dart' as _i5;
+import '../endpoints/restaurant_endpoint.dart' as _i6;
+import '../endpoints/user_account_endpoint.dart' as _i7;
+import '../greetings/greeting_endpoint.dart' as _i8;
 import 'package:menu_assistant_server/src/generated/menu_page_input.dart'
-    as _i8;
-import 'package:serverpod_auth_server/serverpod_auth_server.dart' as _i9;
+    as _i9;
+import 'package:serverpod_auth_server/serverpod_auth_server.dart' as _i10;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i10;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i11;
-import 'package:menu_assistant_server/src/generated/future_calls.dart' as _i12;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i12;
+import 'package:menu_assistant_server/src/generated/future_calls.dart' as _i13;
 export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
@@ -43,25 +44,31 @@ class Endpoints extends _i1.EndpointDispatch {
           'jwtRefresh',
           null,
         ),
-      'aiProcessing': _i4.AiProcessingEndpoint()
+      'admin': _i4.AdminEndpoint()
+        ..initialize(
+          server,
+          'admin',
+          null,
+        ),
+      'aiProcessing': _i5.AiProcessingEndpoint()
         ..initialize(
           server,
           'aiProcessing',
           null,
         ),
-      'restaurant': _i5.RestaurantEndpoint()
+      'restaurant': _i6.RestaurantEndpoint()
         ..initialize(
           server,
           'restaurant',
           null,
         ),
-      'userAccount': _i6.UserAccountEndpoint()
+      'userAccount': _i7.UserAccountEndpoint()
         ..initialize(
           server,
           'userAccount',
           null,
         ),
-      'greeting': _i7.GreetingEndpoint()
+      'greeting': _i8.GreetingEndpoint()
         ..initialize(
           server,
           'greeting',
@@ -272,6 +279,83 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['admin'] = _i1.EndpointConnector(
+      name: 'admin',
+      endpoint: endpoints['admin']!,
+      methodConnectors: {
+        'getMetrics': _i1.MethodConnector(
+          name: 'getMetrics',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).getMetrics(session),
+        ),
+        'listRestaurants': _i1.MethodConnector(
+          name: 'listRestaurants',
+          params: {
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).listRestaurants(
+                    session,
+                    offset: params['offset'],
+                    limit: params['limit'],
+                    search: params['search'],
+                  ),
+        ),
+        'listUsers': _i1.MethodConnector(
+          name: 'listUsers',
+          params: {
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint).listUsers(
+                session,
+                offset: params['offset'],
+                limit: params['limit'],
+                search: params['search'],
+              ),
+        ),
+      },
+    );
     connectors['aiProcessing'] = _i1.EndpointConnector(
       name: 'aiProcessing',
       endpoint: endpoints['aiProcessing']!,
@@ -294,7 +378,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['aiProcessing'] as _i4.AiProcessingEndpoint)
+              ) async => (endpoints['aiProcessing'] as _i5.AiProcessingEndpoint)
                   .processMenuUpload(
                     session,
                     params['fileName'],
@@ -306,7 +390,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'pages': _i1.ParameterDescription(
               name: 'pages',
-              type: _i1.getType<List<_i8.MenuPageInput>>(),
+              type: _i1.getType<List<_i9.MenuPageInput>>(),
               nullable: false,
             ),
           },
@@ -314,7 +398,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['aiProcessing'] as _i4.AiProcessingEndpoint)
+              ) async => (endpoints['aiProcessing'] as _i5.AiProcessingEndpoint)
                   .processMultiPageMenu(
                     session,
                     params['pages'],
@@ -333,7 +417,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .getAllRestaurants(session),
         ),
         'getRestaurantById': _i1.MethodConnector(
@@ -349,7 +433,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .getRestaurantById(
                     session,
                     params['id'],
@@ -368,7 +452,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .getCategoriesForRestaurant(
                     session,
                     params['restaurantId'],
@@ -387,7 +471,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .getMenuItemsForCategory(
                     session,
                     params['categoryId'],
@@ -406,7 +490,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .toggleRestaurantFavorite(
                     session,
                     params['restaurantId'],
@@ -425,7 +509,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .toggleMenuItemFavorite(
                     session,
                     params['menuItemId'],
@@ -444,7 +528,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .getFavoriteRestaurants(
                     session,
                     limit: params['limit'],
@@ -463,7 +547,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .getFavoriteMenuItems(
                     session,
                     limit: params['limit'],
@@ -482,7 +566,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .isRestaurantFavorite(
                     session,
                     params['restaurantId'],
@@ -506,7 +590,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['restaurant'] as _i5.RestaurantEndpoint)
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
                   .confirmMatch(
                     session,
                     params['pendingRestaurantId'],
@@ -532,7 +616,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['userAccount'] as _i6.UserAccountEndpoint)
+              ) async => (endpoints['userAccount'] as _i7.UserAccountEndpoint)
                   .checkEmailExists(
                     session,
                     params['email'],
@@ -545,7 +629,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['userAccount'] as _i6.UserAccountEndpoint)
+              ) async => (endpoints['userAccount'] as _i7.UserAccountEndpoint)
                   .getProfile(session),
         ),
         'saveProfile': _i1.MethodConnector(
@@ -566,7 +650,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['userAccount'] as _i6.UserAccountEndpoint)
+              ) async => (endpoints['userAccount'] as _i7.UserAccountEndpoint)
                   .saveProfile(
                     session,
                     fullName: params['fullName'],
@@ -592,22 +676,22 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['greeting'] as _i7.GreetingEndpoint).hello(
+              ) async => (endpoints['greeting'] as _i8.GreetingEndpoint).hello(
                 session,
                 params['name'],
               ),
         ),
       },
     );
-    modules['serverpod_auth'] = _i9.Endpoints()..initializeEndpoints(server);
-    modules['serverpod_auth_idp'] = _i10.Endpoints()
+    modules['serverpod_auth'] = _i10.Endpoints()..initializeEndpoints(server);
+    modules['serverpod_auth_idp'] = _i11.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i11.Endpoints()
+    modules['serverpod_auth_core'] = _i12.Endpoints()
       ..initializeEndpoints(server);
   }
 
   @override
   _i1.FutureCallDispatch? get futureCalls {
-    return _i12.FutureCalls();
+    return _i13.FutureCalls();
   }
 }

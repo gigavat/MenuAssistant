@@ -1,0 +1,17 @@
+class: AdminUser
+table: admin_user
+### Admin-контур полностью изолирован от B2C `User` таблицы. Identity
+### приходит из Cloudflare Access header `Cf-Access-Authenticated-User-Email`
+### (в dev — из query param `_adminEmail`). Lookup всегда по `email`
+### lowercase, Serverpod `id` остаётся auto-increment но в business логике
+### не используется. Подробности паттерна mixed-auth — gotcha #22.
+fields:
+  email: String
+  displayName: String?
+  role: String
+  invitedAt: DateTime
+  lastLoginAt: DateTime?
+indexes:
+  admin_user_email_idx:
+    fields: email
+    unique: true

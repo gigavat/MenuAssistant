@@ -17,33 +17,43 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i4;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i5;
-import 'category.dart' as _i6;
-import 'curated_dish.dart' as _i7;
-import 'curated_dish_image.dart' as _i8;
-import 'dataset_version.dart' as _i9;
-import 'dish_catalog.dart' as _i10;
-import 'dish_image.dart' as _i11;
-import 'dish_provider_status.dart' as _i12;
-import 'dish_translation.dart' as _i13;
-import 'favorite_menu_item.dart' as _i14;
-import 'favorite_restaurant.dart' as _i15;
-import 'greetings/greeting.dart' as _i16;
-import 'llm_usage.dart' as _i17;
-import 'menu_item.dart' as _i18;
-import 'menu_item_view.dart' as _i19;
-import 'menu_page_input.dart' as _i20;
-import 'menu_source_page.dart' as _i21;
-import 'process_menu_result.dart' as _i22;
-import 'restaurant.dart' as _i23;
-import 'restaurant_match_candidate.dart' as _i24;
-import 'user_profile.dart' as _i25;
-import 'user_restaurant_visit.dart' as _i26;
+import 'admin_metrics.dart' as _i6;
+import 'admin_user.dart' as _i7;
+import 'admin_user_row.dart' as _i8;
+import 'audit_log.dart' as _i9;
+import 'category.dart' as _i10;
+import 'curated_dish.dart' as _i11;
+import 'curated_dish_image.dart' as _i12;
+import 'dataset_version.dart' as _i13;
+import 'dish_catalog.dart' as _i14;
+import 'dish_image.dart' as _i15;
+import 'dish_provider_status.dart' as _i16;
+import 'dish_translation.dart' as _i17;
+import 'favorite_menu_item.dart' as _i18;
+import 'favorite_restaurant.dart' as _i19;
+import 'greetings/greeting.dart' as _i20;
+import 'llm_usage.dart' as _i21;
+import 'menu_item.dart' as _i22;
+import 'menu_item_view.dart' as _i23;
+import 'menu_page_input.dart' as _i24;
+import 'menu_source_page.dart' as _i25;
+import 'process_menu_result.dart' as _i26;
+import 'restaurant.dart' as _i27;
+import 'restaurant_match_candidate.dart' as _i28;
+import 'user_profile.dart' as _i29;
+import 'user_restaurant_visit.dart' as _i30;
+import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i31;
+import 'package:menu_assistant_server/src/generated/admin_user_row.dart'
+    as _i32;
 import 'package:menu_assistant_server/src/generated/menu_page_input.dart'
-    as _i27;
-import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i28;
-import 'package:menu_assistant_server/src/generated/category.dart' as _i29;
+    as _i33;
+import 'package:menu_assistant_server/src/generated/category.dart' as _i34;
 import 'package:menu_assistant_server/src/generated/menu_item_view.dart'
-    as _i30;
+    as _i35;
+export 'admin_metrics.dart';
+export 'admin_user.dart';
+export 'admin_user_row.dart';
+export 'audit_log.dart';
 export 'category.dart';
 export 'curated_dish.dart';
 export 'curated_dish_image.dart';
@@ -74,6 +84,81 @@ class Protocol extends _i1.SerializationManagerServer {
   static final Protocol _instance = Protocol._();
 
   static final List<_i2.TableDefinition> targetTableDefinitions = [
+    _i2.TableDefinition(
+      name: 'admin_user',
+      dartName: 'AdminUser',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'admin_user_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'displayName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'role',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'invitedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lastLoginAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'admin_user_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'admin_user_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'email',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     _i2.TableDefinition(
       name: 'app_user_profile',
       dartName: 'AppUserProfile',
@@ -144,6 +229,106 @@ class Protocol extends _i1.SerializationManagerServer {
           ],
           type: 'btree',
           isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'audit_log',
+      dartName: 'AuditLog',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'audit_log_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'timestamp',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'actorEmail',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'action',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'objectType',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'objectId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'diff',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'ipAddress',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'audit_log_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'audit_log_timestamp_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'timestamp',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'audit_log_actor_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'actorEmail',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
           isPrimary: false,
         ),
       ],
@@ -1807,136 +1992,160 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
 
-    if (t == _i6.Category) {
-      return _i6.Category.fromJson(data) as T;
+    if (t == _i6.AdminMetrics) {
+      return _i6.AdminMetrics.fromJson(data) as T;
     }
-    if (t == _i7.CuratedDish) {
-      return _i7.CuratedDish.fromJson(data) as T;
+    if (t == _i7.AdminUser) {
+      return _i7.AdminUser.fromJson(data) as T;
     }
-    if (t == _i8.CuratedDishImage) {
-      return _i8.CuratedDishImage.fromJson(data) as T;
+    if (t == _i8.AdminUserRow) {
+      return _i8.AdminUserRow.fromJson(data) as T;
     }
-    if (t == _i9.DatasetVersion) {
-      return _i9.DatasetVersion.fromJson(data) as T;
+    if (t == _i9.AuditLog) {
+      return _i9.AuditLog.fromJson(data) as T;
     }
-    if (t == _i10.DishCatalog) {
-      return _i10.DishCatalog.fromJson(data) as T;
+    if (t == _i10.Category) {
+      return _i10.Category.fromJson(data) as T;
     }
-    if (t == _i11.DishImage) {
-      return _i11.DishImage.fromJson(data) as T;
+    if (t == _i11.CuratedDish) {
+      return _i11.CuratedDish.fromJson(data) as T;
     }
-    if (t == _i12.DishProviderStatus) {
-      return _i12.DishProviderStatus.fromJson(data) as T;
+    if (t == _i12.CuratedDishImage) {
+      return _i12.CuratedDishImage.fromJson(data) as T;
     }
-    if (t == _i13.DishTranslation) {
-      return _i13.DishTranslation.fromJson(data) as T;
+    if (t == _i13.DatasetVersion) {
+      return _i13.DatasetVersion.fromJson(data) as T;
     }
-    if (t == _i14.FavoriteMenuItem) {
-      return _i14.FavoriteMenuItem.fromJson(data) as T;
+    if (t == _i14.DishCatalog) {
+      return _i14.DishCatalog.fromJson(data) as T;
     }
-    if (t == _i15.FavoriteRestaurant) {
-      return _i15.FavoriteRestaurant.fromJson(data) as T;
+    if (t == _i15.DishImage) {
+      return _i15.DishImage.fromJson(data) as T;
     }
-    if (t == _i16.Greeting) {
-      return _i16.Greeting.fromJson(data) as T;
+    if (t == _i16.DishProviderStatus) {
+      return _i16.DishProviderStatus.fromJson(data) as T;
     }
-    if (t == _i17.LlmUsage) {
-      return _i17.LlmUsage.fromJson(data) as T;
+    if (t == _i17.DishTranslation) {
+      return _i17.DishTranslation.fromJson(data) as T;
     }
-    if (t == _i18.MenuItem) {
-      return _i18.MenuItem.fromJson(data) as T;
+    if (t == _i18.FavoriteMenuItem) {
+      return _i18.FavoriteMenuItem.fromJson(data) as T;
     }
-    if (t == _i19.MenuItemView) {
-      return _i19.MenuItemView.fromJson(data) as T;
+    if (t == _i19.FavoriteRestaurant) {
+      return _i19.FavoriteRestaurant.fromJson(data) as T;
     }
-    if (t == _i20.MenuPageInput) {
-      return _i20.MenuPageInput.fromJson(data) as T;
+    if (t == _i20.Greeting) {
+      return _i20.Greeting.fromJson(data) as T;
     }
-    if (t == _i21.MenuSourcePage) {
-      return _i21.MenuSourcePage.fromJson(data) as T;
+    if (t == _i21.LlmUsage) {
+      return _i21.LlmUsage.fromJson(data) as T;
     }
-    if (t == _i22.ProcessMenuResult) {
-      return _i22.ProcessMenuResult.fromJson(data) as T;
+    if (t == _i22.MenuItem) {
+      return _i22.MenuItem.fromJson(data) as T;
     }
-    if (t == _i23.Restaurant) {
-      return _i23.Restaurant.fromJson(data) as T;
+    if (t == _i23.MenuItemView) {
+      return _i23.MenuItemView.fromJson(data) as T;
     }
-    if (t == _i24.RestaurantMatchCandidate) {
-      return _i24.RestaurantMatchCandidate.fromJson(data) as T;
+    if (t == _i24.MenuPageInput) {
+      return _i24.MenuPageInput.fromJson(data) as T;
     }
-    if (t == _i25.AppUserProfile) {
-      return _i25.AppUserProfile.fromJson(data) as T;
+    if (t == _i25.MenuSourcePage) {
+      return _i25.MenuSourcePage.fromJson(data) as T;
     }
-    if (t == _i26.UserRestaurantVisit) {
-      return _i26.UserRestaurantVisit.fromJson(data) as T;
+    if (t == _i26.ProcessMenuResult) {
+      return _i26.ProcessMenuResult.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i6.Category?>()) {
-      return (data != null ? _i6.Category.fromJson(data) : null) as T;
+    if (t == _i27.Restaurant) {
+      return _i27.Restaurant.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i7.CuratedDish?>()) {
-      return (data != null ? _i7.CuratedDish.fromJson(data) : null) as T;
+    if (t == _i28.RestaurantMatchCandidate) {
+      return _i28.RestaurantMatchCandidate.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i8.CuratedDishImage?>()) {
-      return (data != null ? _i8.CuratedDishImage.fromJson(data) : null) as T;
+    if (t == _i29.AppUserProfile) {
+      return _i29.AppUserProfile.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i9.DatasetVersion?>()) {
-      return (data != null ? _i9.DatasetVersion.fromJson(data) : null) as T;
+    if (t == _i30.UserRestaurantVisit) {
+      return _i30.UserRestaurantVisit.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i10.DishCatalog?>()) {
-      return (data != null ? _i10.DishCatalog.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i6.AdminMetrics?>()) {
+      return (data != null ? _i6.AdminMetrics.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.DishImage?>()) {
-      return (data != null ? _i11.DishImage.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i7.AdminUser?>()) {
+      return (data != null ? _i7.AdminUser.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.DishProviderStatus?>()) {
-      return (data != null ? _i12.DishProviderStatus.fromJson(data) : null)
+    if (t == _i1.getType<_i8.AdminUserRow?>()) {
+      return (data != null ? _i8.AdminUserRow.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i9.AuditLog?>()) {
+      return (data != null ? _i9.AuditLog.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i10.Category?>()) {
+      return (data != null ? _i10.Category.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i11.CuratedDish?>()) {
+      return (data != null ? _i11.CuratedDish.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i12.CuratedDishImage?>()) {
+      return (data != null ? _i12.CuratedDishImage.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i13.DatasetVersion?>()) {
+      return (data != null ? _i13.DatasetVersion.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i14.DishCatalog?>()) {
+      return (data != null ? _i14.DishCatalog.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i15.DishImage?>()) {
+      return (data != null ? _i15.DishImage.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i16.DishProviderStatus?>()) {
+      return (data != null ? _i16.DishProviderStatus.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i13.DishTranslation?>()) {
-      return (data != null ? _i13.DishTranslation.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i17.DishTranslation?>()) {
+      return (data != null ? _i17.DishTranslation.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.FavoriteMenuItem?>()) {
-      return (data != null ? _i14.FavoriteMenuItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i18.FavoriteMenuItem?>()) {
+      return (data != null ? _i18.FavoriteMenuItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i15.FavoriteRestaurant?>()) {
-      return (data != null ? _i15.FavoriteRestaurant.fromJson(data) : null)
+    if (t == _i1.getType<_i19.FavoriteRestaurant?>()) {
+      return (data != null ? _i19.FavoriteRestaurant.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i16.Greeting?>()) {
-      return (data != null ? _i16.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i20.Greeting?>()) {
+      return (data != null ? _i20.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i17.LlmUsage?>()) {
-      return (data != null ? _i17.LlmUsage.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i21.LlmUsage?>()) {
+      return (data != null ? _i21.LlmUsage.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i18.MenuItem?>()) {
-      return (data != null ? _i18.MenuItem.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i22.MenuItem?>()) {
+      return (data != null ? _i22.MenuItem.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i19.MenuItemView?>()) {
-      return (data != null ? _i19.MenuItemView.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i23.MenuItemView?>()) {
+      return (data != null ? _i23.MenuItemView.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i20.MenuPageInput?>()) {
-      return (data != null ? _i20.MenuPageInput.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i24.MenuPageInput?>()) {
+      return (data != null ? _i24.MenuPageInput.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i21.MenuSourcePage?>()) {
-      return (data != null ? _i21.MenuSourcePage.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i25.MenuSourcePage?>()) {
+      return (data != null ? _i25.MenuSourcePage.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i22.ProcessMenuResult?>()) {
-      return (data != null ? _i22.ProcessMenuResult.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i26.ProcessMenuResult?>()) {
+      return (data != null ? _i26.ProcessMenuResult.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i23.Restaurant?>()) {
-      return (data != null ? _i23.Restaurant.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i27.Restaurant?>()) {
+      return (data != null ? _i27.Restaurant.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i24.RestaurantMatchCandidate?>()) {
+    if (t == _i1.getType<_i28.RestaurantMatchCandidate?>()) {
       return (data != null
-              ? _i24.RestaurantMatchCandidate.fromJson(data)
+              ? _i28.RestaurantMatchCandidate.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i25.AppUserProfile?>()) {
-      return (data != null ? _i25.AppUserProfile.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i29.AppUserProfile?>()) {
+      return (data != null ? _i29.AppUserProfile.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i26.UserRestaurantVisit?>()) {
-      return (data != null ? _i26.UserRestaurantVisit.fromJson(data) : null)
+    if (t == _i1.getType<_i30.UserRestaurantVisit?>()) {
+      return (data != null ? _i30.UserRestaurantVisit.fromJson(data) : null)
           as T;
     }
     if (t == List<String>) {
@@ -1948,40 +2157,46 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<_i24.RestaurantMatchCandidate>) {
+    if (t == List<_i28.RestaurantMatchCandidate>) {
       return (data as List)
-              .map((e) => deserialize<_i24.RestaurantMatchCandidate>(e))
+              .map((e) => deserialize<_i28.RestaurantMatchCandidate>(e))
               .toList()
           as T;
     }
-    if (t == _i1.getType<List<_i24.RestaurantMatchCandidate>?>()) {
+    if (t == _i1.getType<List<_i28.RestaurantMatchCandidate>?>()) {
       return (data != null
               ? (data as List)
-                    .map((e) => deserialize<_i24.RestaurantMatchCandidate>(e))
+                    .map((e) => deserialize<_i28.RestaurantMatchCandidate>(e))
                     .toList()
               : null)
+          as T;
+    }
+    if (t == List<_i31.Restaurant>) {
+      return (data as List).map((e) => deserialize<_i31.Restaurant>(e)).toList()
+          as T;
+    }
+    if (t == List<_i32.AdminUserRow>) {
+      return (data as List)
+              .map((e) => deserialize<_i32.AdminUserRow>(e))
+              .toList()
           as T;
     }
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
     }
-    if (t == List<_i27.MenuPageInput>) {
+    if (t == List<_i33.MenuPageInput>) {
       return (data as List)
-              .map((e) => deserialize<_i27.MenuPageInput>(e))
+              .map((e) => deserialize<_i33.MenuPageInput>(e))
               .toList()
           as T;
     }
-    if (t == List<_i28.Restaurant>) {
-      return (data as List).map((e) => deserialize<_i28.Restaurant>(e)).toList()
+    if (t == List<_i34.Category>) {
+      return (data as List).map((e) => deserialize<_i34.Category>(e)).toList()
           as T;
     }
-    if (t == List<_i29.Category>) {
-      return (data as List).map((e) => deserialize<_i29.Category>(e)).toList()
-          as T;
-    }
-    if (t == List<_i30.MenuItemView>) {
+    if (t == List<_i35.MenuItemView>) {
       return (data as List)
-              .map((e) => deserialize<_i30.MenuItemView>(e))
+              .map((e) => deserialize<_i35.MenuItemView>(e))
               .toList()
           as T;
     }
@@ -2002,27 +2217,31 @@ class Protocol extends _i1.SerializationManagerServer {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i6.Category => 'Category',
-      _i7.CuratedDish => 'CuratedDish',
-      _i8.CuratedDishImage => 'CuratedDishImage',
-      _i9.DatasetVersion => 'DatasetVersion',
-      _i10.DishCatalog => 'DishCatalog',
-      _i11.DishImage => 'DishImage',
-      _i12.DishProviderStatus => 'DishProviderStatus',
-      _i13.DishTranslation => 'DishTranslation',
-      _i14.FavoriteMenuItem => 'FavoriteMenuItem',
-      _i15.FavoriteRestaurant => 'FavoriteRestaurant',
-      _i16.Greeting => 'Greeting',
-      _i17.LlmUsage => 'LlmUsage',
-      _i18.MenuItem => 'MenuItem',
-      _i19.MenuItemView => 'MenuItemView',
-      _i20.MenuPageInput => 'MenuPageInput',
-      _i21.MenuSourcePage => 'MenuSourcePage',
-      _i22.ProcessMenuResult => 'ProcessMenuResult',
-      _i23.Restaurant => 'Restaurant',
-      _i24.RestaurantMatchCandidate => 'RestaurantMatchCandidate',
-      _i25.AppUserProfile => 'AppUserProfile',
-      _i26.UserRestaurantVisit => 'UserRestaurantVisit',
+      _i6.AdminMetrics => 'AdminMetrics',
+      _i7.AdminUser => 'AdminUser',
+      _i8.AdminUserRow => 'AdminUserRow',
+      _i9.AuditLog => 'AuditLog',
+      _i10.Category => 'Category',
+      _i11.CuratedDish => 'CuratedDish',
+      _i12.CuratedDishImage => 'CuratedDishImage',
+      _i13.DatasetVersion => 'DatasetVersion',
+      _i14.DishCatalog => 'DishCatalog',
+      _i15.DishImage => 'DishImage',
+      _i16.DishProviderStatus => 'DishProviderStatus',
+      _i17.DishTranslation => 'DishTranslation',
+      _i18.FavoriteMenuItem => 'FavoriteMenuItem',
+      _i19.FavoriteRestaurant => 'FavoriteRestaurant',
+      _i20.Greeting => 'Greeting',
+      _i21.LlmUsage => 'LlmUsage',
+      _i22.MenuItem => 'MenuItem',
+      _i23.MenuItemView => 'MenuItemView',
+      _i24.MenuPageInput => 'MenuPageInput',
+      _i25.MenuSourcePage => 'MenuSourcePage',
+      _i26.ProcessMenuResult => 'ProcessMenuResult',
+      _i27.Restaurant => 'Restaurant',
+      _i28.RestaurantMatchCandidate => 'RestaurantMatchCandidate',
+      _i29.AppUserProfile => 'AppUserProfile',
+      _i30.UserRestaurantVisit => 'UserRestaurantVisit',
       _ => null,
     };
   }
@@ -2040,47 +2259,55 @@ class Protocol extends _i1.SerializationManagerServer {
     }
 
     switch (data) {
-      case _i6.Category():
+      case _i6.AdminMetrics():
+        return 'AdminMetrics';
+      case _i7.AdminUser():
+        return 'AdminUser';
+      case _i8.AdminUserRow():
+        return 'AdminUserRow';
+      case _i9.AuditLog():
+        return 'AuditLog';
+      case _i10.Category():
         return 'Category';
-      case _i7.CuratedDish():
+      case _i11.CuratedDish():
         return 'CuratedDish';
-      case _i8.CuratedDishImage():
+      case _i12.CuratedDishImage():
         return 'CuratedDishImage';
-      case _i9.DatasetVersion():
+      case _i13.DatasetVersion():
         return 'DatasetVersion';
-      case _i10.DishCatalog():
+      case _i14.DishCatalog():
         return 'DishCatalog';
-      case _i11.DishImage():
+      case _i15.DishImage():
         return 'DishImage';
-      case _i12.DishProviderStatus():
+      case _i16.DishProviderStatus():
         return 'DishProviderStatus';
-      case _i13.DishTranslation():
+      case _i17.DishTranslation():
         return 'DishTranslation';
-      case _i14.FavoriteMenuItem():
+      case _i18.FavoriteMenuItem():
         return 'FavoriteMenuItem';
-      case _i15.FavoriteRestaurant():
+      case _i19.FavoriteRestaurant():
         return 'FavoriteRestaurant';
-      case _i16.Greeting():
+      case _i20.Greeting():
         return 'Greeting';
-      case _i17.LlmUsage():
+      case _i21.LlmUsage():
         return 'LlmUsage';
-      case _i18.MenuItem():
+      case _i22.MenuItem():
         return 'MenuItem';
-      case _i19.MenuItemView():
+      case _i23.MenuItemView():
         return 'MenuItemView';
-      case _i20.MenuPageInput():
+      case _i24.MenuPageInput():
         return 'MenuPageInput';
-      case _i21.MenuSourcePage():
+      case _i25.MenuSourcePage():
         return 'MenuSourcePage';
-      case _i22.ProcessMenuResult():
+      case _i26.ProcessMenuResult():
         return 'ProcessMenuResult';
-      case _i23.Restaurant():
+      case _i27.Restaurant():
         return 'Restaurant';
-      case _i24.RestaurantMatchCandidate():
+      case _i28.RestaurantMatchCandidate():
         return 'RestaurantMatchCandidate';
-      case _i25.AppUserProfile():
+      case _i29.AppUserProfile():
         return 'AppUserProfile';
-      case _i26.UserRestaurantVisit():
+      case _i30.UserRestaurantVisit():
         return 'UserRestaurantVisit';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -2108,68 +2335,80 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
+    if (dataClassName == 'AdminMetrics') {
+      return deserialize<_i6.AdminMetrics>(data['data']);
+    }
+    if (dataClassName == 'AdminUser') {
+      return deserialize<_i7.AdminUser>(data['data']);
+    }
+    if (dataClassName == 'AdminUserRow') {
+      return deserialize<_i8.AdminUserRow>(data['data']);
+    }
+    if (dataClassName == 'AuditLog') {
+      return deserialize<_i9.AuditLog>(data['data']);
+    }
     if (dataClassName == 'Category') {
-      return deserialize<_i6.Category>(data['data']);
+      return deserialize<_i10.Category>(data['data']);
     }
     if (dataClassName == 'CuratedDish') {
-      return deserialize<_i7.CuratedDish>(data['data']);
+      return deserialize<_i11.CuratedDish>(data['data']);
     }
     if (dataClassName == 'CuratedDishImage') {
-      return deserialize<_i8.CuratedDishImage>(data['data']);
+      return deserialize<_i12.CuratedDishImage>(data['data']);
     }
     if (dataClassName == 'DatasetVersion') {
-      return deserialize<_i9.DatasetVersion>(data['data']);
+      return deserialize<_i13.DatasetVersion>(data['data']);
     }
     if (dataClassName == 'DishCatalog') {
-      return deserialize<_i10.DishCatalog>(data['data']);
+      return deserialize<_i14.DishCatalog>(data['data']);
     }
     if (dataClassName == 'DishImage') {
-      return deserialize<_i11.DishImage>(data['data']);
+      return deserialize<_i15.DishImage>(data['data']);
     }
     if (dataClassName == 'DishProviderStatus') {
-      return deserialize<_i12.DishProviderStatus>(data['data']);
+      return deserialize<_i16.DishProviderStatus>(data['data']);
     }
     if (dataClassName == 'DishTranslation') {
-      return deserialize<_i13.DishTranslation>(data['data']);
+      return deserialize<_i17.DishTranslation>(data['data']);
     }
     if (dataClassName == 'FavoriteMenuItem') {
-      return deserialize<_i14.FavoriteMenuItem>(data['data']);
+      return deserialize<_i18.FavoriteMenuItem>(data['data']);
     }
     if (dataClassName == 'FavoriteRestaurant') {
-      return deserialize<_i15.FavoriteRestaurant>(data['data']);
+      return deserialize<_i19.FavoriteRestaurant>(data['data']);
     }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i16.Greeting>(data['data']);
+      return deserialize<_i20.Greeting>(data['data']);
     }
     if (dataClassName == 'LlmUsage') {
-      return deserialize<_i17.LlmUsage>(data['data']);
+      return deserialize<_i21.LlmUsage>(data['data']);
     }
     if (dataClassName == 'MenuItem') {
-      return deserialize<_i18.MenuItem>(data['data']);
+      return deserialize<_i22.MenuItem>(data['data']);
     }
     if (dataClassName == 'MenuItemView') {
-      return deserialize<_i19.MenuItemView>(data['data']);
+      return deserialize<_i23.MenuItemView>(data['data']);
     }
     if (dataClassName == 'MenuPageInput') {
-      return deserialize<_i20.MenuPageInput>(data['data']);
+      return deserialize<_i24.MenuPageInput>(data['data']);
     }
     if (dataClassName == 'MenuSourcePage') {
-      return deserialize<_i21.MenuSourcePage>(data['data']);
+      return deserialize<_i25.MenuSourcePage>(data['data']);
     }
     if (dataClassName == 'ProcessMenuResult') {
-      return deserialize<_i22.ProcessMenuResult>(data['data']);
+      return deserialize<_i26.ProcessMenuResult>(data['data']);
     }
     if (dataClassName == 'Restaurant') {
-      return deserialize<_i23.Restaurant>(data['data']);
+      return deserialize<_i27.Restaurant>(data['data']);
     }
     if (dataClassName == 'RestaurantMatchCandidate') {
-      return deserialize<_i24.RestaurantMatchCandidate>(data['data']);
+      return deserialize<_i28.RestaurantMatchCandidate>(data['data']);
     }
     if (dataClassName == 'AppUserProfile') {
-      return deserialize<_i25.AppUserProfile>(data['data']);
+      return deserialize<_i29.AppUserProfile>(data['data']);
     }
     if (dataClassName == 'UserRestaurantVisit') {
-      return deserialize<_i26.UserRestaurantVisit>(data['data']);
+      return deserialize<_i30.UserRestaurantVisit>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -2217,38 +2456,42 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i6.Category:
-        return _i6.Category.t;
-      case _i7.CuratedDish:
-        return _i7.CuratedDish.t;
-      case _i8.CuratedDishImage:
-        return _i8.CuratedDishImage.t;
-      case _i9.DatasetVersion:
-        return _i9.DatasetVersion.t;
-      case _i10.DishCatalog:
-        return _i10.DishCatalog.t;
-      case _i11.DishImage:
-        return _i11.DishImage.t;
-      case _i12.DishProviderStatus:
-        return _i12.DishProviderStatus.t;
-      case _i13.DishTranslation:
-        return _i13.DishTranslation.t;
-      case _i14.FavoriteMenuItem:
-        return _i14.FavoriteMenuItem.t;
-      case _i15.FavoriteRestaurant:
-        return _i15.FavoriteRestaurant.t;
-      case _i17.LlmUsage:
-        return _i17.LlmUsage.t;
-      case _i18.MenuItem:
-        return _i18.MenuItem.t;
-      case _i21.MenuSourcePage:
-        return _i21.MenuSourcePage.t;
-      case _i23.Restaurant:
-        return _i23.Restaurant.t;
-      case _i25.AppUserProfile:
-        return _i25.AppUserProfile.t;
-      case _i26.UserRestaurantVisit:
-        return _i26.UserRestaurantVisit.t;
+      case _i7.AdminUser:
+        return _i7.AdminUser.t;
+      case _i9.AuditLog:
+        return _i9.AuditLog.t;
+      case _i10.Category:
+        return _i10.Category.t;
+      case _i11.CuratedDish:
+        return _i11.CuratedDish.t;
+      case _i12.CuratedDishImage:
+        return _i12.CuratedDishImage.t;
+      case _i13.DatasetVersion:
+        return _i13.DatasetVersion.t;
+      case _i14.DishCatalog:
+        return _i14.DishCatalog.t;
+      case _i15.DishImage:
+        return _i15.DishImage.t;
+      case _i16.DishProviderStatus:
+        return _i16.DishProviderStatus.t;
+      case _i17.DishTranslation:
+        return _i17.DishTranslation.t;
+      case _i18.FavoriteMenuItem:
+        return _i18.FavoriteMenuItem.t;
+      case _i19.FavoriteRestaurant:
+        return _i19.FavoriteRestaurant.t;
+      case _i21.LlmUsage:
+        return _i21.LlmUsage.t;
+      case _i22.MenuItem:
+        return _i22.MenuItem.t;
+      case _i25.MenuSourcePage:
+        return _i25.MenuSourcePage.t;
+      case _i27.Restaurant:
+        return _i27.Restaurant.t;
+      case _i29.AppUserProfile:
+        return _i29.AppUserProfile.t;
+      case _i30.UserRestaurantVisit:
+        return _i30.UserRestaurantVisit.t;
     }
     return null;
   }

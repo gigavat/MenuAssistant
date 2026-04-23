@@ -16,17 +16,19 @@ import 'package:serverpod_client/serverpod_client.dart' as _i2;
 import 'dart:async' as _i3;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _i4;
+import 'package:menu_assistant_client/src/protocol/admin_metrics.dart' as _i5;
+import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i6;
+import 'package:menu_assistant_client/src/protocol/admin_user_row.dart' as _i7;
 import 'package:menu_assistant_client/src/protocol/process_menu_result.dart'
-    as _i5;
-import 'package:menu_assistant_client/src/protocol/menu_page_input.dart' as _i6;
-import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i7;
-import 'package:menu_assistant_client/src/protocol/category.dart' as _i8;
-import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i9;
-import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i10;
+    as _i8;
+import 'package:menu_assistant_client/src/protocol/menu_page_input.dart' as _i9;
+import 'package:menu_assistant_client/src/protocol/category.dart' as _i10;
+import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i11;
+import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i12;
 import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
-    as _i11;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i12;
-import 'protocol.dart' as _i13;
+    as _i13;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i14;
+import 'protocol.dart' as _i15;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -249,6 +251,58 @@ class EndpointJwtRefresh extends _i4.EndpointRefreshJwtTokens {
   );
 }
 
+/// Scope для moderation panel. Полностью изолирован от B2C auth —
+/// `requireLogin = false` (см. gotcha #22), identity парсится вручную
+/// из Cloudflare Access header `Cf-Access-Authenticated-User-Email`.
+/// В dev-режиме (`ADMIN_DEV_BYPASS=true`) та же identity принимается
+/// из query param `_adminEmail`, чтобы локально работать без туннеля.
+///
+/// Каждый метод начинает с `final admin = await _requireAdmin(session)`.
+/// Без валидной identity бросается [AdminAuthException] → Serverpod
+/// вернёт 500 с сообщением; клиент разбирает по тексту.
+/// {@category Endpoint}
+class EndpointAdmin extends _i2.EndpointRef {
+  EndpointAdmin(_i2.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'admin';
+
+  _i3.Future<_i5.AdminMetrics> getMetrics() =>
+      caller.callServerEndpoint<_i5.AdminMetrics>(
+        'admin',
+        'getMetrics',
+        {},
+      );
+
+  _i3.Future<List<_i6.Restaurant>> listRestaurants({
+    int? offset,
+    int? limit,
+    String? search,
+  }) => caller.callServerEndpoint<List<_i6.Restaurant>>(
+    'admin',
+    'listRestaurants',
+    {
+      'offset': offset,
+      'limit': limit,
+      'search': search,
+    },
+  );
+
+  _i3.Future<List<_i7.AdminUserRow>> listUsers({
+    int? offset,
+    int? limit,
+    String? search,
+  }) => caller.callServerEndpoint<List<_i7.AdminUserRow>>(
+    'admin',
+    'listUsers',
+    {
+      'offset': offset,
+      'limit': limit,
+      'search': search,
+    },
+  );
+}
+
 /// {@category Endpoint}
 class EndpointAiProcessing extends _i2.EndpointRef {
   EndpointAiProcessing(_i2.EndpointCaller caller) : super(caller);
@@ -258,10 +312,10 @@ class EndpointAiProcessing extends _i2.EndpointRef {
 
   /// Backward-compat single-page wrapper — the existing Flutter client
   /// (pre-4.7) still calls this.
-  _i3.Future<_i5.ProcessMenuResult> processMenuUpload(
+  _i3.Future<_i8.ProcessMenuResult> processMenuUpload(
     String fileName,
     List<int> fileBytes,
-  ) => caller.callServerEndpoint<_i5.ProcessMenuResult>(
+  ) => caller.callServerEndpoint<_i8.ProcessMenuResult>(
     'aiProcessing',
     'processMenuUpload',
     {
@@ -276,9 +330,9 @@ class EndpointAiProcessing extends _i2.EndpointRef {
   /// - a [MenuSourcePage] is stored per page,
   /// - menu items are linked to the shared [DishCatalog],
   /// - one [LlmUsage] row is written covering all pages.
-  _i3.Future<_i5.ProcessMenuResult> processMultiPageMenu(
-    List<_i6.MenuPageInput> pages,
-  ) => caller.callServerEndpoint<_i5.ProcessMenuResult>(
+  _i3.Future<_i8.ProcessMenuResult> processMultiPageMenu(
+    List<_i9.MenuPageInput> pages,
+  ) => caller.callServerEndpoint<_i8.ProcessMenuResult>(
     'aiProcessing',
     'processMultiPageMenu',
     {'pages': pages},
@@ -294,8 +348,8 @@ class EndpointRestaurant extends _i2.EndpointRef {
 
   /// Returns every restaurant the current user has ever uploaded a menu
   /// for — tracked via `user_restaurant_visit`.
-  _i3.Future<List<_i7.Restaurant>> getAllRestaurants() =>
-      caller.callServerEndpoint<List<_i7.Restaurant>>(
+  _i3.Future<List<_i6.Restaurant>> getAllRestaurants() =>
+      caller.callServerEndpoint<List<_i6.Restaurant>>(
         'restaurant',
         'getAllRestaurants',
         {},
@@ -303,26 +357,27 @@ class EndpointRestaurant extends _i2.EndpointRef {
 
   /// Returns a single restaurant by id — only if the current user has
   /// visited it. Restaurants are global, but access is still per-user.
-  _i3.Future<_i7.Restaurant?> getRestaurantById(int id) =>
-      caller.callServerEndpoint<_i7.Restaurant?>(
+  _i3.Future<_i6.Restaurant?> getRestaurantById(int id) =>
+      caller.callServerEndpoint<_i6.Restaurant?>(
         'restaurant',
         'getRestaurantById',
         {'id': id},
       );
 
   /// Get Categories for a restaurant. Gated on the user having visited it.
-  _i3.Future<List<_i8.Category>> getCategoriesForRestaurant(int restaurantId) =>
-      caller.callServerEndpoint<List<_i8.Category>>(
-        'restaurant',
-        'getCategoriesForRestaurant',
-        {'restaurantId': restaurantId},
-      );
+  _i3.Future<List<_i10.Category>> getCategoriesForRestaurant(
+    int restaurantId,
+  ) => caller.callServerEndpoint<List<_i10.Category>>(
+    'restaurant',
+    'getCategoriesForRestaurant',
+    {'restaurantId': restaurantId},
+  );
 
   /// Get MenuItems for a category. Returns client-facing [MenuItemView]
   /// payloads with `description` and `imageUrl` resolved via JOIN on
   /// `dish_catalog` and `dish_image` (denorm snapshots removed in 4.6).
-  _i3.Future<List<_i9.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
-      caller.callServerEndpoint<List<_i9.MenuItemView>>(
+  _i3.Future<List<_i11.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
+      caller.callServerEndpoint<List<_i11.MenuItemView>>(
         'restaurant',
         'getMenuItemsForCategory',
         {'categoryId': categoryId},
@@ -345,18 +400,18 @@ class EndpointRestaurant extends _i2.EndpointRef {
       );
 
   /// Get favorite restaurants.
-  _i3.Future<List<_i7.Restaurant>> getFavoriteRestaurants({
+  _i3.Future<List<_i6.Restaurant>> getFavoriteRestaurants({
     required int limit,
-  }) => caller.callServerEndpoint<List<_i7.Restaurant>>(
+  }) => caller.callServerEndpoint<List<_i6.Restaurant>>(
     'restaurant',
     'getFavoriteRestaurants',
     {'limit': limit},
   );
 
   /// Get favorite menu items as hydrated views.
-  _i3.Future<List<_i9.MenuItemView>> getFavoriteMenuItems({
+  _i3.Future<List<_i11.MenuItemView>> getFavoriteMenuItems({
     required int limit,
-  }) => caller.callServerEndpoint<List<_i9.MenuItemView>>(
+  }) => caller.callServerEndpoint<List<_i11.MenuItemView>>(
     'restaurant',
     'getFavoriteMenuItems',
     {'limit': limit},
@@ -391,6 +446,14 @@ class EndpointRestaurant extends _i2.EndpointRef {
   );
 }
 
+/// `UserAccountEndpoint` mixes a PUBLIC method (`checkEmailExists` —
+/// called during the registration-vs-login branch in the merged Auth
+/// screen, before any session exists) with AUTHENTICATED methods
+/// (`getProfile`, `saveProfile`). Serverpod's `requireLogin` override
+/// applies to the whole class, so we can't gate only the profile
+/// methods that way. Instead we leave `requireLogin = false` (default)
+/// and assert `session.authenticated` manually inside the protected
+/// methods. See gotcha #22 for the rationale.
 /// {@category Endpoint}
 class EndpointUserAccount extends _i2.EndpointRef {
   EndpointUserAccount(_i2.EndpointCaller caller) : super(caller);
@@ -398,7 +461,9 @@ class EndpointUserAccount extends _i2.EndpointRef {
   @override
   String get name => 'userAccount';
 
-  /// Checks if an email is already registered in the system.
+  /// Checks if an email is already registered. Public by design —
+  /// invoked when the client has no session yet (deciding whether
+  /// Submit should attempt login or start registration).
   _i3.Future<bool> checkEmailExists(String email) =>
       caller.callServerEndpoint<bool>(
         'userAccount',
@@ -406,8 +471,12 @@ class EndpointUserAccount extends _i2.EndpointRef {
         {'email': email},
       );
 
-  _i3.Future<_i10.AppUserProfile?> getProfile() =>
-      caller.callServerEndpoint<_i10.AppUserProfile?>(
+  /// Returns the caller's profile (full name + birth date captured in
+  /// the post-registration wizard). Returns null if the profile wasn't
+  /// set up yet — the client routes through ProfileSetupScreen in that
+  /// case. Requires authentication.
+  _i3.Future<_i12.AppUserProfile?> getProfile() =>
+      caller.callServerEndpoint<_i12.AppUserProfile?>(
         'userAccount',
         'getProfile',
         {},
@@ -415,10 +484,11 @@ class EndpointUserAccount extends _i2.EndpointRef {
 
   /// Upserts the caller's profile. Creates the row on first call (post-
   /// registration), overwrites the fields on subsequent calls (edit flow).
-  _i3.Future<_i10.AppUserProfile> saveProfile({
+  /// Requires authentication.
+  _i3.Future<_i12.AppUserProfile> saveProfile({
     required String fullName,
     DateTime? birthDate,
-  }) => caller.callServerEndpoint<_i10.AppUserProfile>(
+  }) => caller.callServerEndpoint<_i12.AppUserProfile>(
     'userAccount',
     'saveProfile',
     {
@@ -438,8 +508,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i11.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i11.Greeting>(
+  _i3.Future<_i13.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i13.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -448,12 +518,12 @@ class EndpointGreeting extends _i2.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    auth = _i12.Caller(client);
+    auth = _i14.Caller(client);
     serverpod_auth_idp = _i1.Caller(client);
     serverpod_auth_core = _i4.Caller(client);
   }
 
-  late final _i12.Caller auth;
+  late final _i14.Caller auth;
 
   late final _i1.Caller serverpod_auth_idp;
 
@@ -480,7 +550,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i13.Protocol(),
+         _i15.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -491,6 +561,7 @@ class Client extends _i2.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    admin = EndpointAdmin(this);
     aiProcessing = EndpointAiProcessing(this);
     restaurant = EndpointRestaurant(this);
     userAccount = EndpointUserAccount(this);
@@ -501,6 +572,8 @@ class Client extends _i2.ServerpodClientShared {
   late final EndpointEmailIdp emailIdp;
 
   late final EndpointJwtRefresh jwtRefresh;
+
+  late final EndpointAdmin admin;
 
   late final EndpointAiProcessing aiProcessing;
 
@@ -516,6 +589,7 @@ class Client extends _i2.ServerpodClientShared {
   Map<String, _i2.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'admin': admin,
     'aiProcessing': aiProcessing,
     'restaurant': restaurant,
     'userAccount': userAccount,

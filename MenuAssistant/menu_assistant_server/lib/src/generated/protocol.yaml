@@ -9,6 +9,10 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+admin:
+  - getMetrics:
+  - listRestaurants:
+  - listUsers:
 aiProcessing:
   - processMenuUpload:
   - processMultiPageMenu:

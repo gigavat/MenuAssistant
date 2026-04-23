@@ -467,7 +467,7 @@ indexes:
 - Новое: `IpGeoService` + `DbIpUpdateFutureCall` (DB-IP Lite country CSV, weekly refresh)
 - `ClaudeLlmService.parseMenu({required List<MenuPageBytes> pages})` — multi-image support
 - `RestaurantEndpoint.confirmMatch(pending, matchedId)` — сливает/отклоняет dedup кандидата
-- `docs/legal/db-ip-attribution.md` — обязательный CC-BY 4.0 текст для landing `/legal` (Sprint 4.8)
+- `docs/legal/db-ip-attribution.md` — обязательный CC-BY 4.0 текст для landing `/legal` (Sprint 5.5)
 - Migration: `migrations/20260422100510849/` применена локально. `dart analyze` + `flutter analyze` — 0 errors
 
 ### Deferred в follow-up спринт (отмечено в коде)
@@ -698,56 +698,6 @@ Onboarding slide 2 (из 3) — "Разрешите доступ к геолок
 - `settings_screen.dart` + `greetings_screen.dart` удалены
 - 7 языков переключаются без перезапуска app'а
 - `flutter analyze` — 0 warnings, screenshot-тесты для hero экранов зелёные
-
----
-
-## ⏳ Sprint 4.8 — Landing (Astro)
-
-> **Цель**: SEO-friendly static single-page landing, хостится Serverpod'ом как static route.
-
-### Стек
-
-**Astro** (не Next.js). Причина:
-- Static + minimal JS — лендинг в основном контент, не app
-- Polyglot marquee — единственный JS island (остальное zero-JS)
-- Сборка → plain HTML/CSS/JS → кладётся в `MenuAssistant/menu_assistant_server/web/pages/landing/`
-- Serverpod хостит через `StaticRoute.directory('web/pages/landing')`
-
-### Структура
-
-Новая папка в корне репо `landing/`:
-- `src/components/` — Astro components из handoff (`Nav`, `Hero`, `Problem`, `Polyglot`, `HowItWorks`, `Features`, `AppShowcase`, `Cta`, `Footer`)
-- `src/content/i18n.json` — 7 языков (EN/RU/PT/ES/IT/FR/DE), copy из handoff HTML
-- `src/pages/index.astro` — импорт секций, SSR
-- `src/pages/legal.astro` — privacy, terms, DB-IP attribution, Wikimedia attribution
-- `public/` — real photos (selected из `web/static/images/curated/` ~20 hero-quality)
-- `astro.config.mjs` — i18n routing (`/`, `/ru`, `/pt`, ...)
-
-### Polyglot marquee (JS island)
-
-Единственный JS на странице. Recipe:
-- rAF-driven marquee, два экземпляра контента back-to-back, measured loop width
-- Smooth decelerate to stop on hover (~600ms easeOutCubic)
-- Accel back on mouseleave
-- `visibilitychange` pause когда tab hidden
-- На mobile — native horizontal scroll with snap
-
-`client:idle` hydration — загружается после первого idle browser frame.
-
-### Deploy
-
-- `pnpm build` → `dist/` → rsync в `MenuAssistant/menu_assistant_server/web/pages/landing/`
-- Serverpod `server.dart`: `pipeline.addRoute(StaticRoute(directory: 'web/pages/landing', ...))` на путь `/` или `/landing`
-- SSL via CloudFront (Sprint 6)
-
-### Критерии готовности Sprint 4.8
-
-- Лендинг доступен на `/landing` (pre-Sprint-6) или на root `/` domain (post-Sprint-6)
-- 7 языков работают через URL-prefix routing
-- Polyglot marquee: hover pause smooth, accessibility-fallback на reduced-motion
-- Lighthouse score ≥ 95 (perf + SEO + best practices)
-- Real photos загружены, striped placeholders исчезли
-- `/legal` содержит attribution DB-IP + Wikimedia
 
 ---
 
@@ -1105,6 +1055,58 @@ indexes:
 
 ---
 
+## ⏳ Sprint 5.5 — Landing (Astro)
+
+> **Цель**: SEO-friendly static single-page landing, хостится Serverpod'ом как static route.
+>
+> Отодвинут с позиции 4.8 — лендинг идёт после Sprint 5 (i18n), чтобы переиспользовать готовые переводы и curated photo dataset для hero-блока.
+
+### Стек
+
+**Astro** (не Next.js). Причина:
+- Static + minimal JS — лендинг в основном контент, не app
+- Polyglot marquee — единственный JS island (остальное zero-JS)
+- Сборка → plain HTML/CSS/JS → кладётся в `MenuAssistant/menu_assistant_server/web/pages/landing/`
+- Serverpod хостит через `StaticRoute.directory('web/pages/landing')`
+
+### Структура
+
+Новая папка в корне репо `landing/`:
+- `src/components/` — Astro components из handoff (`Nav`, `Hero`, `Problem`, `Polyglot`, `HowItWorks`, `Features`, `AppShowcase`, `Cta`, `Footer`)
+- `src/content/i18n.json` — 7 языков (EN/RU/PT/ES/IT/FR/DE), copy из handoff HTML
+- `src/pages/index.astro` — импорт секций, SSR
+- `src/pages/legal.astro` — privacy, terms, DB-IP attribution, Wikimedia attribution
+- `public/` — real photos (selected из `web/static/images/curated/` ~20 hero-quality)
+- `astro.config.mjs` — i18n routing (`/`, `/ru`, `/pt`, ...)
+
+### Polyglot marquee (JS island)
+
+Единственный JS на странице. Recipe:
+- rAF-driven marquee, два экземпляра контента back-to-back, measured loop width
+- Smooth decelerate to stop on hover (~600ms easeOutCubic)
+- Accel back on mouseleave
+- `visibilitychange` pause когда tab hidden
+- На mobile — native horizontal scroll with snap
+
+`client:idle` hydration — загружается после первого idle browser frame.
+
+### Deploy
+
+- `pnpm build` → `dist/` → rsync в `MenuAssistant/menu_assistant_server/web/pages/landing/`
+- Serverpod `server.dart`: `pipeline.addRoute(StaticRoute(directory: 'web/pages/landing', ...))` на путь `/` или `/landing`
+- SSL via CloudFront (Sprint 6)
+
+### Критерии готовности Sprint 5.5
+
+- Лендинг доступен на `/landing` (pre-Sprint-6) или на root `/` domain (post-Sprint-6)
+- 7 языков работают через URL-prefix routing
+- Polyglot marquee: hover pause smooth, accessibility-fallback на reduced-motion
+- Lighthouse score ≥ 95 (perf + SEO + best practices)
+- Real photos загружены, striped placeholders исчезли
+- `/legal` содержит attribution DB-IP + Wikimedia
+
+---
+
 ## ⏳ Sprint 6 — Платежи и деплой
 
 ### 6.1 PaymentService (.NET 10)
@@ -1259,14 +1261,14 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 
 1. **Sprint 4.6** — Design Foundation (tokens + fonts + restaurant dedup schema + DB-IP + multi-page backend). Фундамент для трёх треков, параллелизуется с любой другой работой
 2. **Sprint 4.7** — Flutter redesign (9 экранов, multi-page UI, geo onboarding). Большой спринт, ~6-8 недель
-3. **Sprint 4.8** — Landing (Astro). ~1 неделя, параллельно с 4.7 можно
-4. **Sprint 4.9** — Admin Next.js отдельный сайт. ~4-6 недель, можно параллельно с 4.7 для ускорения
-5. **Sprint 4.10** — Curated Candidate Promotion. ~1 неделя, требует готовой admin UI из 4.9. Замыкает loop: unmatched menu dishes → candidate queue → curated_dish
-6. **Sprint 5** — Локализация меню (i18n + currency). Использует инфраструктуру `dish_translation` из Sprint 4.5
+3. **Sprint 4.9** — Admin Next.js отдельный сайт. ~4-6 недель, можно параллельно с 4.7 для ускорения
+4. **Sprint 4.10** — Curated Candidate Promotion. ~1 неделя, требует готовой admin UI из 4.9. Замыкает loop: unmatched menu dishes → candidate queue → curated_dish
+5. **Sprint 5** — Локализация меню (i18n + currency). Использует инфраструктуру `dish_translation` из Sprint 4.5
+6. **Sprint 5.5** — Landing (Astro). ~1 неделя. Отодвинут с позиции 4.8 — идёт после Sprint 5, чтобы переиспользовать готовые переводы и curated photo dataset
 7. **Sprint 6** — PaymentService + AWS production deploy
 8. **Tech debt**: Spoonacular (#1), fal.ai upload (#2), Observability (#8-10)
 
-**Параллелизация Sprint 4.6 → 4.9**: 4.6 фундамент, блокирует 4.7-4.9. После 4.6 — три независимых трека (Flutter / landing / admin), можно вести параллельно. Общая длительность: ~10-12 недель sequential, ~6-8 недель при параллельности.
+**Параллелизация Sprint 4.6 → 4.9**: 4.6 фундамент, блокирует 4.7/4.9. После 4.6 — два независимых трека (Flutter / admin), можно вести параллельно. Landing (5.5) идёт после i18n и параллелизуется с ранними стадиями Sprint 6. Общая длительность: ~10-12 недель sequential, ~6-8 недель при параллельности.
 
 ### TODO tech debt (записано в этот спринт-цикл, но отложено)
 
@@ -1305,13 +1307,6 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 - [restaurant_repository.dart](MenuAssistant/menu_assistant_flutter/lib/repositories/restaurant_repository.dart) — multi-page upload, match confirmation flow
 - [app_state.dart](MenuAssistant/menu_assistant_flutter/lib/core/app_state.dart) — geo permission state
 
-### Sprint 4.8 — Landing
-
-- Новая папка в корне репо: `landing/` (Astro проект)
-- Ключевые: `landing/src/pages/index.astro`, `landing/src/components/Polyglot.astro`, `landing/src/content/i18n.json`
-- Build artifact: `MenuAssistant/menu_assistant_server/web/pages/landing/` (generated, в .gitignore)
-- [server.dart](MenuAssistant/menu_assistant_server/lib/server.dart) — StaticRoute для `web/pages/landing`
-
 ### Sprint 4.9 — Admin (отдельный сайт)
 
 - Новая папка в корне репо: `admin/` (Next.js проект)
@@ -1344,6 +1339,13 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 - [restaurant_endpoint.dart](MenuAssistant/menu_assistant_server/lib/src/endpoints/restaurant_endpoint.dart) — новые методы
 - [restaurant_repository.dart](MenuAssistant/menu_assistant_flutter/lib/repositories/restaurant_repository.dart) — Flutter wrappers
 - [menu_item_screen.dart](MenuAssistant/menu_assistant_flutter/lib/screens/menu_item_screen.dart) — перевод UI
+
+### Sprint 5.5 — Landing
+
+- Новая папка в корне репо: `landing/` (Astro проект)
+- Ключевые: `landing/src/pages/index.astro`, `landing/src/components/Polyglot.astro`, `landing/src/content/i18n.json`
+- Build artifact: `MenuAssistant/menu_assistant_server/web/pages/landing/` (generated, в .gitignore)
+- [server.dart](MenuAssistant/menu_assistant_server/lib/server.dart) — StaticRoute для `web/pages/landing`
 
 ### Sprint 6 — платежи
 

@@ -1,0 +1,20 @@
+class: AuditLog
+table: audit_log
+### Immutable append-only лог действий модераторов. `actorEmail` — loose
+### ссылка на `admin_user.email` (без FK, чтобы audit пережил удаление
+### админа). `diff` — JSON либо human-readable summary, application-level.
+### Retention 24 мес — не форсится на уровне БД, будет archive в Glacier
+### когда объём начнёт давить (Sprint 6+).
+fields:
+  timestamp: DateTime
+  actorEmail: String
+  action: String
+  objectType: String
+  objectId: String
+  diff: String
+  ipAddress: String?
+indexes:
+  audit_log_timestamp_idx:
+    fields: timestamp
+  audit_log_actor_idx:
+    fields: actorEmail

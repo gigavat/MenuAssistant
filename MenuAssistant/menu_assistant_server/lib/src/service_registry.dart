@@ -1,3 +1,4 @@
+import 'services/audit/audit_service.dart';
 import 'services/curated/curated_dish_service.dart';
 import 'services/enrichment/dish_catalog_service.dart';
 import 'services/geo/ip_geo_service.dart';
@@ -21,6 +22,7 @@ class ServiceRegistry {
   final Map<String, ImageSearchService> imageProvidersById;
   final RestaurantDedupService restaurantDedupService;
   final IpGeoService ipGeoService;
+  final AuditService auditService;
 
   ServiceRegistry._({
     required this.llmService,
@@ -31,6 +33,7 @@ class ServiceRegistry {
     required this.imageProvidersById,
     required this.restaurantDedupService,
     required this.ipGeoService,
+    required this.auditService,
   });
 
   static ServiceRegistry? _instance;
@@ -55,6 +58,7 @@ class ServiceRegistry {
     required Map<String, ImageSearchService> imageProvidersById,
     required RestaurantDedupService restaurantDedupService,
     required IpGeoService ipGeoService,
+    required AuditService auditService,
   }) {
     _instance = ServiceRegistry._(
       llmService: llmService,
@@ -65,6 +69,7 @@ class ServiceRegistry {
       imageProvidersById: imageProvidersById,
       restaurantDedupService: restaurantDedupService,
       ipGeoService: ipGeoService,
+      auditService: auditService,
     );
   }
 }

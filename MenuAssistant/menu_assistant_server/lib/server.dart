@@ -9,6 +9,7 @@ import 'package:serverpod_auth_idp_server/providers/google.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/service_registry.dart';
+import 'src/services/audit/audit_service.dart';
 import 'src/services/curated/curated_dish_service.dart';
 import 'src/services/enrichment/dish_catalog_service.dart';
 import 'src/services/enrichment/wikidata_service.dart';
@@ -201,6 +202,7 @@ void _configureServices(Serverpod pod) {
     imageProvidersById: providersById,
     restaurantDedupService: dedupService,
     ipGeoService: ipGeoService,
+    auditService: const AuditService(),
   );
 
   // Note: EnrichmentWorkerFutureCall and ImageHealthCheckFutureCall are
