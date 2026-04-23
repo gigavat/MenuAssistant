@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MenuAssistant design tokens — единый источник для Flutter app, admin,
+   landing. Мейнтейнятся в `design/tokens/tokens.css` (монорепо корень).
+   При правках там файл нужно синхронизировать руками (либо, как follow-up,
+   добавить script copy-step в package.json).
+
+   shadcn-specific токены (primary/secondary/muted/accent/destructive)
+   переопределены ниже и маппятся на наши бренд-цвета, чтобы shadcn
+   компоненты автоматически носили правильный визуал.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-theme="warm"] {
+  --bg: #FBF8F3;
+  --surface: #FFFFFF;
+  --surface2: #F3EEE5;
+  --ink: #1A1713;
+  --ink2: #3D3832;
+  --muted-color: #8A8278;
+  --line: #E6DFD2;
+  --accent-color: #C44E2A;
+  --accent-ink: #8A3416;
+  --accent-soft: #F6E2D6;
+  --ok: #3F7A3B;
+}
+
+:root[data-theme="sage"] {
+  --bg: #F5F5EF;
+  --surface: #FFFFFF;
+  --surface2: #EAEBE1;
+  --ink: #16201A;
+  --ink2: #3D4A3F;
+  --muted-color: #6F7B6F;
+  --line: #DCDFCE;
+  --accent-color: #3E6B4A;
+  --accent-ink: #2A4C33;
+  --accent-soft: #D8E4D1;
+  --ok: #3F7A3B;
+}
+
+:root[data-theme="midnight"] {
+  --bg: #0F1012;
+  --surface: #17181B;
+  --surface2: #1E2024;
+  --ink: #F5EFE6;
+  --ink2: #C9C2B6;
+  --muted-color: #7A7468;
+  --line: #2B2D32;
+  --accent-color: #E8A96B;
+  --accent-ink: #C48A52;
+  --accent-soft: #322217;
+  --ok: #7AB074;
+}
+
+/* shadcn token mapping → наши бренд-цвета.
+   Здесь `--muted`/`--accent` это shadcn-семантика (цвет + foreground),
+   а не наш brand "muted" (цвет текста второго уровня). Переименовали
+   brand-цвета в `--muted-color` / `--accent-color` чтобы не конфликтовать.
+*/
+:root {
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--bg);
+  --secondary: var(--surface2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface2);
+  --muted-foreground: var(--muted-color);
+  --accent: var(--accent-color);
+  --accent-foreground: #ffffff;
+  --destructive: #B12A1A;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent-color);
+  --radius: 0.625rem;
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--bg);
+  --sidebar-accent: var(--surface2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--accent-color);
+  --chart-1: var(--accent-color);
+  --chart-2: var(--accent-ink);
+  --chart-3: var(--ok);
+  --chart-4: var(--ink2);
+  --chart-5: var(--muted-color);
+}
+
+/* Tailwind theme с brand tokens (bg-brand-ink, text-brand-accent, ...) +
+   shadcn-alias tokens (border-border, bg-background, text-foreground, ...)
+   чтобы shadcn компоненты работали без ручных правок. */
+@theme inline {
+  --color-brand-bg: var(--bg);
+  --color-brand-surface: var(--surface);
+  --color-brand-surface-2: var(--surface2);
+  --color-brand-ink: var(--ink);
+  --color-brand-ink-2: var(--ink2);
+  --color-brand-muted: var(--muted-color);
+  --color-brand-line: var(--line);
+  --color-brand-accent: var(--accent-color);
+  --color-brand-accent-ink: var(--accent-ink);
+  --color-brand-accent-soft: var(--accent-soft);
+  --color-brand-ok: var(--ok);
+
+  /* shadcn semantic tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-serif: 'Fraunces', 'Literata', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  --radius-card: 20px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 20px 40px -10px rgba(26, 23, 19, 0.25);
+  --shadow-fab: 0 10px 30px -5px rgba(196, 78, 42, 0.5);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+}

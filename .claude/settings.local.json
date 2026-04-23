@@ -99,7 +99,24 @@
       "Bash(curl -sS -X POST \"http://localhost:8080/admin/listRestaurants?_adminEmail=andrey.grachev38@gmail.com&limit=1\" -H \"Content-Type: application/json\" -d '{}')",
       "Bash(curl -sS -X POST \"http://localhost:8080/admin/listUsers?_adminEmail=andrey.grachev38@gmail.com&limit=2\" -H \"Content-Type: application/json\" -d '{}')",
       "Bash(curl -sS -X POST \"http://localhost:8080/admin/listRestaurants?_adminEmail=andrey.grachev38@gmail.com\" -H \"Content-Type: application/json\" -d '{\"limit\":1}')",
-      "Bash(curl -sS -X POST \"http://localhost:8080/admin/listUsers?_adminEmail=andrey.grachev38@gmail.com\" -H \"Content-Type: application/json\" -d '{\"limit\":2,\"offset\":0}')"
+      "Bash(curl -sS -X POST \"http://localhost:8080/admin/listUsers?_adminEmail=andrey.grachev38@gmail.com\" -H \"Content-Type: application/json\" -d '{\"limit\":2,\"offset\":0}')",
+      "Bash(pnpm --version)",
+      "Bash(npm --version)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" -X POST \"http://localhost:8080/admin/getMetrics?_adminEmail=andrey.grachev38@gmail.com\" -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(npm install *)",
+      "Bash(pnpm create *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm dlx *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm dev *)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(curl -sS http://localhost:3000/dashboard)",
+      "Bash(curl -sS -X POST \"http://localhost:8080/admin/getMetrics?_adminEmail=andrey.grachev38@gmail.com\" -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -H \"Referer: http://localhost:3000/\" -d '{}' -w \"\\\\nHTTP %{http_code}\\\\n\")",
+      "Bash(curl -sS -X OPTIONS \"http://localhost:8080/admin/getMetrics\" -H \"Origin: http://localhost:3000\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: content-type\" -i)",
+      "Bash(python -c \"import sys,html; h=sys.stdin.read\\(\\); import re; matches = re.findall\\(r'[A-Za-z][^<>\\\\\\\\n]{3,80}error[^<>\\\\\\\\n]{0,80}', h\\)[:5]; print\\('\\\\\\\\n'.join\\(matches\\)\\)\")",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Process -Id 36696 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime,MainWindowTitle,Path | Format-List\")",
+      "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Id 36696 -Force\")"
     ],
     "additionalDirectories": [
       "\\tmp"
