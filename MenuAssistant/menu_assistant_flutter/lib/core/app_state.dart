@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'geo_service.dart';
 import 'service_locator.dart';
 import '../repositories/restaurant_repository.dart';
 
@@ -16,8 +18,22 @@ class AppState extends ChangeNotifier {
 
   Client get _client => getIt<Client>();
   RestaurantRepository get _repo => getIt<RestaurantRepository>();
+  GeoService get _geo => getIt<GeoService>();
 
+  /// Called by auth controllers on login / signout. Clears user-scoped
+  /// caches so the next Home render doesn't leak data from the previous
+  /// session (ex: new account seeing restaurants from the account that
+  /// just signed out). Non-user settings (theme/language/currency/grid
+  /// mode) stay intact — they belong to the device, not to the user.
   void refreshAuth() {
+    recentRestaurants = const [];
+    favoriteRestaurants = const [];
+    favoriteMenuItems = const [];
+    profile = null;
+    isDataLoaded = false;
+    loadError = null;
+    locationPermission = null;
+    lastKnownPosition = null;
     notifyListeners();
   }
 
@@ -29,8 +45,14 @@ class AppState extends ChangeNotifier {
   List<Restaurant> recentRestaurants = [];
   List<Restaurant> favoriteRestaurants = [];
   List<MenuItemView> favoriteMenuItems = [];
+  AppUserProfile? profile;
   bool isDataLoaded = false;
   bool isGridMode = true;
+
+  // Geolocation — populated by Onboarding slide 2 and AddMenu pre-upload
+  // hook. Null until the user has been through the permission prompt.
+  LocationPermission? locationPermission;
+  Position? lastKnownPosition;
 
   // Error state — screens observe this to show SnackBar
   String? loadError;
@@ -106,29 +128,56 @@ class AppState extends ChangeNotifier {
 
   Future<void> loadData() async {
     if (!_client.auth.isAuthenticated) {
+      debugPrint('[AppState.loadData] skipped — not authenticated');
       isDataLoaded = true;
       notifyListeners();
       return;
     }
 
-    try {
-      loadError = null;
-      final futures = await Future.wait([
-        _repo.getAllRestaurants(),
-        _repo.getFavoriteRestaurants(limit: 3),
-        _repo.getFavoriteMenuItems(limit: 3),
-      ]);
-      recentRestaurants = futures[0] as List<Restaurant>;
-      favoriteRestaurants = futures[1] as List<Restaurant>;
-      favoriteMenuItems = futures[2] as List<MenuItemView>;
-      isDataLoaded = true;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading data: $e');
-      loadError = 'Не удалось загрузить данные. Проверьте подключение.';
-      isDataLoaded = true;
-      notifyListeners();
+    // Each call runs independently with a 15s cap so a single hung
+    // endpoint (DB deadlock, network blip, stale session) can't keep
+    // the Home spinner spinning forever. `Future.wait` on its own
+    // would propagate only the first rejection and swallow the others
+    // silently. Per-call try/catch + defaulting to [] lets us render
+    // partial data if one endpoint is down.
+    loadError = null;
+    const timeout = Duration(seconds: 15);
+
+    Future<T> call<T>(String name, Future<T> Function() fn, T fallback) async {
+      debugPrint('[AppState.loadData] → $name');
+      try {
+        final result = await fn().timeout(timeout);
+        debugPrint('[AppState.loadData] ← $name OK');
+        return result;
+      } catch (e) {
+        debugPrint('[AppState.loadData] ✗ $name: $e');
+        loadError = 'Не удалось загрузить данные ($name). Проверьте подключение.';
+        return fallback;
+      }
     }
+
+    final results = await Future.wait([
+      call<List<Restaurant>>('getAllRestaurants', _repo.getAllRestaurants, const []),
+      call<List<Restaurant>>('getFavoriteRestaurants',
+          () => _repo.getFavoriteRestaurants(limit: 3), const []),
+      call<List<MenuItemView>>('getFavoriteMenuItems',
+          () => _repo.getFavoriteMenuItems(limit: 3), const []),
+      call<AppUserProfile?>(
+          'getProfile', () => _client.userAccount.getProfile(), null),
+    ]);
+
+    recentRestaurants = results[0] as List<Restaurant>;
+    favoriteRestaurants = results[1] as List<Restaurant>;
+    favoriteMenuItems = results[2] as List<MenuItemView>;
+    profile = results[3] as AppUserProfile?;
+    isDataLoaded = true;
+    notifyListeners();
+  }
+
+  /// Called by ProfileSetupScreen after saveProfile() returns.
+  void setProfile(AppUserProfile p) {
+    profile = p;
+    notifyListeners();
   }
 
   bool isRestaurantFavorite(int id) =>
@@ -158,6 +207,22 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       await loadData();
     }
+  }
+
+  // ── Geolocation ───────────────────────────────────────────────────────────
+
+  /// Requests location permission (if not already granted) and refreshes
+  /// [lastKnownPosition] when allowed. Safe to call from Onboarding slide 2
+  /// and from AddMenu pre-upload — idempotent when permission is denied.
+  Future<LocationPermission> requestLocationPermission() async {
+    final perm = await _geo.requestPermission();
+    locationPermission = perm;
+    if (perm == LocationPermission.whileInUse ||
+        perm == LocationPermission.always) {
+      lastKnownPosition = await _geo.getCurrentPosition();
+    }
+    notifyListeners();
+    return perm;
   }
 
   Future<void> toggleMenuItemFavorite(MenuItemView item) async {

@@ -3,6 +3,7 @@ import 'package:menu_assistant_client/menu_assistant_client.dart';
 import 'package:serverpod_auth_core_flutter/serverpod_auth_core_flutter.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'app_state.dart';
+import 'geo_service.dart';
 import '../repositories/restaurant_repository.dart';
 
 final getIt = GetIt.instance;
@@ -24,6 +25,9 @@ Future<void> setupServiceLocator(String apiUrl) async {
   getIt.registerSingleton<RestaurantRepository>(
     RestaurantRepository(client),
   );
+
+  // Geolocation façade (native permission + EXIF fallback)
+  getIt.registerSingleton<GeoService>(GeoService());
 
   // App State
   getIt.registerSingleton<AppState>(AppState());

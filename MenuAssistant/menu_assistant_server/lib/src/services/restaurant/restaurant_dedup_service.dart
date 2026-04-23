@@ -172,11 +172,14 @@ class RestaurantDedupService {
   ) async {
     if (normalizedName.isEmpty) return const [];
 
+    // Serverpod 3.4 generates camelCase Postgres columns (quoted
+    // identifiers preserve case). Mirror the spy.yaml field names
+    // verbatim — unquoted snake_case would hit ERROR 42703.
     const sql = '''
-SELECT id, name, latitude, longitude, city_hint, address_raw,
-       similarity(normalized_name, @q) AS sim
+SELECT id, name, latitude, longitude, "cityHint", "addressRaw",
+       similarity("normalizedName", @q) AS sim
 FROM restaurant
-WHERE normalized_name % @q
+WHERE "normalizedName" % @q
 ORDER BY sim DESC
 LIMIT 10
 ''';

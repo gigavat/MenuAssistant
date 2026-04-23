@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1440"/>
+<title>MenuAssistant — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #FCFBF8;
+    --surface: #FFFFFF;
+    --surface-2: #F1EEE7;
+    --ink: #171512;
+    --ink-2: #3B3630;
+    --muted: #8A8278;
+    --line: #E5DFD2;
+    --accent: #C44E2A;
+    --accent-ink: color-mix(in oklab, var(--accent) 55%, var(--ink));
+    --accent-soft: color-mix(in oklab, var(--accent) 18%, var(--bg));
+    --ok: #3F7A3B;
+    --warn: #B88310;
+    --bad: #B5432A;
+
+    /* pill tones */
+    --pill-warn-bg: #FBEFD4; --pill-warn-fg: #8A6A14;
+    --pill-ok-bg:   #E2EFDB; --pill-ok-fg:   #2F5E28;
+    --pill-bad-bg:  #F7DED5; --pill-bad-fg:  #7A2A14;
+    --pill-info-bg: #DCE8F0; --pill-info-fg: #1E4864;
+
+    /* placeholder stripes */
+    --ph-a: #EEEAE1; --ph-b: #F6F3EC;
+
+    --sans: 'Inter', system-ui, sans-serif;
+    --serif: 'Fraunces', 'Times New Roman', serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  [data-theme="midnight"] {
+    --bg: #121110;
+    --surface: #1B1A17;
+    --surface-2: #24221E;
+    --ink: #F4EFE4;
+    --ink-2: #C9C2B6;
+    --muted: #7A7468;
+    --line: #2A2723;
+    --accent: #E8896A;
+    --accent-ink: color-mix(in oklab, var(--accent) 55%, var(--ink));
+    --accent-soft: color-mix(in oklab, var(--accent) 22%, var(--bg));
+    --ok: #8AB87F;
+    --warn: #E8B560;
+    --bad: #E08866;
+
+    --pill-warn-bg: #3A2F14; --pill-warn-fg: #E8B560;
+    --pill-ok-bg:   #1F3320; --pill-ok-fg:   #8AB87F;
+    --pill-bad-bg:  #3A1F18; --pill-bad-fg:  #E08866;
+    --pill-info-bg: #1E2A34; --pill-info-fg: #8BB3CF;
+
+    --ph-a: #1F1D1A; --ph-b: #25231F;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; font-size: 14px; }
+  button, input, select, textarea { font-family: inherit; color: var(--ink); }
+  input, select, textarea { background-color: var(--bg); }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* tweaks panel */
+  .tweaks-panel {
+    position: fixed; bottom: 20px; right: 20px; z-index: 200;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; width: 240px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15);
+    display: none;
+  }
+  .tweaks-panel.on { display: block; }
+  .tweaks-panel h4 { margin: 0 0 12px; font-family: var(--serif); font-size: 16px; font-weight: 600; }
+  .tw-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .tw-row > label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: .08em; }
+  .tw-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tw-chip {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  }
+  .tw-chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tw-swatches { display: flex; gap: 6px; }
+  .tw-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+  .tw-swatch.on { border-color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div id="admin-root"></div>
+
+<!-- TWEAKS -->
+<div class="tweaks-panel" id="tweaks">
+  <h4>Tweaks</h4>
+  <div class="tw-row">
+    <label>Accent</label>
+    <div class="tw-swatches" id="tw-accent">
+      <div class="tw-swatch on" data-accent="#C44E2A" data-accent-ink="#8A3416" data-accent-soft="#F6E2D6" style="background:#C44E2A;"></div>
+      <div class="tw-swatch" data-accent="#2F5E90" data-accent-ink="#1E4864" data-accent-soft="#DCE8F0" style="background:#2F5E90;"></div>
+      <div class="tw-swatch" data-accent="#3E6B4A" data-accent-ink="#2A4C33" data-accent-soft="#D8E4D1" style="background:#3E6B4A;"></div>
+      <div class="tw-swatch" data-accent="#171512" data-accent-ink="#000" data-accent-soft="#E5DFD2" style="background:#171512;"></div>
+    </div>
+  </div>
+  <div class="tw-row">
+    <label>Density</label>
+    <div class="tw-opts" id="tw-density">
+      <button class="tw-chip" data-density="compact">Compact</button>
+      <button class="tw-chip on" data-density="balanced">Balanced</button>
+      <button class="tw-chip" data-density="airy">Airy</button>
+    </div>
+  </div>
+  <div class="tw-row">
+    <label>Display font</label>
+    <div class="tw-opts" id="tw-font">
+      <button class="tw-chip on" data-font="'Fraunces', serif">Fraunces</button>
+      <button class="tw-chip" data-font="'Inter', sans-serif">Inter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "#C44E2A",
+  "accentInk": "#8A3416",
+  "accentSoft": "#F6E2D6",
+  "density": "compact",
+  "font": "'Fraunces', serif"
+}/*EDITMODE-END*/;
+
+// theme bootstrap (must be before React paints)
+(function(){
+  const saved = localStorage.getItem('admin_theme') || 'warm';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+window.__setAdminTheme = function(t){
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('admin_theme', t);
+};
+
+function applyAccent(a) {
+  document.documentElement.style.setProperty('--accent', a);
+  document.querySelectorAll('#tw-accent .tw-swatch').forEach(s => s.classList.toggle('on', s.dataset.accent === a));
+}
+function applyDensity(d) {
+  const scale = d === 'compact' ? '13px' : d === 'airy' ? '15px' : '14px';
+  document.body.style.fontSize = scale;
+  document.querySelectorAll('#tw-density button').forEach(b => b.classList.toggle('on', b.dataset.density === d));
+}
+function applyFont(f) {
+  document.documentElement.style.setProperty('--serif', f);
+  document.querySelectorAll('#tw-font button').forEach(b => b.classList.toggle('on', b.dataset.font === f));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyAccent(TWEAK_DEFAULTS.accent);
+  applyDensity(TWEAK_DEFAULTS.density);
+  applyFont(TWEAK_DEFAULTS.font);
+
+  document.getElementById('tw-accent').addEventListener('click', e => {
+    const s = e.target.closest('.tw-swatch'); if (!s) return;
+    applyAccent(s.dataset.accent);
+    postEdit({ accent: s.dataset.accent });
+  });
+  document.getElementById('tw-density').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    applyDensity(b.dataset.density); postEdit({ density: b.dataset.density });
+  });
+  document.getElementById('tw-font').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    applyFont(b.dataset.font); postEdit({ font: b.dataset.font });
+  });
+});
+
+window.addEventListener('message', (e) => {
+  if (!e.data) return;
+  if (e.data.type === '__activate_edit_mode') document.getElementById('tweaks').classList.add('on');
+  if (e.data.type === '__deactivate_edit_mode') document.getElementById('tweaks').classList.remove('on');
+});
+try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e){}
+function postEdit(edits) { try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*'); } catch(e){} }
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="admin/app.jsx"></script>
+
+</body>
+</html>

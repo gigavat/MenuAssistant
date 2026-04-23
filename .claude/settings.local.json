@@ -62,7 +62,23 @@
       "Bash(dart bin/main.dart --apply-migrations)",
       "Bash(tee /tmp/srv.log)",
       "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code} in %{time_total}s\\\\n\" --max-time 5 http://localhost:8080/)",
-      "Bash(curl -sS -o /dev/null -w \"WEB %{http_code} in %{time_total}s\\\\n\" --max-time 5 http://localhost:8082/)"
+      "Bash(curl -sS -o /dev/null -w \"WEB %{http_code} in %{time_total}s\\\\n\" --max-time 5 http://localhost:8082/)",
+      "mcp__serena__get_symbols_overview",
+      "Read(//c/Users/andre/OneDrive/Desktop/MenuAssistant/menu_assistant_flutter/lib/core/**)",
+      "WebFetch(domain:pub.dev)",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(flutter gen-l10n *)",
+      "Bash(curl -sL -o \"Lora-Variable.ttf\" \"https://github.com/google/fonts/raw/main/ofl/lora/Lora%5Bwght%5D.ttf\")",
+      "Bash(curl -sL -o \"Lora-Italic-Variable.ttf\" \"https://github.com/google/fonts/raw/main/ofl/lora/Lora-Italic%5Bwght%5D.ttf\")",
+      "Bash(flutter devices *)",
+      "Bash(flutter emulators *)",
+      "Bash(xargs grep *)",
+      "Bash(curl -sL -o \"Literata-Variable.ttf\" \"https://github.com/google/fonts/raw/main/ofl/literata/Literata%5Bopsz%2Cwght%5D.ttf\")",
+      "Bash(curl -sL -o \"Literata-Italic-Variable.ttf\" \"https://github.com/google/fonts/raw/main/ofl/literata/Literata-Italic%5Bopsz%2Cwght%5D.ttf\")",
+      "Bash(curl -sL -o \"Fraunces-Variable.ttf\" \"https://github.com/google/fonts/raw/main/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf\")",
+      "Bash(curl -sL -o \"Fraunces-Italic-Variable.ttf\" \"https://github.com/google/fonts/raw/main/ofl/fraunces/Fraunces-Italic%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf\")",
+      "Bash(grep -rn \"fontFamily: 'Literata'\\\\|serifItalic\\(\\\\s*$\\\\|serifItalic\\(\\\\s*[a-z]\" \"c:/Users/andre/OneDrive/Desktop/MenuAssistant3/MenuAssistant/menu_assistant_flutter/lib\")"
     ],
     "additionalDirectories": [
       "\\tmp"

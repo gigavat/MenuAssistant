@@ -22,10 +22,11 @@ import 'package:menu_assistant_client/src/protocol/menu_page_input.dart' as _i6;
 import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i7;
 import 'package:menu_assistant_client/src/protocol/category.dart' as _i8;
 import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i9;
+import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i10;
 import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
-    as _i10;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i11;
-import 'protocol.dart' as _i12;
+    as _i11;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i12;
+import 'protocol.dart' as _i13;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -404,6 +405,27 @@ class EndpointUserAccount extends _i2.EndpointRef {
         'checkEmailExists',
         {'email': email},
       );
+
+  _i3.Future<_i10.AppUserProfile?> getProfile() =>
+      caller.callServerEndpoint<_i10.AppUserProfile?>(
+        'userAccount',
+        'getProfile',
+        {},
+      );
+
+  /// Upserts the caller's profile. Creates the row on first call (post-
+  /// registration), overwrites the fields on subsequent calls (edit flow).
+  _i3.Future<_i10.AppUserProfile> saveProfile({
+    required String fullName,
+    DateTime? birthDate,
+  }) => caller.callServerEndpoint<_i10.AppUserProfile>(
+    'userAccount',
+    'saveProfile',
+    {
+      'fullName': fullName,
+      'birthDate': birthDate,
+    },
+  );
 }
 
 /// This is an example endpoint that returns a greeting message through
@@ -416,8 +438,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i10.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i10.Greeting>(
+  _i3.Future<_i11.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i11.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -426,12 +448,12 @@ class EndpointGreeting extends _i2.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    auth = _i11.Caller(client);
+    auth = _i12.Caller(client);
     serverpod_auth_idp = _i1.Caller(client);
     serverpod_auth_core = _i4.Caller(client);
   }
 
-  late final _i11.Caller auth;
+  late final _i12.Caller auth;
 
   late final _i1.Caller serverpod_auth_idp;
 
@@ -458,7 +480,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i12.Protocol(),
+         _i13.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

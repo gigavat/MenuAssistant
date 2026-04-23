@@ -611,9 +611,26 @@ menu_item → dish_catalog → dish_image (WHERE isPrimary=true) → imageUrl
 
 ---
 
-## ⏳ Sprint 4.7 — Flutter redesign (9 экранов + multi-page upload + geo-onboarding)
+## ✅ Sprint 4.7 — Flutter redesign (DONE 2026-04-22)
 
 > **Цель**: 9 экранов дизайна перенесены в Flutter по tokens из Sprint 4.6, новая navigation структура, multi-page upload UI, geo permission flow.
+
+### Итоги
+- **Shared widgets**: 10 штук (`primary_button`, `accent_button`, `ghost_button`, `app_input`, `app_chip`, `photo_placeholder`, `allergen_badge`, `accent_fab`, `app_bottom_sheet`, `lang_dropdown`) + 2 illustrations (`paper_menu`, `glass_pill`). Все используют `Theme.of(context).colorScheme` + `AppSpacing/AppRadii/AppShadows` из tokens — нулевой drift от design/README.md
+- **9 экранов**: OnboardingScreen (3 слайда), AuthScreen (merged email+pass + Google), HomeScreen (search + chips + list + AccentFab), AccountScreen (абсорбировал settings), RestaurantScreen (sliver hero + category list), DishListScreen (2×N grid), MenuItemScreen (DishDetail), AddMenuBottomSheet (multi-page flow), MatchConfirmationDialog, EmptyHomeScreen
+- **Удалены**: `greetings_screen.dart`, `sign_in_screen.dart`, `settings_screen.dart`
+- **i18n**: gen_l10n SDK-native pipeline. `app_en.arb` (100+ ключей) + `app_ru.arb` (полный перевод). PT/ES/IT/FR/DE — stubs с EN-fallback. Runtime switch работает через `MaterialApp.locale = appState.languageCode`
+- **Geolocation**: `geo_service.dart` — `geolocator 14.0.2` для permission+position, `native_exif 0.7.0` для iOS/Android EXIF, `exif 3.3.0` pure-Dart fallback. `AppState.requestLocationPermission()` + `lastKnownPosition`
+- **Multi-page upload**: `AddMenuBottomSheet` — primary accent card (camera) → preview strip (PageView + remove-per-page) → Ghost "Add page" + Accent "Done → Parse" → `processMultiPageMenu(List<MenuPageInput>)` → если `requiresConfirmation` показывает `MatchConfirmationDialog`
+- **Match confirmation**: `MatchConfirmationDialog` показывает candidate (name + address + similarity% + distance) + "Yes / No". "Yes" → `restaurantRepo.confirmMatch(pending, matchedId)` мерджит категории + visits
+- **Onboarding gate**: `main.dart` читает `SharedPreferences('onboardingCompleted')` — первый запуск → OnboardingScreen; иначе Auth/Home
+- `flutter analyze` — 0 errors. `dart analyze` (server) — 0 errors. Unit tests server-side — 11/11
+
+### Deferred в follow-up спринт
+- **Screenshot tests** для hero экранов (`golden_toolkit` + CI pipeline) — требует CI настройки, вне scope spec для 4.7
+- **Полные переводы PT/ES/IT/FR/DE** — stubs на EN сейчас, перевод нужен перед маркетинговым релизом. Источник-референс: `SCREEN_I18N` в `design/components/screens.jsx`
+- **Profile name/email из auth** — сейчас Header в AccountScreen использует fallback из `recentRestaurants.first.name` + `authInfo.authUserId`. Правильный profile endpoint — follow-up
+- **EmptyHomeScreen подключение** — компонент готов, но HomeScreen пока показывает inline-empty (`_buildInlineEmpty`) для экономии push-навигации при пустом state. Подключить к `main.dart` gate когда получим реальный user-flow feedback
 
 ### Mapping с существующими экранами
 
@@ -821,6 +838,167 @@ indexes:
 - `admin_user` table создана, invite flow работает через admin UI (Dashboard → Invite moderator → email OTP setup)
 - Design tokens из Sprint 4.6 используются — visual consistency с Flutter + landing
 - Density tweaker panel из prototype **вырезан** (это dev edit-mode Claude Design, не prod feature)
+
+---
+
+## ⏳ Sprint 4.10 — Curated Candidate Promotion
+
+> **Цель**: замкнуть петлю роста curated dataset — блюда из реальных меню, не
+> нашедшие себе пару в `curated_dish`, автоматически агрегируются в очередь
+> кандидатов и через admin ревью промоутятся в curated_dish. Требует готовой
+> admin UI из Sprint 4.9.
+
+### Проблема
+
+Сейчас при парсинге меню в [dish_catalog_service.dart:59-93](MenuAssistant/menu_assistant_server/lib/src/services/enrichment/dish_catalog_service.dart#L59-L93):
+1. Lookup в `dish_catalog` по `normalizedName` — если есть, reuse.
+2. `CuratedDishService.findMatch` (3-pass) — если match, линкуем `curatedDishId`.
+3. Иначе — создаём `dish_catalog` row с `curatedDishId=null` + live enrichment (Wikidata / Unsplash / Pexels / fal.ai).
+
+Unmatched блюда оседают в `dish_catalog` как мёртвый груз: никем не агрегируются, не ранжируются по частоте, нет workflow продвижения в curated. Это блокирует рост покрытия (целевые 90%+ menu items → известный curated dish).
+
+### 4.10.1 Новая таблица `curated_dish_candidate`
+
+```yaml
+# lib/src/models/curated_dish_candidate.spy.yaml
+class: CuratedDishCandidate
+table: curated_dish_candidate
+fields:
+  # Стабильный группирующий ключ (normalizedName после fuzzy-collapse).
+  # Один candidate = один потенциальный curated_dish.
+  groupKey: String
+  # Представительное имя (самый частый canonicalName в группе).
+  displayName: String
+  # Агрегаты от aggregator future call.
+  occurrenceCount: int             # сколько menu_item ссылок суммарно
+  restaurantCount: int             # distinct ресторанов
+  countryCodes: List<String>?      # страны, где всплывало
+  # До 20 разных canonicalName вариантов и dishCatalogIds для показа в admin UI.
+  sampleVariants: List<String>
+  sampleDishCatalogIds: List<int>
+  # State machine:
+  # pending   — ждёт ревью
+  # enriching — approved, работает CandidateEnrichmentFutureCall
+  # promoted  — создан CuratedDish, остаётся как audit trail
+  # merged    — совмещён с существующим CuratedDish (см. promotedCuratedDishId)
+  # rejected  — не блюдо / junk / дубликат с отклонением
+  reviewStatus: String
+  promotedCuratedDishId: int?
+  rejectReason: String?
+  reviewedBy: String?              # admin_user.email
+  reviewedAt: DateTime?
+  firstSeenAt: DateTime
+  lastSeenAt: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  curated_dish_candidate_group_key_idx:
+    fields: groupKey
+    unique: true
+  curated_dish_candidate_status_idx:
+    fields: reviewStatus
+  curated_dish_candidate_occurrence_idx:
+    fields: occurrenceCount
+```
+
+`dish_catalog.curatedDishId` уже nullable — расширения existing таблиц не нужно.
+
+### 4.10.2 Aggregator future call (daily, self-rescheduling)
+
+Паттерн — как [enrichment_worker_future_call.dart](MenuAssistant/menu_assistant_server/lib/src/future_calls/enrichment_worker_future_call.dart): `FutureCall` + `callAtTime` в `finally`.
+
+Логика одного tick'а:
+1. `SELECT` all `dish_catalog WHERE curated_dish_id IS NULL`.
+2. Для каждой — `COUNT(*)` по `menu_item WHERE dish_catalog_id = dc.id`, distinct `restaurant_id` (join category → restaurant), `restaurant.countryCode`.
+3. Fuzzy-collapse вариантов в один `groupKey` (см. 4.10.3).
+4. `UPSERT` в `curated_dish_candidate` по `groupKey`:
+   - новый row → `reviewStatus='pending'`
+   - `promoted` / `rejected` / `merged` — не трогаем (исторический snapshot), только `lastSeenAt`
+   - `enriching` — обновляем агрегаты
+5. После promoted candidate'а backfill: `UPDATE dish_catalog SET curated_dish_id = <promotedCuratedDishId> WHERE normalized_name IN (candidate.sampleVariants)` — замыкает петлю, следующее меню с тем же блюдом не попадёт в unmatched set.
+
+Интервал — 24h (ночью). Для MVP хватит полного rescan'а, позже incremental по `updatedAt`.
+
+### 4.10.3 Fuzzy-collapse стратегия
+
+На старте **token-set overlap** (стратегия B):
+- `groupKey` = normalized + отсортированные токены ≥3 символов + join через `-`.
+- Пример: `"Spaghetti alla Carbonara"` → `"alla-carbonara-spaghetti"`.
+- Порог merge: token overlap ≥70% и первый токен совпадает.
+
+Ложные склейки reviewer увидит и разделит через endpoint `split`. Когда объём перевалит за ~10k unmatched rows — перейти на embeddings через существующий `InferenceServiceClient` (локальный, бесплатно).
+
+### 4.10.4 Promotion workflow
+
+**Перед началом спринта: рефактор bin/*.dart Sprint 4.5 скриптов** — выделить общий `CandidateEnrichmentService` с методами `generateDescription(curatedId)` / `generateImage(curatedId)` / `generateTranslations(curatedId)`. И bin-скрипты, и future call зовут одинаково. Без этого copy-paste неизбежен.
+
+**Admin endpoints** в `admin_endpoint.dart` (auth через Cloudflare Access middleware из Sprint 4.9):
+
+| Endpoint | Действие |
+|---|---|
+| `candidates.list(filter)` | pending/enriching queue с sort by `occurrenceCount DESC` |
+| `candidates.approve(id)` | создать `CuratedDish` draft → `candidate.reviewStatus='enriching'` → schedule `CandidateEnrichmentFutureCall` |
+| `candidates.merge(id, existingCuratedDishId)` | дописать `displayName` в `aliases` existing dish, `status='merged'`, backfill `dish_catalog` |
+| `candidates.reject(id, reason)` | `status='rejected'`, `rejectReason` |
+| `candidates.split(id, regex)` | разделить candidate на 2 по regex/prefix на `sampleVariants` (опциональный, можно отложить) |
+
+`CandidateEnrichmentFutureCall`:
+1. Wikidata enrichment (country, cuisine, aliases).
+2. Claude description generation.
+3. fal.ai image generation + ImageService upload.
+4. Translations batch (EN→7 языков).
+5. `curated_dish.status='approved'`, `candidate.reviewStatus='promoted'`, backfill `dish_catalog`.
+
+### 4.10.5 Admin UI (дописывается в Next.js admin из 4.9)
+
+Новый экран **Candidates queue** (после Dish review, перед Dish library):
+- Default filter `status=pending`, sort `occurrenceCount DESC`. Колонки: displayName, occurrences, restaurants, countries, sample variants (chips).
+- Detail pane: превью `sampleVariants`, кнопки *Approve* / *Merge into…* (autocomplete по existing curated_dish) / *Reject* / *Split*.
+- Queue filter "hot only" (`>=2 restaurants OR >=3 occurrences`), "new today", "enriching" (что сейчас варится).
+
+### 4.10.6 Backfill текущего состояния
+
+Один ручной прогон aggregator'а после деплоя — получает стартовый top-N unmatched из того, что уже накопилось в `dish_catalog` за Sprint 4.7+. Ожидаем сотни кандидатов, admin backlog на первую неделю.
+
+### 4.10.7 Фильтры мусора на уровне aggregator'а
+
+- Skip `length(normalizedName) < 4` (OCR обрезки).
+- Skip rows где `canonicalName` начинается с цифры или спец.символа.
+- Min threshold для admin queue: `>=2 restaurants OR >=3 occurrences` (опечатки/уникумы отфильтровать).
+
+### Разбивка
+
+| Stage | Суть | Оценка |
+|---|---|---|
+| 4.10.1 | Модель + миграция + ServiceRegistry wiring | 0.5 дня |
+| 4.10.2 | Рефактор Sprint 4.5 bin/*.dart в `CandidateEnrichmentService` | 1 день |
+| 4.10.3 | Aggregator future call + fuzzy-collapse (token-set) | 1.5 дня |
+| 4.10.4 | Admin endpoints (list / approve / merge / reject) | 1 день |
+| 4.10.5 | `CandidateEnrichmentFutureCall` orchestration | 0.5 дня |
+| 4.10.6 | Admin UI screen в Next.js | 1.5 дня |
+| 4.10.7 | Backfill + QA на реальных данных + корректировка fuzzy-порогов | 0.5 дня |
+| **Итого** | | **~6 дней** |
+
+### Критерии готовности
+
+- Aggregator крутится ежедневно, заполняет `curated_dish_candidate` из unmatched `dish_catalog`.
+- Admin queue показывает top-N pending с agregатами и sample variants.
+- Approve запускает end-to-end enrichment → `CuratedDish` с description + image + translations.
+- Backfill `dish_catalog.curatedDishId` срабатывает автоматически после promotion/merge.
+- Coverage metric (`menu_item` с `curated_dish` link) трекается и растёт от месяца к месяцу.
+
+### Success metrics
+
+- **Coverage growth**: процент `menu_item` с `dish_catalog.curatedDishId IS NOT NULL` растёт month-over-month.
+- **Queue throughput**: среднее время от `firstSeenAt` до `reviewedAt` < 7 дней.
+- **Approval rate**: `approved+merged / reviewed` — если <30%, значит aggregator пропускает junk (подкрутить min threshold).
+- **Dedup quality**: `merged / (approved+merged)` растёт со временем (новые curated перестают появляться, всё больше дубликатов) — это та цель, к которой идём.
+
+### Открытые вопросы (решить перед стартом)
+
+1. `candidates.approve` создаёт `curated_dish.status='approved'` или `'draft'`? Предлагаю `approved` с возможностью понизить обратно — иначе два раунда ревью.
+2. Fuzzy strategy — token-set сразу или пробовать embeddings через `InferenceServiceClient`? Я за token-set на старте, embeddings когда объём вырастет.
+3. `candidates.split` endpoint — MVP или отложить до первой реальной нужды? Отложить.
 
 ---
 
@@ -1083,9 +1261,10 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 2. **Sprint 4.7** — Flutter redesign (9 экранов, multi-page UI, geo onboarding). Большой спринт, ~6-8 недель
 3. **Sprint 4.8** — Landing (Astro). ~1 неделя, параллельно с 4.7 можно
 4. **Sprint 4.9** — Admin Next.js отдельный сайт. ~4-6 недель, можно параллельно с 4.7 для ускорения
-5. **Sprint 5** — Локализация меню (i18n + currency). Использует инфраструктуру `dish_translation` из Sprint 4.5
-6. **Sprint 6** — PaymentService + AWS production deploy
-7. **Tech debt**: Spoonacular (#1), fal.ai upload (#2), Observability (#8-10)
+5. **Sprint 4.10** — Curated Candidate Promotion. ~1 неделя, требует готовой admin UI из 4.9. Замыкает loop: unmatched menu dishes → candidate queue → curated_dish
+6. **Sprint 5** — Локализация меню (i18n + currency). Использует инфраструктуру `dish_translation` из Sprint 4.5
+7. **Sprint 6** — PaymentService + AWS production deploy
+8. **Tech debt**: Spoonacular (#1), fal.ai upload (#2), Observability (#8-10)
 
 **Параллелизация Sprint 4.6 → 4.9**: 4.6 фундамент, блокирует 4.7-4.9. После 4.6 — три независимых трека (Flutter / landing / admin), можно вести параллельно. Общая длительность: ~10-12 недель sequential, ~6-8 недель при параллельности.
 
@@ -1140,6 +1319,18 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 - Новое: `MenuAssistant/menu_assistant_server/lib/src/endpoints/admin_endpoint.dart` (+ middleware `requireAdminAccess`)
 - Новое: `MenuAssistant/menu_assistant_server/lib/src/services/audit/audit_service.dart`
 - Cloudflare Access config (terraform или ручной setup в dashboard)
+
+### Sprint 4.10 — Curated Candidate Promotion
+
+- Новое: `MenuAssistant/menu_assistant_server/lib/src/models/curated_dish_candidate.spy.yaml`
+- Новое: `MenuAssistant/menu_assistant_server/lib/src/services/curated/curated_candidate_aggregator_service.dart`
+- Новое: `MenuAssistant/menu_assistant_server/lib/src/services/curated/candidate_enrichment_service.dart` (общий для bin-скриптов + future call)
+- Новое: `MenuAssistant/menu_assistant_server/lib/src/future_calls/curated_candidate_aggregator_future_call.dart`
+- Новое: `MenuAssistant/menu_assistant_server/lib/src/future_calls/candidate_enrichment_future_call.dart`
+- [admin_endpoint.dart](MenuAssistant/menu_assistant_server/lib/src/endpoints/admin_endpoint.dart) — новые методы `candidates.{list,approve,merge,reject,split}`
+- **Рефактор**: `bin/generate_descriptions.dart`, `bin/generate_images.dart`, `bin/generate_translations.dart`, `bin/enrich_from_wikidata.dart` — извлечь общую логику в `CandidateEnrichmentService`
+- [service_registry.dart](MenuAssistant/menu_assistant_server/lib/src/service_registry.dart) — зарегистрировать aggregator + enrichment service
+- Новое (admin UI): `admin/app/candidates/page.tsx`, `admin/components/CandidateRow.tsx`, `admin/components/CandidateDetailDrawer.tsx`
 
 ### Sprint 5 — локализация
 

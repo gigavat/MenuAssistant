@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
-import '../core/service_locator.dart';
-import '../core/app_state.dart';
-import '../repositories/restaurant_repository.dart';
-import 'menu_item_screen.dart';
 
+import '../core/app_state.dart';
+import '../core/service_locator.dart';
+import '../l10n/app_localizations.dart';
+import '../repositories/restaurant_repository.dart';
+import '../theme/tokens.dart';
+import '../theme/typography.dart';
+import '../widgets/app_chip.dart';
+import '../widgets/app_input.dart';
+import '../widgets/illustrations/glass_pill.dart';
+import '../widgets/photo_placeholder.dart';
+import 'dish_list_screen.dart';
+
+/// Restaurant landing: 180px sliver hero with glass back/heart buttons,
+/// natural-language search, filter chips, then the category rundown.
+/// Tapping a category dives into [DishListScreen] for the 2×N grid.
 class RestaurantScreen extends StatefulWidget {
   final Restaurant restaurant;
 
@@ -19,9 +30,8 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   final _repo = getIt<RestaurantRepository>();
 
   List<Category> _categories = [];
-  final Map<int, List<MenuItemView>> _categoryItems = {};
-  Category? _selectedCategory;
-  bool _isLoadingContent = true;
+  final Map<int, int> _countByCategory = {};
+  bool _loading = true;
   String? _error;
 
   @override
@@ -31,334 +41,296 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   }
 
   Future<void> _loadCategories() async {
-    final restaurantId = widget.restaurant.id;
-    if (restaurantId == null) {
-      setState(() => _isLoadingContent = false);
+    final id = widget.restaurant.id;
+    if (id == null) {
+      setState(() => _loading = false);
       return;
     }
-
     try {
-      final categories = await _repo.getCategoriesForRestaurant(restaurantId);
+      final categories = await _repo.getCategoriesForRestaurant(id);
       if (!mounted) return;
       setState(() {
         _categories = categories;
-        _isLoadingContent = false;
+        _loading = false;
       });
-      for (var category in categories) {
-        _loadItemsForCategory(category);
+      // Fire-and-forget per-category counts so the UI can show "12 dishes".
+      for (final c in categories) {
+        final cid = c.id;
+        if (cid == null) continue;
+        _repo.getMenuItemsForCategory(cid).then((items) {
+          if (mounted) setState(() => _countByCategory[cid] = items.length);
+        }).catchError((_) {});
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _isLoadingContent = false;
-        _error = 'Не удалось загрузить категории';
+        _loading = false;
+        _error = 'error';
       });
-    }
-  }
-
-  Future<void> _loadItemsForCategory(Category category) async {
-    final categoryId = category.id;
-    if (categoryId == null || _categoryItems.containsKey(categoryId)) return;
-
-    try {
-      final items = await _repo.getMenuItemsForCategory(categoryId);
-      if (!mounted) return;
-      setState(() {
-        _categoryItems[categoryId] = items;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Не удалось загрузить блюда: ${category.name}')),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (_selectedCategory != null) {
-              setState(() {
-                _selectedCategory = null;
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        title: const TextField(
-          decoration: InputDecoration(
-            hintText: 'Поиск блюда...',
-            border: InputBorder.none,
-          ),
-        ),
-        scrolledUnderElevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        actions: [
-          IconButton(
-            icon: Icon(_appState.isGridMode ? Icons.list : Icons.grid_view),
-            onPressed: () {
-              _appState.toggleGridMode();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Фильтры в разработке')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildRestaurantHeader(),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ),
-          Expanded(
-            child: _isLoadingContent
-              ? const Center(child: CircularProgressIndicator())
-              : ListenableBuilder(
-                  listenable: _appState,
-                  builder: (context, _) {
-                    return _appState.isGridMode ? _buildGridView() : _buildListView();
-                  }
-                ),
-          ),
-        ],
-      ),
-    );
-  }
+    final l10n = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
 
-  Widget _buildRestaurantHeader() {
-    final restaurantId = widget.restaurant.id;
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              _selectedCategory != null
-                ? '${_selectedCategory!.name} в ${widget.restaurant.name}'
-                : widget.restaurant.name,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: _selectedCategory != null ? 20 : null,
+    return Scaffold(
+      backgroundColor: colors.surface,
+      body: CustomScrollView(
+        slivers: [
+          _buildHero(context),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.s20, AppSpacing.s20, AppSpacing.s20, AppSpacing.s12,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: AppInput(
+                small: true,
+                placeholder: l10n.restaurantSearchPlaceholder,
+                icon: Icons.search,
               ),
             ),
           ),
-          if (restaurantId != null)
-            ListenableBuilder(
-              listenable: _appState,
-              builder: (context, _) {
-                final isFavorite = _appState.isRestaurantFavorite(restaurantId);
-                return IconButton(
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.red : null,
+          SliverToBoxAdapter(
+            child: _buildChipRow(context, l10n),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.s20)),
+          if (_loading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.s40),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.s20),
+                child: Text(l10n.errorGeneric),
+              ),
+            )
+          else
+            SliverList.separated(
+              itemCount: _categories.length,
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                thickness: 1,
+                color: Theme.of(context).colorScheme.outline,
+                indent: AppSpacing.s20,
+                endIndent: AppSpacing.s20,
+              ),
+              itemBuilder: (_, i) => _CategoryRow(
+                ordinal: i + 1,
+                category: _categories[i],
+                itemCount: _countByCategory[_categories[i].id],
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => DishListScreen(category: _categories[i]),
                   ),
-                  onPressed: () {
-                    _appState.toggleRestaurantFavorite(widget.restaurant);
-                  },
-                );
-              },
+                ),
+              ),
             ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.s40)),
         ],
       ),
     );
   }
 
-
-  Widget _buildListView() {
-    if (_categories.isEmpty) {
-      return const Center(child: Text('Нет категорий'));
-    }
-
-    return ListView.builder(
-      itemCount: _categories.length,
-      itemBuilder: (context, index) {
-        final category = _categories[index];
-        return ExpansionTile(
-          initiallyExpanded: index == 0,
-          title: Text(
-            category.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          onExpansionChanged: (expanded) {
-            if (expanded) {
-              _loadItemsForCategory(category);
-            }
-          },
-          children: _buildListCategoryItems(category),
-        );
-      },
-    );
-  }
-
-  List<Widget> _buildListCategoryItems(Category category) {
-    final categoryId = category.id;
-    if (categoryId == null) return [];
-
-    final items = _categoryItems[categoryId];
-    if (items == null) {
-      return [const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator())];
-    }
-
-    if (items.isEmpty) {
-      return [const Padding(padding: EdgeInsets.all(16), child: Text('Нет блюд в категории'))];
-    }
-
-    return items.map((item) {
-      final itemId = item.id;
-      return ListTile(
-        title: Text(item.name),
-        subtitle: Text('${item.price.toStringAsFixed(2)} ${_appState.currencyCode}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildHero(BuildContext context) {
+    final r = widget.restaurant;
+    final colors = Theme.of(context).colorScheme;
+    final favorite = r.id == null
+        ? false
+        : _appState.isRestaurantFavorite(r.id!);
+    return SliverAppBar(
+      backgroundColor: colors.surface,
+      expandedHeight: 180,
+      pinned: false,
+      floating: false,
+      automaticallyImplyLeading: false,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
           children: [
-            ListenableBuilder(
-                listenable: _appState,
-                builder: (context, _) {
-                  final isFav = _appState.isMenuItemFavorite(itemId);
-                  return IconButton(
-                    icon: Icon(
-                      isFav ? Icons.favorite : Icons.favorite_border,
-                      color: isFav ? Colors.red : null,
-                    ),
-                    onPressed: () {
-                      _appState.toggleMenuItemFavorite(item);
-                    },
-                  );
+            const PhotoPlaceholder(radius: 0),
+            // Bottom gradient for text legibility.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.0),
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + AppSpacing.s10,
+              left: AppSpacing.s20,
+              child: GlassPill(
+                icon: Icons.arrow_back,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + AppSpacing.s10,
+              right: AppSpacing.s20,
+              child: GlassPill(
+                icon: favorite ? Icons.favorite : Icons.favorite_border,
+                iconColor: favorite ? colors.primary : Colors.white,
+                onPressed: () {
+                  if (r.id != null) {
+                    _appState.toggleRestaurantFavorite(r);
+                    setState(() {});
+                  }
                 },
               ),
-            if (item.imageUrl != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.network(item.imageUrl!, width: 40, height: 40, fit: BoxFit.cover),
-              ),
-          ],
-        ),
-        onTap: () {
-           Navigator.push(context, MaterialPageRoute(builder: (_) => MenuItemScreen(menuItem: item)));
-        },
-      );
-    }).toList();
-  }
-
-  Widget _buildGridView() {
-    if (_selectedCategory == null) {
-      if (_categories.isEmpty) {
-        return const Center(child: Text('Нет категорий'));
-      }
-
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.0,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          return Card(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedCategory = category;
-                });
-                _loadItemsForCategory(category);
-              },
-              child: Center(
-                child: Text(
-                  category.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
-                ),
-              ),
             ),
-          );
-        },
-      );
-    } else {
-      final items = _categoryItems[_selectedCategory!.id];
-      if (items == null) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (items.isEmpty) {
-        return const Center(child: Text('Нет блюд в категории'));
-      }
-
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.0,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return Card(
-            elevation: 2,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: item.imageUrl != null
-                       ? Image.network(item.imageUrl!, fit: BoxFit.cover)
-                       : Container(
-                           color: Theme.of(context).colorScheme.surfaceContainerLow,
-                           child: const Icon(Icons.restaurant, size: 48, color: Colors.grey)
-                         ),
-                    ),
-                    Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 4),
-                          Text('${item.price.toStringAsFixed(2)} ${_appState.currencyCode}', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Positioned.fill(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => MenuItemScreen(menuItem: item)));
-                      },
+            Positioned(
+              left: AppSpacing.s20,
+              right: AppSpacing.s20,
+              bottom: AppSpacing.s16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    [r.cityHint, r.countryCode]
+                        .whereType<String>()
+                        .join(' · ')
+                        .toUpperCase(),
+                    style: const TextStyle(
+                      fontFamily: 'JetBrainsMono',
+                      fontSize: 10,
+                      letterSpacing: 1.2,
+                      color: Colors.white70,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    r.name,
+                    style: TextStyle(
+                      fontFamily: serifFamily(r.name),
+                      fontSize: 28,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
-      );
-    }
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChipRow(BuildContext context, AppLocalizations l10n) {
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s20),
+        children: [
+          AppChip(
+            label: l10n.restaurantLanguagePair,
+            active: true,
+            mono: true,
+            onTap: () {},
+          ),
+          const SizedBox(width: AppSpacing.s8),
+          AppChip(
+            label: l10n.restaurantChipCurrency,
+            active: false,
+            onTap: () {},
+          ),
+          const SizedBox(width: AppSpacing.s8),
+          AppChip(
+            label: l10n.restaurantChipVeg,
+            active: false,
+            onTap: () {},
+          ),
+          const SizedBox(width: AppSpacing.s8),
+          AppChip(
+            label: l10n.restaurantChipGlutenFree,
+            active: false,
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.ordinal,
+    required this.category,
+    required this.onTap,
+    this.itemCount,
+  });
+
+  final int ordinal;
+  final Category category;
+  final int? itemCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s20, vertical: AppSpacing.s14),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Text(
+                ordinal.toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontFamily: 'JetBrainsMono',
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                  color: colors.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s14),
+            Expanded(
+              child: Text(
+                category.name,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: colors.onSurface,
+                ),
+              ),
+            ),
+            if (itemCount != null)
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.s10),
+                child: Text(
+                  '$itemCount',
+                  style: TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontSize: 11,
+                    color: colors.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            Icon(Icons.chevron_right,
+                size: 18, color: colors.onSurface.withValues(alpha: 0.5)),
+          ],
+        ),
+      ),
+    );
   }
 }

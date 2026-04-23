@@ -171,7 +171,7 @@ class AppShadows {
 
 class AppFontFamilies {
   AppFontFamilies._();
-  static const String serif = 'Fraunces';
+  static const String serif = 'Literata';
   static const String sans = 'Inter';
   static const String mono = 'JetBrainsMono';
 }

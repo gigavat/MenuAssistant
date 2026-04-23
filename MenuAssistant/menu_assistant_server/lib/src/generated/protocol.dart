@@ -36,13 +36,14 @@ import 'menu_source_page.dart' as _i21;
 import 'process_menu_result.dart' as _i22;
 import 'restaurant.dart' as _i23;
 import 'restaurant_match_candidate.dart' as _i24;
-import 'user_restaurant_visit.dart' as _i25;
+import 'user_profile.dart' as _i25;
+import 'user_restaurant_visit.dart' as _i26;
 import 'package:menu_assistant_server/src/generated/menu_page_input.dart'
-    as _i26;
-import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i27;
-import 'package:menu_assistant_server/src/generated/category.dart' as _i28;
+    as _i27;
+import 'package:menu_assistant_server/src/generated/restaurant.dart' as _i28;
+import 'package:menu_assistant_server/src/generated/category.dart' as _i29;
 import 'package:menu_assistant_server/src/generated/menu_item_view.dart'
-    as _i29;
+    as _i30;
 export 'category.dart';
 export 'curated_dish.dart';
 export 'curated_dish_image.dart';
@@ -62,6 +63,7 @@ export 'menu_source_page.dart';
 export 'process_menu_result.dart';
 export 'restaurant.dart';
 export 'restaurant_match_candidate.dart';
+export 'user_profile.dart';
 export 'user_restaurant_visit.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
@@ -72,6 +74,81 @@ class Protocol extends _i1.SerializationManagerServer {
   static final Protocol _instance = Protocol._();
 
   static final List<_i2.TableDefinition> targetTableDefinitions = [
+    _i2.TableDefinition(
+      name: 'app_user_profile',
+      dartName: 'AppUserProfile',
+      schema: 'public',
+      module: 'menu_assistant',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'app_user_profile_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'userId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fullName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'birthDate',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'app_user_profile_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'app_user_profile_user_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     _i2.TableDefinition(
       name: 'category',
       dartName: 'Category',
@@ -1787,8 +1864,11 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i24.RestaurantMatchCandidate) {
       return _i24.RestaurantMatchCandidate.fromJson(data) as T;
     }
-    if (t == _i25.UserRestaurantVisit) {
-      return _i25.UserRestaurantVisit.fromJson(data) as T;
+    if (t == _i25.AppUserProfile) {
+      return _i25.AppUserProfile.fromJson(data) as T;
+    }
+    if (t == _i26.UserRestaurantVisit) {
+      return _i26.UserRestaurantVisit.fromJson(data) as T;
     }
     if (t == _i1.getType<_i6.Category?>()) {
       return (data != null ? _i6.Category.fromJson(data) : null) as T;
@@ -1852,8 +1932,11 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == _i1.getType<_i25.UserRestaurantVisit?>()) {
-      return (data != null ? _i25.UserRestaurantVisit.fromJson(data) : null)
+    if (t == _i1.getType<_i25.AppUserProfile?>()) {
+      return (data != null ? _i25.AppUserProfile.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i26.UserRestaurantVisit?>()) {
+      return (data != null ? _i26.UserRestaurantVisit.fromJson(data) : null)
           as T;
     }
     if (t == List<String>) {
@@ -1882,23 +1965,23 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
     }
-    if (t == List<_i26.MenuPageInput>) {
+    if (t == List<_i27.MenuPageInput>) {
       return (data as List)
-              .map((e) => deserialize<_i26.MenuPageInput>(e))
+              .map((e) => deserialize<_i27.MenuPageInput>(e))
               .toList()
           as T;
     }
-    if (t == List<_i27.Restaurant>) {
-      return (data as List).map((e) => deserialize<_i27.Restaurant>(e)).toList()
+    if (t == List<_i28.Restaurant>) {
+      return (data as List).map((e) => deserialize<_i28.Restaurant>(e)).toList()
           as T;
     }
-    if (t == List<_i28.Category>) {
-      return (data as List).map((e) => deserialize<_i28.Category>(e)).toList()
+    if (t == List<_i29.Category>) {
+      return (data as List).map((e) => deserialize<_i29.Category>(e)).toList()
           as T;
     }
-    if (t == List<_i29.MenuItemView>) {
+    if (t == List<_i30.MenuItemView>) {
       return (data as List)
-              .map((e) => deserialize<_i29.MenuItemView>(e))
+              .map((e) => deserialize<_i30.MenuItemView>(e))
               .toList()
           as T;
     }
@@ -1938,7 +2021,8 @@ class Protocol extends _i1.SerializationManagerServer {
       _i22.ProcessMenuResult => 'ProcessMenuResult',
       _i23.Restaurant => 'Restaurant',
       _i24.RestaurantMatchCandidate => 'RestaurantMatchCandidate',
-      _i25.UserRestaurantVisit => 'UserRestaurantVisit',
+      _i25.AppUserProfile => 'AppUserProfile',
+      _i26.UserRestaurantVisit => 'UserRestaurantVisit',
       _ => null,
     };
   }
@@ -1994,7 +2078,9 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'Restaurant';
       case _i24.RestaurantMatchCandidate():
         return 'RestaurantMatchCandidate';
-      case _i25.UserRestaurantVisit():
+      case _i25.AppUserProfile():
+        return 'AppUserProfile';
+      case _i26.UserRestaurantVisit():
         return 'UserRestaurantVisit';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -2079,8 +2165,11 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'RestaurantMatchCandidate') {
       return deserialize<_i24.RestaurantMatchCandidate>(data['data']);
     }
+    if (dataClassName == 'AppUserProfile') {
+      return deserialize<_i25.AppUserProfile>(data['data']);
+    }
     if (dataClassName == 'UserRestaurantVisit') {
-      return deserialize<_i25.UserRestaurantVisit>(data['data']);
+      return deserialize<_i26.UserRestaurantVisit>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -2156,8 +2245,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i21.MenuSourcePage.t;
       case _i23.Restaurant:
         return _i23.Restaurant.t;
-      case _i25.UserRestaurantVisit:
-        return _i25.UserRestaurantVisit.t;
+      case _i25.AppUserProfile:
+        return _i25.AppUserProfile.t;
+      case _i26.UserRestaurantVisit:
+        return _i26.UserRestaurantVisit.t;
     }
     return null;
   }

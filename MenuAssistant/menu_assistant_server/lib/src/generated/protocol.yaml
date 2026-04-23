@@ -25,5 +25,7 @@ restaurant:
   - confirmMatch:
 userAccount:
   - checkEmailExists:
+  - getProfile:
+  - saveProfile:
 greeting:
   - hello:

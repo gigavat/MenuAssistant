@@ -1,0 +1,1739 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1440"/>
+<title>MenuAssistant — Landing & App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #FBF8F3;
+    --surface: #FFFFFF;
+    --surface-2: #F3EEE5;
+    --ink: #1A1713;
+    --ink-2: #3D3832;
+    --muted: #8A8278;
+    --line: #E6DFD2;
+    --accent: #C44E2A;     /* terracotta */
+    --accent-ink: #8A3416;
+    --accent-soft: #F6E2D6;
+    --ok: #3F7A3B;
+    --sans: 'Inter', system-ui, sans-serif;
+    --serif: 'Fraunces', 'Times New Roman', serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  [data-theme="sage"] {
+    --bg: #F5F5EF;
+    --surface: #FFFFFF;
+    --surface-2: #EAEBE1;
+    --ink: #16201A;
+    --ink-2: #2F3A33;
+    --muted: #7D8378;
+    --line: #DCDFCE;
+    --accent: #3E6B4A;
+    --accent-ink: #2A4C33;
+    --accent-soft: #D8E4D1;
+  }
+
+  [data-theme="midnight"] {
+    --bg: #0F1012;
+    --surface: #17181B;
+    --surface-2: #1E2024;
+    --ink: #F5EFE6;
+    --ink-2: #C9C2B6;
+    --muted: #7A7468;
+    --line: #2B2D32;
+    --accent: #E8A96B;
+    --accent-ink: #F2C88F;
+    --accent-soft: #322217;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+  /* account for sticky nav when jumping to anchors */
+  section[id] { scroll-margin-top: 80px; }
+  #how { scroll-margin-top: 40px; }
+
+  .page { max-width: 1440px; margin: 0 auto; }
+
+  /* ───────── NAV ───────── */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px; position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: var(--serif); font-style: italic; font-weight: 700; font-size: 18px;
+  }
+  .nav-links { display: flex; gap: 36px; font-size: 14px; color: var(--ink-2); }
+  .nav-links a { color: inherit; text-decoration: none; }
+  .nav-right { display: flex; align-items: center; gap: 14px; }
+  /* ───────── LANG DROPDOWN ───────── */
+  .lang-dd { position: relative; }
+  .lang-dd-trigger {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 12px 7px 10px;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--ink);
+    cursor: pointer; font-family: var(--mono);
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .lang-dd-trigger:hover { border-color: color-mix(in srgb, var(--ink) 40%, var(--line)); }
+  .lang-dd-trigger .flag { font-size: 15px; line-height: 1; filter: saturate(0.95); }
+  .lang-dd-trigger .code { font-size: 11px; letter-spacing: 0.08em; font-weight: 600; }
+  .lang-dd-trigger .chev { color: var(--muted); margin-left: 2px; transition: transform .18s ease; }
+  .lang-dd[data-open="true"] .lang-dd-trigger .chev { transform: rotate(180deg); }
+  .lang-dd[data-open="true"] .lang-dd-trigger {
+    background: var(--surface-2);
+    border-color: color-mix(in srgb, var(--ink) 40%, var(--line));
+  }
+  .lang-dd-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 20px 40px -12px rgba(26,23,19,0.18);
+    display: none;
+    z-index: 60;
+  }
+  .lang-dd[data-open="true"] .lang-dd-menu { display: block; animation: langDdFade .14s ease-out; }
+  @keyframes langDdFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .lang-dd-opt {
+    display: grid; grid-template-columns: 20px 32px 1fr; align-items: center; gap: 10px;
+    width: 100%; padding: 9px 12px;
+    border: 0; background: transparent; cursor: pointer;
+    border-radius: 9px;
+    color: var(--ink); text-align: left;
+    font-family: var(--sans);
+    transition: background .12s ease;
+  }
+  .lang-dd-opt .flag { font-size: 15px; line-height: 1; justify-self: center; }
+  .lang-dd-opt .code {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    color: var(--muted); font-weight: 600;
+  }
+  .lang-dd-opt .name { font-size: 13px; color: var(--ink-2); }
+  .lang-dd-opt:hover { background: var(--surface-2); }
+  .lang-dd-opt:hover .name { color: var(--ink); }
+  .lang-dd-opt.on { background: var(--ink); color: var(--bg); }
+  .lang-dd-opt.on .code,
+  .lang-dd-opt.on .name { color: var(--bg); }
+  .lang-dd-opt.on .code { opacity: 0.7; }
+
+  /* ───────── THEME TOGGLE ───────── */
+  .theme-seg {
+    display: inline-flex; align-items: center; padding: 3px;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface);
+    gap: 0;
+  }
+  .theme-seg button {
+    width: 30px; height: 30px;
+    border: 0; background: transparent; cursor: pointer;
+    color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 999px;
+    padding: 0;
+    transition: color .15s ease, background .15s ease;
+    position: relative;
+  }
+  .theme-seg button svg { display: block; }
+  .theme-seg button:hover { color: var(--ink); }
+  .theme-seg button.on {
+    background: var(--ink); color: var(--bg);
+  }
+  .theme-seg button[aria-label]::after {
+    content: attr(aria-label);
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--ink); color: var(--bg);
+    padding: 4px 8px; border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0; transition: opacity .15s ease .2s;
+  }
+  .theme-seg button:hover::after { opacity: 1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 999px; font-size: 14px; font-weight: 500;
+    cursor: pointer; border: 1px solid transparent; text-decoration: none;
+    transition: transform .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--ink); color: var(--bg); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    padding: 64px 48px 40px;
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 6px 12px; border-radius: 999px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .hero h1 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: 88px; line-height: 0.97; letter-spacing: -0.035em;
+    margin: 20px 0 24px;
+    text-wrap: pretty;
+  }
+  .hero h1 em {
+    font-style: italic; font-weight: 400; color: var(--accent);
+    font-variation-settings: "opsz" 144;
+  }
+  .hero-sub {
+    font-size: 19px; line-height: 1.5; color: var(--ink-2); max-width: 520px;
+    text-wrap: pretty;
+  }
+  .hero-cta { display: flex; gap: 12px; margin-top: 32px; align-items: center; }
+  .store-btn {
+    display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--bg);
+    padding: 12px 20px; border-radius: 14px; text-decoration: none;
+  }
+  .store-btn .store-top { font-size: 10px; opacity: .7; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+  .store-btn .store-bot { font-size: 16px; font-weight: 600; line-height: 1; margin-top: 2px; }
+  .hero-meta { display: flex; gap: 32px; margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .hero-meta > div { font-size: 13px; color: var(--muted); }
+  .hero-meta strong { display: block; font-family: var(--serif); font-size: 28px; color: var(--ink); font-weight: 500; letter-spacing: -0.02em; }
+
+  /* ───────── HERO MOCKUP COLLAGE ───────── */
+  .hero-mockup {
+    position: relative; height: 720px;
+    display: flex; justify-content: center;
+  }
+  .phone-main { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
+  .photo-chip {
+    position: absolute; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 20px 40px -10px rgba(26,23,19,0.25), 0 0 0 6px #fff;
+  }
+  .photo-chip.left { left: -20px; top: 120px; width: 160px; height: 200px; transform: rotate(-6deg); z-index: 1; }
+  .photo-chip.right { right: -30px; bottom: 80px; width: 200px; height: 260px; transform: rotate(5deg); z-index: 1; }
+  .photo-caption {
+    position: absolute; bottom: 8px; left: 8px; right: 8px;
+    background: rgba(0,0,0,0.7); color: #fff; backdrop-filter: blur(8px);
+    padding: 4px 8px; border-radius: 6px; font-family: var(--mono); font-size: 9px;
+  }
+  .badge-float {
+    position: absolute; background: var(--surface); padding: 12px 16px; border-radius: 14px;
+    box-shadow: 0 12px 30px -8px rgba(26,23,19,0.2); border: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; font-size: 13px;
+    z-index: 3;
+  }
+  .badge-float.top-left { top: 40px; left: 10px; }
+  .badge-float.bot-right { bottom: 40px; right: -10px; }
+  .badge-float .icon { width: 32px; height: 32px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 700; font-style: italic; }
+
+  /* ───────── PROBLEM STRIP ───────── */
+  .problem {
+    margin: 40px 48px; padding: 40px 48px;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    display: grid; grid-template-columns: 1fr 2fr; gap: 48px; align-items: start;
+  }
+  .problem h2 {
+    font-family: var(--serif); font-weight: 500; font-size: 44px;
+    line-height: 1.05; letter-spacing: -0.02em; margin: 0;
+  }
+  .problem-quotes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .quote {
+    font-family: var(--serif); font-style: italic; font-size: 19px; line-height: 1.4; color: var(--ink-2);
+    padding-left: 16px; border-left: 2px solid var(--accent);
+    text-wrap: pretty;
+  }
+  .quote cite { display: block; margin-top: 10px; font-family: var(--mono); font-style: normal; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+  /* ───────── POLYGLOT (horizontal rail) ───────── */
+  .polyglot {
+    padding: 80px 0 64px;
+    position: relative;
+  }
+  .polyglot-head {
+    max-width: 900px; margin: 0 48px 36px;
+    display: flex; justify-content: space-between; align-items: end; gap: 40px;
+  }
+  .polyglot-head-text { max-width: 620px; }
+  .polyglot-head h2 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: 56px; line-height: 1.02; letter-spacing: -0.03em;
+    margin: 14px 0 14px; text-wrap: pretty;
+  }
+  .polyglot-head h2 em { font-style: italic; color: var(--accent); font-weight: 400; }
+  .polyglot-head p { color: var(--ink-2); font-size: 15px; line-height: 1.55; max-width: 520px; margin: 0; }
+  .polyglot-hint {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+    white-space: nowrap; padding-bottom: 8px;
+  }
+  .polyglot-hint svg { opacity: 0.55; }
+
+  /* Rail: 7 cards, auto-scrolling marquee (loops forever) */
+  .poly-rail-wrap {
+    position: relative;
+    overflow: hidden;
+    padding: 8px 0 20px;
+  }
+  .poly-rail {
+    display: flex; gap: 18px;
+    width: max-content;
+    padding: 0 0 0 48px;
+    will-change: transform;
+  }
+  @keyframes polyMarquee { /* legacy — animation now driven by JS rAF */ }
+  /* fade edges */
+  .poly-rail-wrap::before,
+  .poly-rail-wrap::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 60px;
+    pointer-events: none; z-index: 2;
+  }
+  .poly-rail-wrap::before { left: 0;  background: linear-gradient(90deg, var(--bg), transparent); }
+  .poly-rail-wrap::after  { right: 0; background: linear-gradient(270deg, var(--bg), transparent); }
+
+  .poly-card {
+    flex: 0 0 340px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+    overflow: hidden; display: flex; flex-direction: column;
+    min-height: 440px;
+    transition: box-shadow .25s ease, border-color .25s ease;
+  }
+  .poly-card:hover {
+    box-shadow: 0 14px 32px -16px rgba(26,23,19,0.25);
+    border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
+  }
+  .poly-card.is-source {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .poly-card-photo {
+    position: relative; height: 150px;
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--ink) 6%, var(--surface-2)) 0 14px,
+      var(--surface-2) 14px 28px);
+    display: flex; align-items: flex-end; padding: 14px;
+  }
+  .poly-card-photo .orig {
+    font-family: var(--serif); font-style: italic; font-weight: 500;
+    font-size: 22px; color: #fff; letter-spacing: -0.02em; line-height: 1.05;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.6);
+  }
+  .poly-card-photo .price {
+    position: absolute; top: 12px; right: 12px;
+    background: var(--surface); border-radius: 999px; padding: 5px 11px;
+    font-family: var(--serif); font-weight: 600; font-size: 13px; color: var(--accent);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .poly-card-photo .flag-chip {
+    position: absolute; top: 12px; left: 12px;
+    background: var(--surface); border-radius: 999px;
+    padding: 4px 10px 4px 6px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--ink);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  }
+  .poly-card-photo .flag-chip .flag { font-size: 14px; line-height: 1; }
+
+  .poly-card-body {
+    padding: 18px 20px 20px;
+    display: flex; flex-direction: column; gap: 8px; flex: 1;
+  }
+  .poly-card-body .src-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .poly-card-body .src-badge {
+    padding: 2px 7px; background: var(--accent); color: #fff; border-radius: 4px;
+    font-size: 9px; letter-spacing: 0.08em; font-weight: 600;
+  }
+  .poly-card-body .dish-name {
+    font-family: var(--serif); font-weight: 500; font-size: 22px; letter-spacing: -0.02em;
+    line-height: 1.15; margin: 2px 0 0;
+  }
+  .poly-card-body .dish-desc {
+    font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0;
+    text-wrap: pretty;
+  }
+  .poly-card-body .tags {
+    display: flex; gap: 5px; flex-wrap: wrap; margin-top: auto; padding-top: 10px;
+  }
+  .poly-card-body .tags span {
+    font-family: var(--mono); font-size: 10px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent-ink);
+  }
+
+  /* ───────── HOW IT WORKS ───────── */
+  .how {
+    padding: 96px 48px;
+  }
+  .how-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 48px; gap: 48px; }
+  .how-head h2 {
+    font-family: var(--serif); font-weight: 500; font-size: 72px; line-height: 0.98; letter-spacing: -0.03em; margin: 12px 0 0; max-width: 700px;
+    text-wrap: pretty;
+  }
+  .how-head p { color: var(--ink-2); font-size: 16px; max-width: 320px; line-height: 1.5; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .step {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+    padding: 28px 24px 32px; position: relative; min-height: 360px;
+    display: flex; flex-direction: column;
+  }
+  .step-num { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+  .step h3 { font-family: var(--serif); font-weight: 500; font-size: 28px; letter-spacing: -0.02em; margin: 12px 0 10px; line-height: 1.1; }
+  .step p { color: var(--ink-2); font-size: 14px; line-height: 1.5; margin: 0; }
+  .step-visual {
+    margin-top: auto; padding-top: 24px; height: 160px;
+    display: flex; align-items: end; justify-content: center;
+  }
+
+  /* ───────── STEP 01 — CAPTURE VISUAL ───────── */
+  .step-capture { overflow: hidden; }
+  .step-visual-capture {
+    height: 180px; padding-top: 16px;
+    position: relative; overflow: visible;
+    align-items: center; justify-content: center;
+  }
+  .cap-stack {
+    position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cap-card {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 8px 22px -10px rgba(26,23,19,0.25), 0 0 0 1px rgba(255,255,255,0.6) inset;
+    transition: transform .25s ease;
+  }
+  .cap-tag {
+    position: absolute; bottom: 8px; left: 8px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 8px; border-radius: 999px;
+    background: var(--surface); color: var(--ink);
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Photo (back) — tilted left */
+  .cap-photo {
+    width: 120px; height: 150px;
+    left: 4px; top: 10px;
+    transform: rotate(-10deg);
+    padding: 8px 8px 28px;
+    background: #fff;
+  }
+  .cap-photo-img {
+    width: 100%; height: 100%;
+    border-radius: 4px;
+    position: relative;
+    background-image:
+      linear-gradient(145deg, color-mix(in srgb, var(--accent) 18%, var(--surface-2)) 0%, var(--surface-2) 55%),
+      repeating-linear-gradient(135deg, rgba(26,23,19,0.06) 0 6px, transparent 6px 12px);
+    background-blend-mode: multiply;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 8px;
+    overflow: hidden;
+  }
+  .cap-photo-tape {
+    position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+    width: 40px; height: 12px;
+    background: color-mix(in srgb, var(--accent) 25%, #fff);
+    opacity: 0.55;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .cap-photo-label {
+    font-family: var(--mono); font-size: 8px;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 0.12em;
+    background: rgba(26,23,19,0.55);
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .cap-photo .cap-tag { left: 50%; transform: translateX(-50%); bottom: 4px; }
+
+  /* PDF (middle) */
+  .cap-pdf {
+    width: 110px; height: 140px;
+    left: 50%; top: 16px; margin-left: -55px;
+    transform: rotate(2deg);
+    padding: 14px 12px 28px;
+    z-index: 2;
+    background: #fefefe;
+  }
+  .cap-pdf-corner {
+    position: absolute; top: 0; right: 0;
+    width: 18px; height: 18px;
+    background: linear-gradient(225deg, var(--surface-2) 50%, transparent 50%);
+    border-top-right-radius: 10px;
+    border-left: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .cap-pdf-lines {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .cap-pdf-lines div {
+    height: 4px; border-radius: 2px;
+    background: var(--surface-2);
+    width: 100%;
+  }
+  .cap-pdf-lines div:first-child {
+    background: var(--ink-2); height: 5px; width: 70%;
+  }
+  .cap-tag-pdf {
+    background: var(--accent);
+    color: #fff;
+    left: 50%; transform: translateX(-50%);
+    bottom: 6px;
+  }
+
+  /* Link (front) — tilted right */
+  .cap-link {
+    width: 170px; height: 76px;
+    right: 0; bottom: 14px;
+    transform: rotate(6deg);
+    padding: 10px 12px;
+    z-index: 3;
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .cap-link-bar {
+    display: flex; gap: 4px; margin-bottom: 10px;
+  }
+  .cap-link-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: color-mix(in srgb, var(--bg) 25%, transparent);
+  }
+  .cap-link-dot:first-child { background: #ff5f57; }
+  .cap-link-dot:nth-child(2) { background: #febc2e; }
+  .cap-link-dot:nth-child(3) { background: #28c840; }
+  .cap-link-url {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 10px; border-radius: 6px;
+    background: color-mix(in srgb, var(--bg) 12%, transparent);
+    color: var(--bg);
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.01em;
+    width: 100%;
+  }
+  .cap-link-url svg { flex-shrink: 0; opacity: 0.9; }
+
+  /* subtle hover interaction: fan out */
+  .step-capture:hover .cap-photo { transform: rotate(-14deg) translate(-4px, -4px); }
+  .step-capture:hover .cap-pdf { transform: rotate(0deg) translateY(-4px); }
+  .step-capture:hover .cap-link { transform: rotate(8deg) translate(4px, 0); }
+
+  /* ───────── FEATURES GRID ───────── */
+  .features {
+    padding: 0 48px 96px;
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px;
+    grid-auto-rows: minmax(200px, auto);
+  }
+  .feat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+    padding: 28px; display: flex; flex-direction: column; justify-content: space-between;
+    overflow: hidden; position: relative;
+  }
+  .feat h3 { font-family: var(--serif); font-weight: 500; font-size: 26px; letter-spacing: -0.02em; margin: 0 0 8px; line-height: 1.1; }
+  .feat p { color: var(--ink-2); font-size: 14px; line-height: 1.5; margin: 0; }
+  .feat-big { grid-column: span 3; grid-row: span 2; }
+  .feat-med { grid-column: span 3; }
+  .feat-sm  { grid-column: span 2; }
+
+  .feat-dark { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .feat-dark p { color: color-mix(in srgb, var(--bg) 75%, transparent); }
+  .feat-accent { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+
+  /* placeholder for food photo */
+  .photo-slot {
+    border-radius: 14px; overflow: hidden; position: relative;
+    background-image: repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ink) 5%, var(--surface-2)) 0 12px,
+      var(--surface-2) 12px 24px
+    );
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  /* ───────── SCREEN SHOWCASE ───────── */
+  .showcase {
+    padding: 96px 48px; background: var(--ink); color: var(--bg);
+    border-radius: 40px; margin: 0 24px 40px;
+  }
+  .showcase h2 { font-family: var(--serif); font-weight: 500; font-size: 56px; letter-spacing: -0.025em; line-height: 1.02; margin: 0 0 12px; max-width: 700px; }
+  .showcase p { color: color-mix(in srgb, var(--bg) 60%, transparent); font-size: 16px; max-width: 480px; line-height: 1.5; margin: 0 0 56px; }
+  .showcase-rail {
+    display: flex; gap: 24px; overflow-x: auto; padding: 8px 0 24px;
+    scrollbar-color: color-mix(in srgb, var(--bg) 25%, transparent) transparent;
+  }
+  .showcase-rail::-webkit-scrollbar { height: 8px; }
+  .showcase-rail::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--bg) 25%, transparent); border-radius: 4px; }
+  .showcase-item { flex: 0 0 auto; width: 280px; }
+  .showcase-item .label { font-family: var(--mono); font-size: 11px; color: color-mix(in srgb, var(--bg) 60%, transparent); text-transform: uppercase; letter-spacing: .08em; margin-top: 16px; }
+  .showcase-item .name { font-family: var(--serif); font-style: italic; font-size: 22px; margin-top: 4px; }
+
+  /* ───────── FAQ/FOOTER COMBO ───────── */
+  .cta {
+    padding: 120px 48px; text-align: center;
+  }
+  .cta h2 {
+    font-family: var(--serif); font-weight: 500; font-size: 104px; line-height: 0.95; letter-spacing: -0.035em;
+    margin: 0; text-wrap: balance;
+  }
+  .cta h2 em { font-style: italic; color: var(--accent); }
+  .cta p { color: var(--ink-2); font-size: 18px; margin: 24px auto 36px; max-width: 520px; line-height: 1.5; }
+  .cta-btns { display: flex; gap: 12px; justify-content: center; }
+
+  .foot {
+    padding: 40px 48px; display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--line); font-size: 13px; color: var(--muted);
+    flex-wrap: wrap; gap: 16px;
+  }
+  .foot-links { display: flex; gap: 24px; }
+  .foot-links a { color: var(--muted); text-decoration: none; }
+
+  /* ───────── APP SECTION (prototype anchor) ───────── */
+  .app-section {
+    padding: 80px 48px; background: var(--surface-2);
+    margin: 0 24px 40px; border-radius: 40px;
+  }
+  .app-section-head {
+    display: flex; justify-content: space-between; align-items: end; margin-bottom: 48px;
+  }
+  .app-section-head h2 { font-family: var(--serif); font-weight: 500; font-size: 64px; letter-spacing: -0.03em; line-height: 1; margin: 0; max-width: 600px; }
+  .app-section-head p { color: var(--ink-2); max-width: 320px; font-size: 14px; line-height: 1.5; margin: 0; }
+
+  .screen-grid {
+    min-height: 720px;
+  }
+  .screens-carousel {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .screens-stage {
+    position: relative; width: 100%;
+    display: grid; grid-template-columns: 60px 1fr 60px; align-items: center;
+    min-height: 680px;
+  }
+  .screens-arrow {
+    width: 48px; height: 48px; border-radius: 24px;
+    border: 1px solid var(--line); background: var(--surface);
+    font-size: 22px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s ease, box-shadow .15s ease;
+    z-index: 3;
+  }
+  .screens-arrow:hover {
+    background: var(--ink); color: var(--bg); border-color: var(--ink);
+    transform: scale(1.05);
+  }
+  .screens-arrow.left { justify-self: start; }
+  .screens-arrow.right { justify-self: end; }
+  .screens-track {
+    display: flex; align-items: center; justify-content: center;
+    gap: 40px; position: relative; width: 100%;
+  }
+  .screens-slot {
+    transition: transform .35s cubic-bezier(.2,.7,.2,1), opacity .35s ease, filter .35s ease;
+  }
+  .screens-slot.active { transform: scale(1); opacity: 1; filter: none; z-index: 2; }
+  .screens-slot.prev,
+  .screens-slot.next {
+    transform: scale(0.68); opacity: 0.55; cursor: pointer;
+    filter: saturate(0.85);
+  }
+  .screens-slot.prev { transform: scale(0.68) translateX(20px); }
+  .screens-slot.next { transform: scale(0.68) translateX(-20px); }
+  .screens-slot.prev:hover,
+  .screens-slot.next:hover { opacity: 0.8; }
+
+  .screens-caption {
+    text-align: center; max-width: 540px; margin: 8px auto 28px;
+  }
+  .screens-caption-tag {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .1em;
+  }
+  .screens-caption-count { color: var(--ink-2); }
+  .screens-caption-title {
+    font-family: var(--serif); font-weight: 500; font-size: 28px;
+    letter-spacing: -0.02em; margin-top: 8px; line-height: 1.1;
+  }
+  .screens-caption-desc {
+    color: var(--ink-2); font-size: 14px; line-height: 1.55;
+    margin-top: 8px; text-wrap: pretty;
+  }
+
+  /* thumbnail strip */
+  .screens-strip {
+    display: flex; gap: 4px; padding: 6px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 14px;
+    max-width: 100%; overflow-x: auto;
+  }
+  .screens-dot {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 10px 14px; border: 0; background: transparent; cursor: pointer;
+    border-radius: 9px; min-width: 80px; white-space: nowrap;
+    transition: background .15s ease, color .15s ease;
+  }
+  .screens-dot-num {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: .1em;
+  }
+  .screens-dot-label {
+    font-family: var(--serif); font-size: 13px; color: var(--ink-2);
+    font-weight: 500; letter-spacing: -0.005em;
+  }
+  .screens-dot:hover { background: var(--surface-2); }
+  .screens-dot:hover .screens-dot-label { color: var(--ink); }
+  .screens-dot.is-active {
+    background: var(--ink); 
+  }
+  .screens-dot.is-active .screens-dot-num { color: var(--bg); opacity: 0.7; }
+  .screens-dot.is-active .screens-dot-label { color: var(--bg); }
+
+  /* Responsive */
+
+  /* ───────── TWEAKS PANEL ───────── */
+  .tweaks-panel {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+    padding: 18px; width: 260px; box-shadow: 0 20px 50px -10px rgba(0,0,0,0.2);
+    font-family: var(--sans);
+    display: none;
+  }
+  .tweaks-panel.on { display: block; }
+  .tweaks-panel h4 { margin: 0 0 14px; font-family: var(--serif); font-size: 18px; font-weight: 600; }
+  .tw-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .tw-row > label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: .08em; }
+  .tw-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tw-chip {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    font-family: var(--sans);
+  }
+  .tw-chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tw-swatches { display: flex; gap: 6px; }
+  .tw-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+  .tw-swatch.on { border-color: var(--ink); }
+
+</style>
+</head>
+<body>
+
+<!-- state container -->
+<div class="page" id="page">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="logo">
+      <div class="logo-mark">M</div>
+      <span>MenuAssistant</span>
+    </div>
+    <div class="nav-links">
+      <a href="#how" data-i18n="nav_how">Как работает</a>
+      <a href="#features" data-i18n="nav_features">Возможности</a>
+      <a href="#app" data-i18n="nav_app">Приложение</a>
+      <a href="#faq" data-i18n="nav_faq">FAQ</a>
+    </div>
+    <div class="nav-right">
+      <div class="theme-seg" id="theme-seg" role="group" aria-label="Theme">
+        <button data-theme-mode="auto" aria-label="Auto" title="Auto">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M8 3v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 3a5 5 0 010 10z" fill="currentColor"/></svg>
+        </button>
+        <button data-theme-mode="light" aria-label="Light" title="Light">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.95 3.05l-1.06 1.06M4.1 11.9l-1.05 1.05M12.95 12.95l-1.06-1.06M4.1 4.1L3.05 3.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button data-theme-mode="dark" aria-label="Dark" title="Dark">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 9.5A5 5 0 016.5 3c0-.5.06-.98.18-1.44A6.5 6.5 0 1014.44 9.32c-.46.12-.94.18-1.44.18z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="lang-dd" id="lang-dd">
+        <button class="lang-dd-trigger" id="lang-dd-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="flag" id="lang-dd-flag">🇬🇧</span>
+          <span class="code" id="lang-dd-code">EN</span>
+          <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="lang-dd-menu" id="lang-dd-menu" role="listbox">
+          <button class="lang-dd-opt on" data-lang="en"><span class="flag">🇬🇧</span><span class="code">EN</span><span class="name">English</span></button>
+          <button class="lang-dd-opt" data-lang="ru"><span class="flag">🇷🇺</span><span class="code">RU</span><span class="name">Русский</span></button>
+          <button class="lang-dd-opt" data-lang="pt"><span class="flag">🇵🇹</span><span class="code">PT</span><span class="name">Português</span></button>
+          <button class="lang-dd-opt" data-lang="es"><span class="flag">🇪🇸</span><span class="code">ES</span><span class="name">Español</span></button>
+          <button class="lang-dd-opt" data-lang="it"><span class="flag">🇮🇹</span><span class="code">IT</span><span class="name">Italiano</span></button>
+          <button class="lang-dd-opt" data-lang="fr"><span class="flag">🇫🇷</span><span class="code">FR</span><span class="name">Français</span></button>
+          <button class="lang-dd-opt" data-lang="de"><span class="flag">🇩🇪</span><span class="code">DE</span><span class="name">Deutsch</span></button>
+        </div>
+      </div>
+      <a class="btn btn-primary" href="#download">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v9m0 0L3.5 6.5M7 10l3.5-3.5M1 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span data-i18n="nav_cta">Скачать</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <span class="eyebrow"><span class="dot"></span> <span data-i18n="eyebrow">Ваш личный ресторанный гид</span></span>
+      <h1 data-i18n="hero_h1">Каждое меню — <em>как домашнее.</em> На любом языке.</h1>
+      <p class="hero-sub" data-i18n="hero_sub">Сфотографируйте меню в кафе — и через 20 секунд получите его с фото блюд, составом, переводом, тегами и ценами в вашей валюте.</p>
+
+      <div class="hero-cta">
+        <a class="store-btn" href="#">
+          <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor"><path d="M16.3 12.8c0-2.8 2.3-4.1 2.4-4.2-1.3-1.9-3.3-2.2-4-2.2-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.7-1-1.9 0-3.6 1.1-4.6 2.8-2 3.4-.5 8.5 1.4 11.3.9 1.4 2.1 2.9 3.6 2.8 1.4-.1 2-.9 3.7-.9 1.7 0 2.2.9 3.7.9 1.5 0 2.5-1.4 3.4-2.7 1.1-1.6 1.5-3.1 1.5-3.2-.1 0-2.9-1.1-2.9-4.4zM13.6 4.7c.8-.9 1.3-2.2 1.2-3.5-1.1 0-2.5.8-3.3 1.7-.7.8-1.4 2.1-1.2 3.3 1.2.1 2.5-.6 3.3-1.5z"/></svg>
+          <div>
+            <div class="store-top" data-i18n="store_top_apple">Скачать в</div>
+            <div class="store-bot">App Store</div>
+          </div>
+        </a>
+        <a class="store-btn" href="#">
+          <svg width="20" height="22" viewBox="0 0 20 22" fill="currentColor"><path d="M.8 1.3C.3 1.8 0 2.6 0 3.6v14.8c0 1 .3 1.8.8 2.3l.1.1L9.2 12v-.2L.9 1.2.8 1.3z"/><path d="M11.9 14.7l-2.7-2.7v-.2l2.7-2.7.1.1 3.3 1.9c.9.5.9 1.4 0 1.9l-3.4 1.7z"/><path d="M12 14.6L9.2 11.8 0.8 20.2c.3.3.8.3 1.4 0l9.8-5.6"/><path d="M12 9l-9.8-5.6c-.6-.3-1-.3-1.4 0l8.4 8.4L12 9z"/></svg>
+          <div>
+            <div class="store-top" data-i18n="store_top_google">Доступно в</div>
+            <div class="store-bot">Google Play</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="hero-meta">
+        <div>
+          <strong>20<span style="font-family:var(--mono);font-size:16px;color:var(--muted);"> сек</span></strong>
+          <span data-i18n="stat1">обработка меню</span>
+        </div>
+        <div>
+          <strong>80+</strong>
+          <span data-i18n="stat2">языков перевода</span>
+        </div>
+        <div>
+          <strong>150+</strong>
+          <span data-i18n="stat3">валют и регионов</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOCKUP COLLAGE -->
+    <div class="hero-mockup">
+      <div class="photo-chip left">
+        <div class="photo-slot" style="height:100%; border-radius:16px;">pasta</div>
+        <div class="photo-caption">IMG_2983.HEIC</div>
+      </div>
+      <div class="photo-chip right">
+        <div class="photo-slot" style="height:100%; border-radius:16px;">main course</div>
+        <div class="photo-caption">IMG_3104.HEIC</div>
+      </div>
+
+      <div class="badge-float top-left">
+        <div class="icon">RU</div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;" data-i18n="badge_translated">Переведено</div>
+          <div style="font-weight:500;font-size:13px;margin-top:2px;" data-i18n="badge_translated_from">из португальского</div>
+        </div>
+      </div>
+
+      <div class="badge-float bot-right">
+        <div class="icon" style="background:#E7F1E2;color:#3F7A3B;">✓</div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;" data-i18n="badge_diet">Без глютена</div>
+          <div style="font-weight:500;font-size:13px;margin-top:2px;" data-i18n="badge_diet_count">12 блюд подошли</div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone-main" id="hero-phone-slot"></div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="problem">
+    <h2 data-i18n="problem_h">Меню — это половина впечатления. А часто — половина стресса.</h2>
+    <div class="problem-quotes">
+      <div class="quote" data-i18n="quote1">«Сидим в Лиссабоне — в меню ни одного слова по-английски, ни одной картинки. Заказали наугад — пришёл язык трески.»<cite>— турист, Reddit</cite></div>
+      <div class="quote" data-i18n="quote2">«Я ем без глютена. Каждый раз допрашиваю официанта. Хочу просто видеть список блюд, которые мне подходят.»<cite>— пользовательница, 32 года</cite></div>
+    </div>
+  </section>
+
+  <!-- POLYGLOT: one dish, 7 languages (horizontal rail) -->
+  <section class="polyglot" id="polyglot">
+    <div class="polyglot-head">
+      <div class="polyglot-head-text">
+        <span class="eyebrow"><span class="dot"></span> <span data-i18n="poly_eyebrow">Works in 7 languages</span></span>
+        <h2 data-i18n="poly_h">One dish, <em>seven languages.</em> Same understanding.</h2>
+        <p data-i18n="poly_sub">Menus are read and stored in English — the canonical catalog. Every dish is translated into your language with description, ingredients and allergens.</p>
+      </div>
+      <div class="polyglot-hint">
+        <span data-i18n="poly_scroll">hover to pause</span>
+        <svg width="24" height="10" viewBox="0 0 24 10" fill="none"><path d="M0 5 H22 M18 1 L22 5 L18 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="poly-rail-wrap">
+      <div class="poly-rail" id="poly-rail"></div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="how">
+    <div class="how-head">
+      <div>
+        <span class="eyebrow" data-i18n="how_eyebrow">Как работает</span>
+        <h2 data-i18n="how_h">От фотографии к готовому меню — за один глоток эспрессо.</h2>
+      </div>
+      <p data-i18n="how_sub">ИИ парсит текст, сверяется с базой блюд, подбирает фотографии, тегирует аллергены и переводит на ваш язык.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step step-capture">
+        <div class="step-num">01 — <span data-i18n="step1_tag">Снимок</span></div>
+        <h3 data-i18n="step1_h">Фото, PDF или ссылка</h3>
+        <p data-i18n="step1_p">Сфотографируйте бумажное меню, загрузите PDF или вставьте ссылку на сайт ресторана.</p>
+
+        <div class="step-visual step-visual-capture">
+          <!-- stacked input options -->
+          <div class="cap-stack">
+            <!-- photo card (back) -->
+            <div class="cap-card cap-photo">
+              <div class="cap-photo-img">
+                <div class="cap-photo-tape"></div>
+                <div class="cap-photo-label">MENU.JPG</div>
+                <!-- stripe placeholder -->
+              </div>
+              <div class="cap-tag">
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="3" width="11" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="1.5" width="4" height="2" rx=".5" fill="currentColor"/></svg>
+                <span data-i18n="cap_photo">Фото</span>
+              </div>
+            </div>
+
+            <!-- PDF card (middle) -->
+            <div class="cap-card cap-pdf">
+              <div class="cap-pdf-corner"></div>
+              <div class="cap-pdf-lines">
+                <div></div><div></div><div style="width:60%"></div>
+                <div style="margin-top:6px"></div><div style="width:78%"></div>
+              </div>
+              <div class="cap-tag cap-tag-pdf">
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M3 1.5h5l3.5 3.5v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M8 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/></svg>
+                <span>PDF</span>
+              </div>
+            </div>
+
+            <!-- link card (front) -->
+            <div class="cap-card cap-link">
+              <div class="cap-link-bar">
+                <span class="cap-link-dot"></span>
+                <span class="cap-link-dot"></span>
+                <span class="cap-link-dot"></span>
+              </div>
+              <div class="cap-link-url">
+                <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M6 8a3 3 0 0 0 4.2 0l2-2a3 3 0 1 0-4.2-4.2L7 2.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/><path d="M8 6a3 3 0 0 0-4.2 0l-2 2a3 3 0 1 0 4.2 4.2L7 11.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
+                <span>restaurant.pt/menu</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">02 — <span data-i18n="step2_tag">Распознавание</span></div>
+        <h3 data-i18n="step2_h">ИИ читает и структурирует</h3>
+        <p data-i18n="step2_p">Разбирает названия блюд, цены, категории, ингредиенты и рассчитывает ваш список аллергенов.</p>
+        <div class="step-visual" style="width:100%;">
+          <div style="font-family:var(--mono); font-size:10px; line-height:1.6; width:100%; color:var(--ink-2); background:var(--surface-2); padding:12px; border-radius:10px;">
+            <div style="color:var(--muted)">parsing…</div>
+            <div>→ <span style="color:var(--accent)">salada</span> = "салат"</div>
+            <div>→ tags: [beef, gluten]</div>
+            <div>→ price: 14.50 EUR</div>
+            <div style="color:var(--ok)">✓ 24 items ready</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">03 — <span data-i18n="step3_tag">Оформление</span></div>
+        <h3 data-i18n="step3_h">Фото, описания, перевод</h3>
+        <p data-i18n="step3_p">К каждому блюду подбирается фотография, добавляется перевод на ваш язык и понятное описание состава.</p>
+        <div class="step-visual">
+          <div style="display:flex; gap:6px; width:100%;">
+            <div style="flex:1; aspect-ratio:3/4; border-radius:8px;" class="photo-slot">dish</div>
+            <div style="flex:1; aspect-ratio:3/4; border-radius:8px;" class="photo-slot">dish</div>
+            <div style="flex:1; aspect-ratio:3/4; border-radius:8px;" class="photo-slot">dish</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">04 — <span data-i18n="step4_tag">Сохранение</span></div>
+        <h3 data-i18n="step4_h">Остаётся в вашей коллекции</h3>
+        <p data-i18n="step4_p">Меню навсегда сохраняется в профиле. Лайкайте места и блюда — собирайте свою карту вкусов.</p>
+        <div class="step-visual">
+          <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
+            <rect x="6" y="10" width="50" height="70" rx="8" fill="var(--surface-2)" stroke="var(--line)"/>
+            <rect x="34" y="22" width="80" height="55" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+            <rect x="42" y="30" width="30" height="4" rx="2" fill="var(--ink-2)"/>
+            <rect x="42" y="40" width="60" height="3" rx="1.5" fill="var(--line)"/>
+            <rect x="42" y="47" width="50" height="3" rx="1.5" fill="var(--line)"/>
+            <path d="M100 60 l3 3 l5 -6" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="features">
+    <div class="feat feat-big feat-dark" style="padding:40px;">
+      <div>
+        <span class="eyebrow" style="background:rgba(255,255,255,.08); color:#F6E2D6;" data-i18n="feat_translate_eye">Перевод на лету</span>
+        <h3 style="font-size:40px; margin-top:14px;" data-i18n="feat_translate_h">Меню Лиссабона — на вашем языке.</h3>
+        <p data-i18n="feat_translate_p">Нажмите один раз — и всё меню переводится на 80+ языков. Сохраняется и оригинал, чтобы показать официанту.</p>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:24px; flex-wrap:wrap;">
+        <span style="padding:8px 14px; border-radius:999px; background:rgba(255,255,255,.08); font-family:var(--mono); font-size:11px;">PT → RU</span>
+        <span style="padding:8px 14px; border-radius:999px; background:var(--accent); font-family:var(--mono); font-size:11px;">IT → EN</span>
+        <span style="padding:8px 14px; border-radius:999px; background:rgba(255,255,255,.08); font-family:var(--mono); font-size:11px;">ES → DE</span>
+        <span style="padding:8px 14px; border-radius:999px; background:rgba(255,255,255,.08); font-family:var(--mono); font-size:11px;">JA → EN</span>
+        <span style="padding:8px 14px; border-radius:999px; background:rgba(255,255,255,.08); font-family:var(--mono); font-size:11px;">+ 76</span>
+      </div>
+    </div>
+
+    <div class="feat feat-med feat-accent">
+      <div>
+        <h3 data-i18n="feat_allergen_h">Фильтры по аллергенам и диете</h3>
+        <p data-i18n="feat_allergen_p">Отметьте, что вам нельзя — и мы спрячем несовместимое. Веган, без глютена, без лактозы, халяль.</p>
+      </div>
+      <div style="display:flex; gap:6px; margin-top:16px; flex-wrap:wrap;">
+        <span style="padding:6px 12px; border-radius:999px; background:var(--surface); font-size:12px; border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);" data-i18n="chip_vegan">🌱 Веган</span>
+        <span style="padding:6px 12px; border-radius:999px; background:var(--surface); font-size:12px; border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);" data-i18n="chip_gluten">Без глютена</span>
+        <span style="padding:6px 12px; border-radius:999px; background:var(--surface); font-size:12px; border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);" data-i18n="chip_lactose">Без лактозы</span>
+        <span style="padding:6px 12px; border-radius:999px; background:var(--surface); font-size:12px; border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);" data-i18n="chip_halal">Халяль</span>
+      </div>
+    </div>
+
+    <div class="feat feat-med">
+      <div>
+        <h3 data-i18n="feat_search_h">«Что-то с курицей до €20»</h3>
+        <p data-i18n="feat_search_p">Умный поиск понимает обычный язык. Находит блюда по ингредиентам, цене, вкусу или настроению.</p>
+      </div>
+      <div style="margin-top:20px; padding:12px 16px; background:var(--surface-2); border-radius:12px; display:flex; align-items:center; gap:10px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="var(--muted)" stroke-width="1.6"/><path d="M11 11l4 4" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span style="font-family:var(--mono); font-size:12px; color:var(--ink-2);" data-i18n="feat_search_example">что-то с курицей, не острое, до 20 евро</span>
+      </div>
+    </div>
+
+    <div class="feat feat-sm">
+      <h3 style="font-size:22px;" data-i18n="feat_currency_h">Ваша валюта</h3>
+      <p data-i18n="feat_currency_p">Цены автоматически переводятся в любимую валюту.</p>
+      <div style="display:flex; gap:8px; margin-top:16px; font-family:var(--mono); font-size:13px;">
+        <span style="padding:6px 10px; background:var(--surface-2); border-radius:8px;">EUR</span>
+        <span style="padding:6px 10px; background:var(--accent); color:#fff; border-radius:8px;">RUB</span>
+        <span style="padding:6px 10px; background:var(--surface-2); border-radius:8px;">USD</span>
+      </div>
+    </div>
+
+    <div class="feat feat-sm">
+      <h3 style="font-size:22px;" data-i18n="feat_history_h">История посещений</h3>
+      <p data-i18n="feat_history_p">Все меню, в которых вы ели, — в одном месте. Можно вернуться, лайкнуть, поделиться.</p>
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
+        <div style="padding:8px 12px; background:var(--surface-2); border-radius:8px; display:flex; justify-content:space-between; font-size:12px;"><span>Wood & Fire</span><span style="color:var(--muted); font-family:var(--mono);">Пт</span></div>
+        <div style="padding:8px 12px; background:var(--surface-2); border-radius:8px; display:flex; justify-content:space-between; font-size:12px;"><span>Londrina</span><span style="color:var(--muted); font-family:var(--mono);">Ср</span></div>
+      </div>
+    </div>
+
+    <div class="feat feat-sm">
+      <h3 style="font-size:22px;" data-i18n="feat_recs_h">Советы под вас</h3>
+      <p data-i18n="feat_recs_p">Чем больше лайков — тем точнее подбор. Рекомендации блюд на основе ваших вкусов.</p>
+      <div style="margin-top:16px; padding:10px; background:var(--accent-soft); border-radius:10px; font-size:12px; color:var(--accent-ink); font-family:var(--serif); font-style:italic;" data-i18n="feat_recs_example">«Вам понравятся сибас и тартар — по вашим лайкам»</div>
+    </div>
+  </section>
+
+  <!-- APP SHOWCASE -->
+  <section id="app" class="app-section">
+    <div class="app-section-head">
+      <div>
+        <span class="eyebrow" data-i18n="app_eyebrow">Прототип мобильного приложения</span>
+        <h2 data-i18n="app_h">Новый интерфейс.<br>Старый темперамент.</h2>
+      </div>
+      <p data-i18n="app_sub">Редизайн экранов текущего Flutter-приложения: авторизация, главная, ресторан, категория, блюдо, добавление меню, пустые состояния и онбординг.</p>
+    </div>
+
+    <div class="screen-grid" id="screen-grid">
+      <!-- React mounts 9 phone frames here -->
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="download" class="cta">
+    <h2 data-i18n="cta_h">Хватит <em>гадать</em> по меню.</h2>
+    <p data-i18n="cta_p">Сфотографируйте — и через 20 секунд читайте как своё.</p>
+    <div class="cta-btns">
+      <a class="store-btn" href="#">
+        <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor"><path d="M16.3 12.8c0-2.8 2.3-4.1 2.4-4.2-1.3-1.9-3.3-2.2-4-2.2-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.7-1-1.9 0-3.6 1.1-4.6 2.8-2 3.4-.5 8.5 1.4 11.3.9 1.4 2.1 2.9 3.6 2.8 1.4-.1 2-.9 3.7-.9 1.7 0 2.2.9 3.7.9 1.5 0 2.5-1.4 3.4-2.7 1.1-1.6 1.5-3.1 1.5-3.2-.1 0-2.9-1.1-2.9-4.4zM13.6 4.7c.8-.9 1.3-2.2 1.2-3.5-1.1 0-2.5.8-3.3 1.7-.7.8-1.4 2.1-1.2 3.3 1.2.1 2.5-.6 3.3-1.5z"/></svg>
+        <div><div class="store-top" data-i18n="store_top_apple">Скачать в</div><div class="store-bot">App Store</div></div>
+      </a>
+      <a class="store-btn" href="#">
+        <svg width="20" height="22" viewBox="0 0 20 22" fill="currentColor"><path d="M.8 1.3C.3 1.8 0 2.6 0 3.6v14.8c0 1 .3 1.8.8 2.3l.1.1L9.2 12v-.2L.9 1.2.8 1.3z"/><path d="M11.9 14.7l-2.7-2.7v-.2l2.7-2.7.1.1 3.3 1.9c.9.5.9 1.4 0 1.9l-3.4 1.7z"/><path d="M12 14.6L9.2 11.8 0.8 20.2c.3.3.8.3 1.4 0l9.8-5.6"/><path d="M12 9l-9.8-5.6c-.6-.3-1-.3-1.4 0l8.4 8.4L12 9z"/></svg>
+        <div><div class="store-top" data-i18n="store_top_google">Доступно в</div><div class="store-bot">Google Play</div></div>
+      </a>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div>© 2026 MenuAssistant</div>
+    <div class="foot-links">
+      <a href="#" data-i18n="foot_privacy">Конфиденциальность</a>
+      <a href="#" data-i18n="foot_terms">Условия</a>
+      <a href="#" data-i18n="foot_business">Для ресторанов</a>
+      <a href="mailto:hello@menuassistant.app">hello@menuassistant.app</a>
+    </div>
+  </footer>
+
+</div>
+
+<!-- TWEAKS PANEL -->
+<div class="tweaks-panel" id="tweaks">
+  <h4>Tweaks</h4>
+  <div class="tw-row">
+    <label>Theme</label>
+    <div class="tw-swatches" id="tw-theme">
+      <div class="tw-swatch on" data-theme="" style="background:#C44E2A;"></div>
+      <div class="tw-swatch" data-theme="sage" style="background:#3E6B4A;"></div>
+      <div class="tw-swatch" data-theme="midnight" style="background:#E8A96B; border:1px solid #0F1012;"></div>
+    </div>
+  </div>
+  <div class="tw-row">
+    <label>Display font</label>
+    <div class="tw-opts" id="tw-font">
+      <button class="tw-chip on" data-font="'Fraunces', serif">Fraunces</button>
+      <button class="tw-chip" data-font="'Instrument Serif', serif">Instrument</button>
+      <button class="tw-chip" data-font="'Inter', sans-serif">Inter</button>
+    </div>
+  </div>
+  <div class="tw-row">
+    <label>Language</label>
+    <div class="tw-opts" id="tw-lang">
+      <button class="tw-chip on" data-lang="en">EN</button>
+      <button class="tw-chip" data-lang="ru">RU</button>
+      <button class="tw-chip" data-lang="pt">PT</button>
+      <button class="tw-chip" data-lang="es">ES</button>
+      <button class="tw-chip" data-lang="it">IT</button>
+      <button class="tw-chip" data-lang="fr">FR</button>
+      <button class="tw-chip" data-lang="de">DE</button>
+    </div>
+  </div>
+  <div class="tw-row">
+    <label>App section variant</label>
+    <div class="tw-opts" id="tw-variant">
+      <button class="tw-chip on" data-variant="warm">Warm</button>
+      <button class="tw-chip" data-variant="editorial">Editorial</button>
+      <button class="tw-chip" data-variant="dark">Dark</button>
+    </div>
+  </div>
+</div>
+
+<!-- editmode state -->
+<script>
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "",
+  "themeMode": "light",
+  "font": "'Fraunces', serif",
+  "lang": "ru",
+  "variant": "dark"
+}/*EDITMODE-END*/;
+
+// i18n
+const I18N = {
+  ru: {
+    nav_how: 'Как работает', nav_features: 'Возможности', nav_app: 'Приложение', nav_faq: 'FAQ', nav_cta: 'Скачать',
+    eyebrow: 'Ваш личный ресторанный гид',
+    hero_h1: 'Каждое меню — <em>как домашнее.</em> На любом языке.',
+    hero_sub: 'Сфотографируйте меню в кафе — и через 20 секунд получите его с фото блюд, составом, переводом, тегами и ценами в вашей валюте.',
+    store_top_apple: 'Скачать в', store_top_google: 'Доступно в',
+    stat1: 'обработка меню', stat2: 'языков перевода', stat3: 'валют и регионов',
+    badge_translated: 'Переведено', badge_translated_from: 'из португальского',
+    badge_diet: 'Без глютена', badge_diet_count: '12 блюд подошли',
+    problem_h: 'Меню — это половина впечатления. А часто — половина стресса.',
+    quote1: '«Сидим в Лиссабоне — в меню ни одного слова по-английски, ни одной картинки. Заказали наугад — пришёл язык трески.»<cite>— турист, Reddit</cite>',
+    quote2: '«Я ем без глютена. Каждый раз допрашиваю официанта. Хочу просто видеть список блюд, которые мне подходят.»<cite>— пользовательница, 32 года</cite>',
+    how_eyebrow: 'Как работает',
+    how_h: 'От фотографии к готовому меню — за один глоток эспрессо.',
+    how_sub: 'ИИ парсит текст, сверяется с базой блюд, подбирает фотографии, тегирует аллергены и переводит на ваш язык.',
+    step1_tag: 'Снимок', step1_h: 'Фото, PDF или ссылка', step1_p: 'Сфотографируйте бумажное меню, загрузите PDF или вставьте ссылку на сайт ресторана.',
+    step2_tag: 'Распознавание', step2_h: 'ИИ читает и структурирует', step2_p: 'Разбирает названия блюд, цены, категории, ингредиенты и рассчитывает ваш список аллергенов.',
+    step3_tag: 'Оформление', step3_h: 'Фото, описания, перевод', step3_p: 'К каждому блюду подбирается фотография, добавляется перевод на ваш язык и понятное описание состава.',
+    step4_tag: 'Сохранение', step4_h: 'Остаётся в вашей коллекции', step4_p: 'Меню навсегда сохраняется в профиле. Лайкайте места и блюда — собирайте свою карту вкусов.',
+    feat_translate_eye: 'Перевод на лету',
+    feat_translate_h: 'Меню Лиссабона — на вашем языке.',
+    feat_translate_p: 'Нажмите один раз — и всё меню переводится на 80+ языков. Сохраняется и оригинал, чтобы показать официанту.',
+    feat_allergen_h: 'Фильтры по аллергенам и диете',
+    feat_allergen_p: 'Отметьте, что вам нельзя — и мы спрячем несовместимое. Веган, без глютена, без лактозы, халяль.',
+    chip_vegan: '🌱 Веган', chip_gluten: 'Без глютена', chip_lactose: 'Без лактозы', chip_halal: 'Халяль',
+    feat_search_h: '«Что-то с курицей до €20»',
+    feat_search_p: 'Умный поиск понимает обычный язык. Находит блюда по ингредиентам, цене, вкусу или настроению.',
+    feat_search_example: 'что-то с курицей, не острое, до 20 евро',
+    feat_currency_h: 'Ваша валюта', feat_currency_p: 'Цены автоматически переводятся в любимую валюту.',
+    feat_history_h: 'История посещений', feat_history_p: 'Все меню, в которых вы ели, — в одном месте. Можно вернуться, лайкнуть, поделиться.',
+    feat_recs_h: 'Советы под вас', feat_recs_p: 'Чем больше лайков — тем точнее подбор. Рекомендации блюд на основе ваших вкусов.',
+    feat_recs_example: '«Вам понравятся сибас и тартар — по вашим лайкам»',
+    app_eyebrow: 'Прототип мобильного приложения',
+    app_h: 'Новый интерфейс.<br>Старый темперамент.',
+    app_sub: 'Редизайн экранов текущего Flutter-приложения: авторизация, главная, ресторан, категория, блюдо, добавление меню, пустые состояния и онбординг.',
+    cta_h: 'Хватит <em>гадать</em> по меню.',
+    cta_p: 'Сфотографируйте — и через 20 секунд читайте как своё.',
+    foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_business: 'Для ресторанов',
+    poly_eyebrow: 'Работает на 7 языках',
+    poly_h: 'Одно блюдо, <em>семь языков.</em> Одно и то же понимание.',
+    poly_sub: 'Меню считываются и хранятся на английском — это канонический каталог. Каждое блюдо переводится на ваш язык с описанием, ингредиентами и аллергенами.',
+    poly_scroll: 'наведите, чтобы остановить',
+    poly_shown_in: 'Показано на', poly_foot_label: 'Исходный язык каталога', poly_foot_count: '+ 6 целевых языков',
+  },
+  en: {
+    nav_how: 'How it works', nav_features: 'Features', nav_app: 'App', nav_faq: 'FAQ', nav_cta: 'Get the app',
+    eyebrow: 'Your personal restaurant guide',
+    hero_h1: 'Every menu, <em>like it was yours.</em> In any language.',
+    hero_sub: 'Snap the menu at a café — and 20 seconds later see it with dish photos, ingredients, translations, tags and prices in your currency.',
+    store_top_apple: 'Download on', store_top_google: 'Get it on',
+    stat1: 'to process a menu', stat2: 'translation languages', stat3: 'currencies & regions',
+    badge_translated: 'Translated', badge_translated_from: 'from Portuguese',
+    badge_diet: 'Gluten-free', badge_diet_count: '12 dishes matched',
+    problem_h: 'A menu is half the experience. And often half the stress.',
+    quote1: '"In Lisbon, not a single English word in the menu, no pictures. Ordered blind — got cod tongue."<cite>— tourist, Reddit</cite>',
+    quote2: '"I eat gluten-free. Every time I interrogate the waiter. I just want to see the dishes I can actually eat."<cite>— user, 32</cite>',
+    how_eyebrow: 'How it works',
+    how_h: 'From a photo to a beautiful menu — in one sip of espresso.',
+    how_sub: 'The AI parses the text, matches a dish database, picks photos, tags allergens and translates it into your language.',
+    step1_tag: 'Capture', step1_h: 'Photo, PDF or link', step1_p: 'Snap a paper menu, upload a PDF or paste the restaurant\'s website link.',
+    step2_tag: 'Recognize', step2_h: 'AI reads & structures', step2_p: 'Parses dish names, prices, categories, ingredients and computes your allergen list.',
+    step3_tag: 'Dress up', step3_h: 'Photos, descriptions, translation', step3_p: 'Every dish gets a photo, a translation and a clear ingredient description.',
+    step4_tag: 'Save', step4_h: 'Stays in your collection', step4_p: 'Menus live in your profile forever. Like places and dishes — build your taste map.',
+    feat_translate_eye: 'Live translation',
+    feat_translate_h: 'A Lisbon menu — in your language.',
+    feat_translate_p: 'One tap translates the whole menu into 80+ languages. Keeps the original so you can show the waiter.',
+    feat_allergen_h: 'Allergen & diet filters',
+    feat_allergen_p: 'Mark what you can\'t have — we hide the rest. Vegan, gluten-free, lactose-free, halal.',
+    chip_vegan: '🌱 Vegan', chip_gluten: 'Gluten-free', chip_lactose: 'Lactose-free', chip_halal: 'Halal',
+    feat_search_h: '"Something with chicken under €20"',
+    feat_search_p: 'Smart search understands plain language. Finds dishes by ingredient, price, flavor or mood.',
+    feat_search_example: 'something with chicken, not spicy, under 20 euros',
+    feat_currency_h: 'Your currency', feat_currency_p: 'Prices auto-convert to the currency you prefer.',
+    feat_history_h: 'Visit history', feat_history_p: 'Every menu you ate from — in one place. Revisit, like, share.',
+    feat_recs_h: 'Tips for you', feat_recs_p: 'The more you like, the smarter it gets. Dish recommendations by your taste.',
+    feat_recs_example: '"You\'ll love the sea bass & tartare — based on your likes"',
+    app_eyebrow: 'Mobile app prototype',
+    app_h: 'New interface.<br>Same temperament.',
+    app_sub: 'Redesign of the current Flutter app: auth, home, restaurant, category, dish, add menu, empty states and onboarding.',
+    cta_h: 'Stop <em>guessing</em> at menus.',
+    cta_p: 'Snap it — and 20 seconds later it reads like yours.',
+    foot_privacy: 'Privacy', foot_terms: 'Terms', foot_business: 'For restaurants',
+    poly_eyebrow: 'Works in 7 languages',
+    poly_h: 'One dish, <em>seven languages.</em> Same understanding.',
+    poly_sub: 'Menus are read and stored in English — the canonical catalog. Every dish is translated into your language, with a clear description, ingredients and allergens.',
+    poly_scroll: 'hover to pause',
+    poly_shown_in: 'Shown in', poly_foot_label: 'Canonical source language', poly_foot_count: '+ 6 target languages',
+  },
+  pt: {
+    nav_how: 'Como funciona', nav_features: 'Recursos', nav_app: 'App', nav_faq: 'FAQ', nav_cta: 'Baixar app',
+    eyebrow: 'O seu guia pessoal de restaurantes',
+    hero_h1: 'Cada menu, <em>como se fosse seu.</em> Em qualquer idioma.',
+    hero_sub: 'Fotografe o menu no café — e em 20 segundos tem-no com fotos dos pratos, ingredientes, tradução, tags e preços na sua moeda.',
+    store_top_apple: 'Descarregar no', store_top_google: 'Disponível no',
+    stat1: 'para processar um menu', stat2: 'idiomas de tradução', stat3: 'moedas e regiões',
+    badge_translated: 'Traduzido', badge_translated_from: 'do português',
+    badge_diet: 'Sem glúten', badge_diet_count: '12 pratos compatíveis',
+    problem_h: 'Um menu é metade da experiência. E muitas vezes metade do stress.',
+    quote1: '«Em Lisboa, nem uma palavra em inglês no menu, nenhuma foto. Pedi às cegas — veio língua de bacalhau.»<cite>— turista, Reddit</cite>',
+    quote2: '«Como sem glúten. A cada vez interrogo o empregado. Só quero ver os pratos que posso comer.»<cite>— utilizadora, 32 anos</cite>',
+    how_eyebrow: 'Como funciona',
+    how_h: 'De uma foto a um menu bonito — num gole de expresso.',
+    how_sub: 'A IA lê o texto, compara com a base de pratos, escolhe fotos, etiqueta alergénios e traduz para o seu idioma.',
+    step1_tag: 'Captura', step1_h: 'Foto, PDF ou link', step1_p: 'Fotografe o menu em papel, carregue um PDF ou cole o link do site.',
+    step2_tag: 'Reconhece', step2_h: 'A IA lê e estrutura', step2_p: 'Analisa nomes, preços, categorias, ingredientes e calcula a sua lista de alergénios.',
+    step3_tag: 'Apresenta', step3_h: 'Fotos, descrições, tradução', step3_p: 'Cada prato ganha foto, tradução e descrição clara dos ingredientes.',
+    step4_tag: 'Guarda', step4_h: 'Fica na sua coleção', step4_p: 'Os menus vivem para sempre no seu perfil. Curta locais e pratos — construa o seu mapa de sabores.',
+    feat_translate_eye: 'Tradução ao vivo',
+    feat_translate_h: 'Um menu de Lisboa — no seu idioma.',
+    feat_translate_p: 'Um toque traduz todo o menu para 80+ idiomas. Guarda o original para mostrar ao empregado.',
+    feat_allergen_h: 'Filtros de alergénios e dieta',
+    feat_allergen_p: 'Marque o que não pode — escondemos o resto. Vegano, sem glúten, sem lactose, halal.',
+    chip_vegan: '🌱 Vegano', chip_gluten: 'Sem glúten', chip_lactose: 'Sem lactose', chip_halal: 'Halal',
+    feat_search_h: '«Algo com frango até €20»',
+    feat_search_p: 'Pesquisa inteligente em linguagem comum. Encontra pratos por ingrediente, preço, sabor ou humor.',
+    feat_search_example: 'algo com frango, não picante, até 20 euros',
+    feat_currency_h: 'A sua moeda', feat_currency_p: 'Os preços convertem-se na moeda que preferir.',
+    feat_history_h: 'Histórico de visitas', feat_history_p: 'Todos os menus em um lugar. Volte, curta, partilhe.',
+    feat_recs_h: 'Sugestões para si', feat_recs_p: 'Quanto mais curte, mais preciso fica. Recomendações pelo seu gosto.',
+    feat_recs_example: '«Vai adorar o robalo e o tártaro — pelos seus gostos»',
+    app_eyebrow: 'Protótipo da app móvel',
+    app_h: 'Nova interface.<br>Mesmo temperamento.',
+    app_sub: 'Redesenho dos ecrãs da app Flutter actual: login, início, restaurante, categoria, prato, adicionar menu, estados vazios e onboarding.',
+    cta_h: 'Chega de <em>adivinhar</em> menus.',
+    cta_p: 'Fotografe — e 20 segundos depois lê-se como seu.',
+    foot_privacy: 'Privacidade', foot_terms: 'Termos', foot_business: 'Para restaurantes',
+    poly_eyebrow: 'Funciona em 7 idiomas',
+    poly_h: 'Um prato, <em>sete idiomas.</em> A mesma compreensão.',
+    poly_sub: 'Os menus são lidos e guardados em inglês — é o catálogo canónico. Cada prato é traduzido para o seu idioma, com descrição, ingredientes e alergénios.',
+    poly_scroll: 'passe o rato para pausar',
+    poly_shown_in: 'Mostrado em', poly_foot_label: 'Idioma canónico do catálogo', poly_foot_count: '+ 6 idiomas de destino',
+  },
+  es: {
+    nav_how: 'Cómo funciona', nav_features: 'Características', nav_app: 'App', nav_faq: 'FAQ', nav_cta: 'Descargar',
+    eyebrow: 'Tu guía personal de restaurantes',
+    hero_h1: 'Cada carta, <em>como si fuera tuya.</em> En cualquier idioma.',
+    hero_sub: 'Fotografía la carta en un café — y en 20 segundos la tienes con fotos de platos, ingredientes, traducción, etiquetas y precios en tu moneda.',
+    store_top_apple: 'Descargar en', store_top_google: 'Disponible en',
+    stat1: 'para procesar una carta', stat2: 'idiomas de traducción', stat3: 'monedas y regiones',
+    badge_translated: 'Traducido', badge_translated_from: 'del portugués',
+    badge_diet: 'Sin gluten', badge_diet_count: '12 platos compatibles',
+    problem_h: 'Una carta es la mitad de la experiencia. Y a menudo la mitad del estrés.',
+    quote1: '«En Lisboa, ni una palabra en inglés en la carta, ni una foto. Pedí a ciegas — llegó lengua de bacalao.»<cite>— turista, Reddit</cite>',
+    quote2: '«Como sin gluten. Cada vez interrogo al camarero. Solo quiero ver los platos que puedo comer.»<cite>— usuaria, 32 años</cite>',
+    how_eyebrow: 'Cómo funciona',
+    how_h: 'De una foto a una carta preciosa — en un sorbo de espresso.',
+    how_sub: 'La IA lee el texto, coteja con la base de platos, elige fotos, etiqueta alérgenos y traduce a tu idioma.',
+    step1_tag: 'Captura', step1_h: 'Foto, PDF o enlace', step1_p: 'Fotografía la carta en papel, sube un PDF o pega el enlace de la web.',
+    step2_tag: 'Reconoce', step2_h: 'La IA lee y estructura', step2_p: 'Analiza nombres, precios, categorías, ingredientes y calcula tu lista de alérgenos.',
+    step3_tag: 'Presenta', step3_h: 'Fotos, descripciones, traducción', step3_p: 'Cada plato tiene foto, traducción y descripción clara.',
+    step4_tag: 'Guarda', step4_h: 'Se queda en tu colección', step4_p: 'Las cartas viven en tu perfil para siempre. Da like a sitios y platos — construye tu mapa de sabores.',
+    feat_translate_eye: 'Traducción al vuelo',
+    feat_translate_h: 'Una carta de Lisboa — en tu idioma.',
+    feat_translate_p: 'Un toque traduce toda la carta a 80+ idiomas. Guarda el original para enseñarlo al camarero.',
+    feat_allergen_h: 'Filtros de alérgenos y dieta',
+    feat_allergen_p: 'Marca lo que no puedes — ocultamos el resto. Vegano, sin gluten, sin lactosa, halal.',
+    chip_vegan: '🌱 Vegano', chip_gluten: 'Sin gluten', chip_lactose: 'Sin lactosa', chip_halal: 'Halal',
+    feat_search_h: '«Algo con pollo hasta €20»',
+    feat_search_p: 'Búsqueda inteligente en lenguaje natural. Encuentra platos por ingrediente, precio, sabor o ánimo.',
+    feat_search_example: 'algo con pollo, no picante, hasta 20 euros',
+    feat_currency_h: 'Tu moneda', feat_currency_p: 'Los precios se convierten a la moneda que prefieras.',
+    feat_history_h: 'Historial de visitas', feat_history_p: 'Todas las cartas en un lugar. Vuelve, da like, comparte.',
+    feat_recs_h: 'Sugerencias para ti', feat_recs_p: 'Cuanto más likes, mejor afina. Recomendaciones a tu gusto.',
+    feat_recs_example: '«Te encantarán la lubina y el tartar — por tus likes»',
+    app_eyebrow: 'Prototipo de la app móvil',
+    app_h: 'Nueva interfaz.<br>Mismo temperamento.',
+    app_sub: 'Rediseño de las pantallas de la app Flutter actual: login, inicio, restaurante, categoría, plato, añadir carta, estados vacíos y onboarding.',
+    cta_h: 'Deja de <em>adivinar</em> las cartas.',
+    cta_p: 'Foto — y 20 segundos después se lee como tuya.',
+    foot_privacy: 'Privacidad', foot_terms: 'Términos', foot_business: 'Para restaurantes',
+    poly_eyebrow: 'Funciona en 7 idiomas',
+    poly_h: 'Un plato, <em>siete idiomas.</em> La misma comprensión.',
+    poly_sub: 'Las cartas se leen y guardan en inglés — es el catálogo canónico. Cada plato se traduce a tu idioma, con descripción, ingredientes y alérgenos.',
+    poly_scroll: 'pasa el cursor para pausar',
+    poly_shown_in: 'Mostrado en', poly_foot_label: 'Idioma canónico del catálogo', poly_foot_count: '+ 6 idiomas de destino',
+  },
+  it: {
+    nav_how: 'Come funziona', nav_features: 'Funzioni', nav_app: 'App', nav_faq: 'FAQ', nav_cta: 'Scarica',
+    eyebrow: 'La tua guida personale ai ristoranti',
+    hero_h1: 'Ogni menu, <em>come fosse tuo.</em> In qualsiasi lingua.',
+    hero_sub: 'Fotografa il menu al caffè — e in 20 secondi lo trovi con foto dei piatti, ingredienti, traduzione, tag e prezzi nella tua valuta.',
+    store_top_apple: 'Scarica su', store_top_google: 'Disponibile su',
+    stat1: 'per elaborare un menu', stat2: 'lingue di traduzione', stat3: 'valute e regioni',
+    badge_translated: 'Tradotto', badge_translated_from: 'dal portoghese',
+    badge_diet: 'Senza glutine', badge_diet_count: '12 piatti compatibili',
+    problem_h: 'Un menu è metà dell\'esperienza. E spesso metà dello stress.',
+    quote1: '«A Lisbona, neanche una parola in inglese nel menu, nessuna foto. Ho ordinato alla cieca — è arrivata lingua di baccalà.»<cite>— turista, Reddit</cite>',
+    quote2: '«Mangio senza glutine. Ogni volta interrogo il cameriere. Voglio solo vedere i piatti che posso mangiare.»<cite>— utente, 32 anni</cite>',
+    how_eyebrow: 'Come funziona',
+    how_h: 'Da una foto a un menu bellissimo — in un sorso di espresso.',
+    how_sub: 'L\'IA legge il testo, confronta con la base dati, sceglie le foto, etichetta gli allergeni e traduce nella tua lingua.',
+    step1_tag: 'Scatta', step1_h: 'Foto, PDF o link', step1_p: 'Fotografa il menu cartaceo, carica un PDF o incolla il link del sito.',
+    step2_tag: 'Riconosce', step2_h: 'L\'IA legge e struttura', step2_p: 'Analizza nomi, prezzi, categorie, ingredienti e calcola la tua lista allergeni.',
+    step3_tag: 'Presenta', step3_h: 'Foto, descrizioni, traduzione', step3_p: 'Ogni piatto ha una foto, una traduzione e una descrizione chiara.',
+    step4_tag: 'Salva', step4_h: 'Resta nella tua collezione', step4_p: 'I menu vivono nel tuo profilo per sempre. Metti like a locali e piatti — costruisci la tua mappa dei sapori.',
+    feat_translate_eye: 'Traduzione al volo',
+    feat_translate_h: 'Un menu di Lisbona — nella tua lingua.',
+    feat_translate_p: 'Un tocco traduce tutto il menu in 80+ lingue. Tiene l\'originale per mostrarlo al cameriere.',
+    feat_allergen_h: 'Filtri allergeni e dieta',
+    feat_allergen_p: 'Segna cosa non puoi — nascondiamo il resto. Vegano, senza glutine, senza lattosio, halal.',
+    chip_vegan: '🌱 Vegano', chip_gluten: 'Senza glutine', chip_lactose: 'Senza lattosio', chip_halal: 'Halal',
+    feat_search_h: '«Qualcosa con pollo sotto i €20»',
+    feat_search_p: 'Ricerca intelligente in linguaggio naturale. Trova piatti per ingrediente, prezzo, sapore o umore.',
+    feat_search_example: 'qualcosa con pollo, non piccante, sotto i 20 euro',
+    feat_currency_h: 'La tua valuta', feat_currency_p: 'I prezzi si convertono nella valuta che preferisci.',
+    feat_history_h: 'Storico visite', feat_history_p: 'Tutti i menu in un posto. Torna, metti like, condividi.',
+    feat_recs_h: 'Suggerimenti per te', feat_recs_p: 'Più like metti, più preciso diventa. Raccomandazioni sul tuo gusto.',
+    feat_recs_example: '«Ti piaceranno la spigola e la tartare — dai tuoi like»',
+    app_eyebrow: 'Prototipo dell\'app mobile',
+    app_h: 'Nuova interfaccia.<br>Stesso temperamento.',
+    app_sub: 'Ridisegno degli schermi dell\'app Flutter attuale: login, home, ristorante, categoria, piatto, aggiungi menu, stati vuoti e onboarding.',
+    cta_h: 'Smetti di <em>indovinare</em> i menu.',
+    cta_p: 'Foto — e 20 secondi dopo si legge come tuo.',
+    foot_privacy: 'Privacy', foot_terms: 'Termini', foot_business: 'Per i ristoranti',
+    poly_eyebrow: 'Funziona in 7 lingue',
+    poly_h: 'Un piatto, <em>sette lingue.</em> Stessa comprensione.',
+    poly_sub: 'I menu vengono letti e memorizzati in inglese — è il catalogo canonico. Ogni piatto viene tradotto nella tua lingua, con descrizione, ingredienti e allergeni.',
+    poly_scroll: 'passa sopra per fermare',
+    poly_shown_in: 'Mostrato in', poly_foot_label: 'Lingua canonica del catalogo', poly_foot_count: '+ 6 lingue di destinazione',
+  },
+  fr: {
+    nav_how: 'Comment ça marche', nav_features: 'Fonctions', nav_app: 'App', nav_faq: 'FAQ', nav_cta: 'Télécharger',
+    eyebrow: 'Votre guide personnel des restaurants',
+    hero_h1: 'Chaque carte, <em>comme chez vous.</em> Dans toutes les langues.',
+    hero_sub: 'Photographiez la carte au café — et en 20 secondes vous l\'avez avec photos des plats, ingrédients, traduction, tags et prix dans votre devise.',
+    store_top_apple: 'Télécharger sur', store_top_google: 'Disponible sur',
+    stat1: 'pour traiter une carte', stat2: 'langues de traduction', stat3: 'devises et régions',
+    badge_translated: 'Traduit', badge_translated_from: 'du portugais',
+    badge_diet: 'Sans gluten', badge_diet_count: '12 plats compatibles',
+    problem_h: 'Une carte, c\'est la moitié de l\'expérience. Et souvent la moitié du stress.',
+    quote1: '«À Lisbonne, pas un mot en anglais sur la carte, aucune photo. Commandé au hasard — on a eu de la langue de morue.»<cite>— touriste, Reddit</cite>',
+    quote2: '«Je mange sans gluten. À chaque fois j\'interroge le serveur. Je veux juste voir les plats que je peux manger.»<cite>— utilisatrice, 32 ans</cite>',
+    how_eyebrow: 'Comment ça marche',
+    how_h: 'D\'une photo à une carte magnifique — en une gorgée d\'espresso.',
+    how_sub: 'L\'IA lit le texte, compare à la base de plats, choisit les photos, étiquette les allergènes et traduit dans votre langue.',
+    step1_tag: 'Capture', step1_h: 'Photo, PDF ou lien', step1_p: 'Photographiez la carte papier, téléversez un PDF ou collez le lien du site.',
+    step2_tag: 'Reconnaît', step2_h: 'L\'IA lit et structure', step2_p: 'Analyse les noms, prix, catégories, ingrédients et calcule votre liste d\'allergènes.',
+    step3_tag: 'Présente', step3_h: 'Photos, descriptions, traduction', step3_p: 'Chaque plat a une photo, une traduction et une description claire.',
+    step4_tag: 'Sauvegarde', step4_h: 'Reste dans votre collection', step4_p: 'Les cartes vivent dans votre profil pour toujours. Likez lieux et plats — construisez votre carte des saveurs.',
+    feat_translate_eye: 'Traduction en direct',
+    feat_translate_h: 'Une carte de Lisbonne — dans votre langue.',
+    feat_translate_p: 'Un clic traduit toute la carte en 80+ langues. Garde l\'original pour le montrer au serveur.',
+    feat_allergen_h: 'Filtres allergènes et régime',
+    feat_allergen_p: 'Cochez ce que vous ne pouvez pas — on cache le reste. Végan, sans gluten, sans lactose, halal.',
+    chip_vegan: '🌱 Végan', chip_gluten: 'Sans gluten', chip_lactose: 'Sans lactose', chip_halal: 'Halal',
+    feat_search_h: '«Quelque chose avec du poulet sous €20»',
+    feat_search_p: 'Recherche intelligente en langage naturel. Trouve les plats par ingrédient, prix, saveur ou humeur.',
+    feat_search_example: 'quelque chose avec du poulet, pas épicé, sous 20 euros',
+    feat_currency_h: 'Votre devise', feat_currency_p: 'Les prix se convertissent dans la devise préférée.',
+    feat_history_h: 'Historique', feat_history_p: 'Toutes les cartes en un seul endroit. Revenez, likez, partagez.',
+    feat_recs_h: 'Conseils pour vous', feat_recs_p: 'Plus vous likez, plus c\'est précis. Recommandations selon vos goûts.',
+    feat_recs_example: '«Vous aimerez le bar et le tartare — d\'après vos likes»',
+    app_eyebrow: 'Prototype de l\'app mobile',
+    app_h: 'Nouvelle interface.<br>Même tempérament.',
+    app_sub: 'Refonte des écrans de l\'app Flutter actuelle : connexion, accueil, restaurant, catégorie, plat, ajouter carte, états vides et onboarding.',
+    cta_h: 'Arrêtez de <em>deviner</em> les cartes.',
+    cta_p: 'Photo — et 20 secondes après ça se lit comme chez vous.',
+    foot_privacy: 'Confidentialité', foot_terms: 'Conditions', foot_business: 'Pour les restaurants',
+    poly_eyebrow: 'Fonctionne en 7 langues',
+    poly_h: 'Un plat, <em>sept langues.</em> La même compréhension.',
+    poly_sub: 'Les cartes sont lues et stockées en anglais — c\'est le catalogue canonique. Chaque plat est traduit dans votre langue, avec description, ingrédients et allergènes.',
+    poly_scroll: 'survolez pour mettre en pause',
+    poly_shown_in: 'Affiché en', poly_foot_label: 'Langue canonique du catalogue', poly_foot_count: '+ 6 langues cibles',
+  },
+  de: {
+    nav_how: 'So funktioniert\'s', nav_features: 'Funktionen', nav_app: 'App', nav_faq: 'FAQ', nav_cta: 'App laden',
+    eyebrow: 'Dein persönlicher Restaurant-Guide',
+    hero_h1: 'Jede Karte, <em>als wäre sie deine.</em> In jeder Sprache.',
+    hero_sub: 'Fotografiere die Speisekarte im Café — und in 20 Sekunden hast du sie mit Gerichtsfotos, Zutaten, Übersetzung, Tags und Preisen in deiner Währung.',
+    store_top_apple: 'Laden im', store_top_google: 'Jetzt bei',
+    stat1: 'pro Karte', stat2: 'Übersetzungssprachen', stat3: 'Währungen & Regionen',
+    badge_translated: 'Übersetzt', badge_translated_from: 'aus dem Portugiesischen',
+    badge_diet: 'Glutenfrei', badge_diet_count: '12 Gerichte passen',
+    problem_h: 'Eine Speisekarte ist die halbe Erfahrung. Und oft der halbe Stress.',
+    quote1: '„In Lissabon: kein englisches Wort auf der Karte, keine Bilder. Blind bestellt — es kam Kabeljauzunge."<cite>— Tourist, Reddit</cite>',
+    quote2: '„Ich esse glutenfrei. Jedes Mal löchere ich den Kellner. Ich will einfach die Gerichte sehen, die ich essen kann."<cite>— Nutzerin, 32</cite>',
+    how_eyebrow: 'So funktioniert\'s',
+    how_h: 'Vom Foto zur schönen Karte — in einem Schluck Espresso.',
+    how_sub: 'Die KI liest den Text, gleicht mit der Gerichtsdatenbank ab, wählt Fotos, taggt Allergene und übersetzt in deine Sprache.',
+    step1_tag: 'Aufnahme', step1_h: 'Foto, PDF oder Link', step1_p: 'Fotografiere die Papierkarte, lade ein PDF hoch oder füge den Website-Link ein.',
+    step2_tag: 'Erkennen', step2_h: 'KI liest & strukturiert', step2_p: 'Analysiert Namen, Preise, Kategorien, Zutaten und berechnet deine Allergenliste.',
+    step3_tag: 'Gestalten', step3_h: 'Fotos, Beschreibungen, Übersetzung', step3_p: 'Jedes Gericht bekommt ein Foto, eine Übersetzung und eine klare Beschreibung.',
+    step4_tag: 'Speichern', step4_h: 'Bleibt in deiner Sammlung', step4_p: 'Die Karten leben für immer in deinem Profil. Like Orte und Gerichte — baue deine Geschmackskarte.',
+    feat_translate_eye: 'Live-Übersetzung',
+    feat_translate_h: 'Eine Lissabonner Karte — in deiner Sprache.',
+    feat_translate_p: 'Ein Tipp übersetzt die ganze Karte in 80+ Sprachen. Das Original bleibt, um es dem Kellner zu zeigen.',
+    feat_allergen_h: 'Allergen- und Diätfilter',
+    feat_allergen_p: 'Markier, was du nicht verträgst — den Rest blenden wir aus. Vegan, glutenfrei, laktosefrei, halal.',
+    chip_vegan: '🌱 Vegan', chip_gluten: 'Glutenfrei', chip_lactose: 'Laktosefrei', chip_halal: 'Halal',
+    feat_search_h: '„Etwas mit Hühnchen unter €20"',
+    feat_search_p: 'Intelligente Suche in natürlicher Sprache. Findet Gerichte nach Zutat, Preis, Geschmack oder Laune.',
+    feat_search_example: 'etwas mit Hühnchen, nicht scharf, unter 20 Euro',
+    feat_currency_h: 'Deine Währung', feat_currency_p: 'Preise rechnen sich automatisch in deine Lieblingswährung um.',
+    feat_history_h: 'Besuchsverlauf', feat_history_p: 'Alle Karten an einem Ort. Zurückkehren, liken, teilen.',
+    feat_recs_h: 'Tipps für dich', feat_recs_p: 'Je mehr Likes, desto schlauer. Empfehlungen nach deinem Geschmack.',
+    feat_recs_example: '„Du wirst Seebarsch und Tatar lieben — basierend auf deinen Likes"',
+    app_eyebrow: 'Mobile App Prototyp',
+    app_h: 'Neues Interface.<br>Gleiches Temperament.',
+    app_sub: 'Redesign der aktuellen Flutter-App: Login, Start, Restaurant, Kategorie, Gericht, Karte hinzufügen, Empty States und Onboarding.',
+    cta_h: 'Schluss mit dem <em>Raten</em> bei Speisekarten.',
+    cta_p: 'Foto machen — und 20 Sekunden später liest sich\'s wie deine eigene.',
+    foot_privacy: 'Datenschutz', foot_terms: 'AGB', foot_business: 'Für Restaurants',
+    poly_eyebrow: 'Funktioniert in 7 Sprachen',
+    poly_h: 'Ein Gericht, <em>sieben Sprachen.</em> Dasselbe Verständnis.',
+    poly_sub: 'Speisekarten werden auf Englisch gelesen und gespeichert — der kanonische Katalog. Jedes Gericht wird in deine Sprache übersetzt, mit Beschreibung, Zutaten und Allergenen.',
+    poly_scroll: 'zum Pausieren hovern',
+    poly_shown_in: 'Angezeigt in', poly_foot_label: 'Kanonische Katalogsprache', poly_foot_count: '+ 6 Zielsprachen',
+  }
+};
+
+function applyLang(lang) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[lang] && I18N[lang][key]) el.innerHTML = I18N[lang][key];
+  });
+  document.documentElement.lang = lang;
+  // sync dropdown trigger
+  const LD_FLAGS = { en:'🇬🇧', ru:'🇷🇺', pt:'🇵🇹', es:'🇪🇸', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪' };
+  const trigFlag = document.getElementById('lang-dd-flag');
+  const trigCode = document.getElementById('lang-dd-code');
+  if (trigFlag) trigFlag.textContent = LD_FLAGS[lang] || '🏳️';
+  if (trigCode) trigCode.textContent = lang.toUpperCase();
+  document.querySelectorAll('#lang-dd-menu .lang-dd-opt').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  document.querySelectorAll('#tw-lang button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+}
+
+function applyTheme(t) {
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+  document.querySelectorAll('#tw-theme .tw-swatch').forEach(s => s.classList.toggle('on', (s.dataset.theme || '') === t));
+}
+
+// ── Theme mode: Auto / Light / Dark (controls whether midnight is applied) ──
+let currentThemeMode = 'auto';
+const _prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+function resolveThemeMode() {
+  if (currentThemeMode === 'dark') return 'midnight';
+  if (currentThemeMode === 'light') return '';
+  // auto: follow system
+  return _prefersDark.matches ? 'midnight' : '';
+}
+function applyThemeMode(mode) {
+  currentThemeMode = mode || 'auto';
+  // reflect in nav toggle
+  document.querySelectorAll('#theme-seg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.themeMode === currentThemeMode)
+  );
+  // apply resolved theme
+  const resolved = resolveThemeMode();
+  // but don't clobber a non-midnight/non-empty choice set via Tweaks (e.g. sage)
+  const currentAttr = document.documentElement.getAttribute('data-theme') || '';
+  if (currentThemeMode === 'auto' && (currentAttr === 'sage')) return; // leave sage alone in auto
+  applyTheme(resolved);
+  // Also mirror landing-wide dark/light onto phone mockups so they feel cohesive.
+  // Only override if the user hasn't explicitly picked a non-default app variant via Tweaks.
+  if (typeof applyVariant === 'function') {
+    const phoneVariant = resolved === 'midnight' ? 'dark' : 'warm';
+    applyVariant(phoneVariant);
+    if (typeof window.rerenderScreens === 'function') window.rerenderScreens();
+  }
+}
+// react to system theme changes while in Auto
+_prefersDark.addEventListener && _prefersDark.addEventListener('change', () => {
+  if (currentThemeMode === 'auto') applyTheme(resolveThemeMode());
+});
+
+function applyFont(f) {
+  document.documentElement.style.setProperty('--serif', f);
+  document.querySelectorAll('#tw-font button').forEach(b => b.classList.toggle('on', b.dataset.font === f));
+}
+
+let currentVariant = 'warm';
+function applyVariant(v) {
+  currentVariant = v;
+  document.querySelectorAll('#tw-variant button').forEach(b => b.classList.toggle('on', b.dataset.variant === v));
+  if (window.rerenderScreens) window.rerenderScreens();
+}
+
+// ─────── POLYGLOT DEMO ───────
+// One dish (Bacalhau à Brás) — rendered in all 7 supported languages.
+// Source is always English (canonical catalog); the 6 others are translations.
+const POLYGLOT = {
+  en: { flag: '🇬🇧', code: 'EN', label: 'English',    name: 'Shredded salt cod with potatoes & egg',   desc: 'Classic Portuguese dish: salted cod shredded into fine strands, tossed with matchstick potatoes, onions and softly-set egg. Served with olives and parsley.', tags: ['fish','egg','potato','gluten'] },
+  ru: { flag: '🇷🇺', code: 'RU', label: 'Русский',    name: 'Треска «а Браш» с картофелем и яйцом',    desc: 'Классическое португальское блюдо: солёная треска, разобранная на волокна, с жареным картофелем-соломкой, луком и нежным омлетом. Подаётся с оливками и петрушкой.', tags: ['рыба','яйцо','картофель','глютен'] },
+  pt: { flag: '🇵🇹', code: 'PT', label: 'Português',  name: 'Bacalhau à Brás',                         desc: 'Prato clássico português: bacalhau desfiado em lascas finas, salteado com batata palha, cebola e ovo levemente cozido. Servido com azeitonas e salsa.', tags: ['peixe','ovo','batata','glúten'] },
+  es: { flag: '🇪🇸', code: 'ES', label: 'Español',    name: 'Bacalao a la Brás',                       desc: 'Plato clásico portugués: bacalao desmenuzado en hebras finas, salteado con patatas paja, cebolla y huevo cuajado. Servido con aceitunas y perejil.', tags: ['pescado','huevo','patata','gluten'] },
+  it: { flag: '🇮🇹', code: 'IT', label: 'Italiano',   name: 'Baccalà alla Brás',                       desc: 'Piatto classico portoghese: baccalà sfilacciato, saltato con patate a fiammifero, cipolla e uovo morbido. Servito con olive e prezzemolo.', tags: ['pesce','uovo','patata','glutine'] },
+  fr: { flag: '🇫🇷', code: 'FR', label: 'Français',   name: 'Morue effilochée à la Brás',              desc: 'Plat portugais classique : morue salée effilochée, sautée avec des pommes paille, oignons et œufs juste pris. Servi avec olives et persil.', tags: ['poisson','œuf','pomme de terre','gluten'] },
+  de: { flag: '🇩🇪', code: 'DE', label: 'Deutsch',    name: 'Bacalhau à Brás (Kabeljau mit Kartoffelstroh & Ei)', desc: 'Portugiesischer Klassiker: gesalzener Kabeljau in feinen Fäden, gebraten mit Kartoffelstroh, Zwiebeln und weich gerührtem Ei. Mit Oliven und Petersilie serviert.', tags: ['Fisch','Ei','Kartoffel','Gluten'] },
+};
+
+// Which language is currently "featured" on the left hero card.
+let polyFeatured = 'en';
+
+function renderPolyRail() {
+  const host = document.getElementById('poly-rail');
+  const wrap = host && host.closest('.poly-rail-wrap');
+  if (!host || !wrap) return;
+  host.innerHTML = '';
+  const order = ['en','ru','pt','es','it','fr','de'];
+  const buildCard = (k) => {
+    const v = POLYGLOT[k];
+    const srcLine = (k === 'en')
+      ? '<span class="src-badge">SOURCE</span><span>English · canonical</span>'
+      : `<span>${v.code} · translated from EN</span>`;
+    return `
+      <article class="poly-card${k === 'en' ? ' is-source' : ''}" data-lang="${k}">
+        <div class="poly-card-photo">
+          <div class="flag-chip"><span class="flag">${v.flag}</span><span>${v.code}</span></div>
+          <div class="price">€ 18</div>
+          <div class="orig">Bacalhau à Brás</div>
+        </div>
+        <div class="poly-card-body">
+          <div class="src-row">${srcLine}</div>
+          <h3 class="dish-name">${v.name}</h3>
+          <p class="dish-desc">${v.desc}</p>
+          <div class="tags">${v.tags.map(t => `<span>${t}</span>`).join('')}</div>
+        </div>
+      </article>
+    `;
+  };
+  // 2 copies back-to-back for seamless loop
+  const track = order.map(buildCard).join('');
+  host.innerHTML = track + track;
+
+  // ── JS-driven marquee with smooth accel/decel on hover ──
+  let loopWidth = 0;
+  const measureLoop = () => {
+    const cards = host.querySelectorAll('.poly-card');
+    if (cards.length < 8) return;
+    const first = cards[0].getBoundingClientRect();
+    const eighth = cards[7].getBoundingClientRect();
+    loopWidth = eighth.left - first.left;
+  };
+  requestAnimationFrame(measureLoop);
+  window.addEventListener('resize', () => requestAnimationFrame(measureLoop));
+
+  const TARGET_PX_PER_SEC = 45;     // base marquee speed
+  const ACCEL_TIME = 600;           // ms to ease between 1× ↔ 0×
+  let offset = 0;                   // current translateX in px (negative)
+  let speed = 1;                    // 0 = stopped, 1 = full speed
+  let targetSpeed = 1;
+  let lastT = performance.now();
+  let speedChangeStart = lastT;
+  let speedChangeFrom = 1;
+
+  const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
+
+  const tick = (now) => {
+    const dt = (now - lastT) / 1000;
+    lastT = now;
+    // update speed toward target with easing
+    if (speed !== targetSpeed) {
+      const t = Math.min(1, (now - speedChangeStart) / ACCEL_TIME);
+      speed = speedChangeFrom + (targetSpeed - speedChangeFrom) * easeOutCubic(t);
+      if (t >= 1) speed = targetSpeed;
+    }
+    if (loopWidth > 0) {
+      offset -= TARGET_PX_PER_SEC * speed * dt;
+      if (offset <= -loopWidth) offset += loopWidth;
+      host.style.transform = `translate3d(${offset}px, 0, 0)`;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+
+  const setTarget = (v) => {
+    if (targetSpeed === v) return;
+    speedChangeFrom = speed;
+    speedChangeStart = performance.now();
+    targetSpeed = v;
+  };
+  wrap.addEventListener('mouseenter', () => setTarget(0));
+  wrap.addEventListener('mouseleave', () => setTarget(1));
+  // also pause when the tab isn't visible (don't waste battery)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      speed = 0; targetSpeed = 0;
+    } else if (!wrap.matches(':hover')) {
+      setTarget(1);
+    }
+  });
+}
+
+// apply defaults on load
+document.addEventListener('DOMContentLoaded', () => {
+  applyLang(TWEAK_DEFAULTS.lang);
+  // Theme mode first (auto/light/dark), then Tweaks palette (may override with sage)
+  applyThemeMode(TWEAK_DEFAULTS.themeMode || 'auto');
+  if (TWEAK_DEFAULTS.theme) applyTheme(TWEAK_DEFAULTS.theme);
+  applyFont(TWEAK_DEFAULTS.font);
+  applyVariant(TWEAK_DEFAULTS.variant);
+  renderPolyRail();
+
+  // theme toggle in nav
+  document.getElementById('theme-seg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const mode = b.dataset.themeMode;
+    applyThemeMode(mode);
+    postEdit({ themeMode: mode, theme: document.documentElement.getAttribute('data-theme') || '' });
+  });
+
+  // language dropdown in nav
+  const langDD = document.getElementById('lang-dd');
+  const langTrig = document.getElementById('lang-dd-trigger');
+  const langMenu = document.getElementById('lang-dd-menu');
+  function setLangDdOpen(open) {
+    langDD.setAttribute('data-open', open ? 'true' : 'false');
+    langTrig.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  langTrig.addEventListener('click', e => {
+    e.stopPropagation();
+    setLangDdOpen(langDD.getAttribute('data-open') !== 'true');
+  });
+  langMenu.addEventListener('click', e => {
+    const b = e.target.closest('.lang-dd-opt');
+    if (!b) return;
+    applyLang(b.dataset.lang);
+    postEdit({ lang: b.dataset.lang });
+    setLangDdOpen(false);
+  });
+  document.addEventListener('click', e => {
+    if (!langDD.contains(e.target)) setLangDdOpen(false);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') setLangDdOpen(false);
+  });
+
+  // tweaks
+  document.getElementById('tw-theme').addEventListener('click', e => {
+    const s = e.target.closest('.tw-swatch'); if (!s) return;
+    applyTheme(s.dataset.theme || ''); postEdit({ theme: s.dataset.theme || '' });
+  });
+  document.getElementById('tw-font').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    applyFont(b.dataset.font); postEdit({ font: b.dataset.font });
+  });
+  document.getElementById('tw-lang').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    applyLang(b.dataset.lang); postEdit({ lang: b.dataset.lang });
+  });
+  document.getElementById('tw-variant').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    applyVariant(b.dataset.variant); postEdit({ variant: b.dataset.variant });
+  });
+});
+
+// edit-mode protocol
+window.addEventListener('message', (e) => {
+  if (!e.data) return;
+  if (e.data.type === '__activate_edit_mode') document.getElementById('tweaks').classList.add('on');
+  if (e.data.type === '__deactivate_edit_mode') document.getElementById('tweaks').classList.remove('on');
+});
+try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e){}
+function postEdit(edits) {
+  try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*'); } catch(e){}
+}
+window.I18N = I18N;
+window.getLang = () => document.documentElement.lang || 'en';
+window.getVariant = () => currentVariant;
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components/screens.jsx"></script>
+
+</body>
+</html>

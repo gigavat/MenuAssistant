@@ -538,6 +538,41 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['email'],
                   ),
         ),
+        'getProfile': _i1.MethodConnector(
+          name: 'getProfile',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['userAccount'] as _i6.UserAccountEndpoint)
+                  .getProfile(session),
+        ),
+        'saveProfile': _i1.MethodConnector(
+          name: 'saveProfile',
+          params: {
+            'fullName': _i1.ParameterDescription(
+              name: 'fullName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'birthDate': _i1.ParameterDescription(
+              name: 'birthDate',
+              type: _i1.getType<DateTime?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['userAccount'] as _i6.UserAccountEndpoint)
+                  .saveProfile(
+                    session,
+                    fullName: params['fullName'],
+                    birthDate: params['birthDate'],
+                  ),
+        ),
       },
     );
     connectors['greeting'] = _i1.EndpointConnector(

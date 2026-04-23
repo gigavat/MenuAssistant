@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:menu_assistant_client/menu_assistant_client.dart';
 
 class RestaurantRepository {
@@ -33,10 +35,35 @@ class RestaurantRepository {
     return _client.restaurant.getMenuItemsForCategory(categoryId);
   }
 
+  /// Backward-compat single-image wrapper used by the current AddMenu flow
+  /// for "legacy" paths (gallery/PDF/link → one file). Multi-page camera
+  /// uploads should call [processMultiPageMenu].
   Future<ProcessMenuResult> processMenuUpload(
     String fileName,
     List<int> fileBytes,
   ) async {
     return _client.aiProcessing.processMenuUpload(fileName, fileBytes);
+  }
+
+  /// Multi-page menu upload. Pages are sent in the same RPC so the server
+  /// feeds them all to Claude as a single vision request.
+  Future<ProcessMenuResult> processMultiPageMenu(
+    List<({String fileName, Uint8List bytes, String? mediaType})> pages,
+  ) async {
+    final payload = pages
+        .map((p) => MenuPageInput(
+              fileName: p.fileName,
+              fileBytes: ByteData.view(p.bytes.buffer, p.bytes.offsetInBytes,
+                  p.bytes.lengthInBytes),
+              mediaType: p.mediaType,
+            ))
+        .toList();
+    return _client.aiProcessing.processMultiPageMenu(payload);
+  }
+
+  /// Resolves ambiguity when dedup returned candidates. Pass the chosen
+  /// candidate's id to merge into it, or null to keep the pending one.
+  Future<int> confirmMatch(int pendingRestaurantId, int? matchedId) async {
+    return _client.restaurant.confirmMatch(pendingRestaurantId, matchedId);
   }
 }

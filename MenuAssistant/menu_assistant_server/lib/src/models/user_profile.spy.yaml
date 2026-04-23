@@ -1,0 +1,20 @@
+class: AppUserProfile
+table: app_user_profile
+# Per-user profile data captured during the post-registration wizard
+# (AuthScreen → ProfileSetupScreen on first sign-up). `userId` is the
+# Serverpod UUID (session.authenticated!.userIdentifier), unique per
+# account. Existing users re-running the setup flow overwrite the row.
+#
+# Named `AppUserProfile` to avoid collision with `UserProfile` exported
+# by `serverpod_auth_core_server` (which focuses on email/userName/
+# imageId and has no birthDate or other app-specific fields).
+fields:
+  userId: String
+  fullName: String
+  birthDate: DateTime?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  app_user_profile_user_idx:
+    fields: userId
+    unique: true
