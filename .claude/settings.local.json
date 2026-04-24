@@ -116,7 +116,10 @@
       "Bash(curl -sS -X OPTIONS \"http://localhost:8080/admin/getMetrics\" -H \"Origin: http://localhost:3000\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: content-type\" -i)",
       "Bash(python -c \"import sys,html; h=sys.stdin.read\\(\\); import re; matches = re.findall\\(r'[A-Za-z][^<>\\\\\\\\n]{3,80}error[^<>\\\\\\\\n]{0,80}', h\\)[:5]; print\\('\\\\\\\\n'.join\\(matches\\)\\)\")",
       "Bash(powershell.exe -NoProfile -Command \"Get-Process -Id 36696 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime,MainWindowTitle,Path | Format-List\")",
-      "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Id 36696 -Force\")"
+      "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Id 36696 -Force\")",
+      "Bash(curl -sS -X POST 'http://localhost:8080/admin/listCuratedDishes?__TRACKED_VAR__' -H 'Content-Type: application/json' -d '{\"limit\":2}')",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Process -Id 28888 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime | Format-List\")",
+      "Bash(curl -sS -X POST 'http://localhost:8080/admin/updateCuratedDish?_adminEmail=andrey.grachev38@gmail.com' -H 'Content-Type: application/json' -d '{\"id\":62,\"status\":\"approved\"}')"
     ],
     "additionalDirectories": [
       "\\tmp"

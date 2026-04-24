@@ -1,0 +1,14 @@
+### Admin Photo Review DTO. Вариация `CuratedDishImage` с joined
+### `dishDisplayName` для показа в grid.
+class: PhotoReviewRow
+fields:
+  imageId: int
+  curatedDishId: int
+  dishDisplayName: String
+  imageUrl: String
+  source: String
+  qualityScore: int
+  isPrimary: bool
+  width: int?
+  height: int?
+  createdAt: DateTime

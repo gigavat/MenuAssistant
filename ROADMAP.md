@@ -1107,6 +1107,119 @@ indexes:
 
 ---
 
+## ⏳ Sprint 5.7 — Internal Wiki (Starlight + ADR + Runbooks + Auto-API)
+
+> **Цель**: единая внутренняя документация — рукописная архитектура / ADR / runbook'и в Starlight, auto-generated API reference из inline комментов. Закрывает knowledge-drift до prod-деплоя в Sprint 6.
+>
+> **Позиция**: после Sprint 5.5 (Astro toolchain уже стоит — Starlight его переиспользует), до Sprint 6 (runbook'и нужны до prod, чтобы не учиться на горячую). Архитектура к этому моменту стабилизирована (4.6→4.10→5→5.5 done).
+
+### Стек
+
+- **Starlight** (Astro) — рукописная документация (architecture / ADR / runbooks / services / screens). Тот же toolchain, что landing в 5.5
+- **dart doc** (встроен в Dart SDK) — auto-generated API reference из `///` комментов для Serverpod backend + Flutter app
+- **TypeDoc + starlight-typedoc** — auto-generated API reference из TSDoc для Next.js admin, встраивается прямо в Starlight как раздел sidebar
+- **mkdocstrings** (опционально) — для Python InferenceService, если посчитаем нужным
+- Hosting: Cloudflare Pages на subdomain `docs.menuassistant.app` под Cloudflare Access (как admin в 4.9 — приватный, только команда)
+
+### Структура
+
+Новая папка в корне репо `docs/`:
+
+```
+docs/
+├── astro.config.mjs              # Starlight config + sidebar tree
+├── package.json
+├── src/content/docs/
+│   ├── index.mdx                 # landing wiki
+│   ├── architecture/
+│   │   ├── overview.md           # high-level service map + data flow diagrams
+│   │   ├── data-model.md         # ER-схема ключевых таблиц
+│   │   ├── auth-flow.md          # JWT / Cloudflare Access / Serverpod sessions
+│   │   ├── enrichment-pipeline.md# Claude → curated_dish → translation → image
+│   │   └── deploy-topology.md    # AWS Fargate + RDS + S3 + CloudFront map
+│   ├── adr/                      # Architecture Decision Records (YYYY-MM-DD-title.md)
+│   ├── runbooks/                 # operations
+│   ├── services/                 # описание каждого сервиса
+│   └── screens/                  # описание каждого Flutter/Admin экрана
+└── public/
+```
+
+Auto-generated API reference (gitignored, build artifact):
+- `docs/src/content/docs/api/dart-server/` ← `dart doc` из `MenuAssistant/menu_assistant_server/`
+- `docs/src/content/docs/api/dart-flutter/` ← `dart doc` из `MenuAssistant/menu_assistant_flutter/`
+- `docs/src/content/docs/api/admin/` ← TypeDoc из `admin/`
+- `docs/src/content/docs/api/inference/` ← mkdocstrings из `InferenceService/` (если делаем)
+
+### ADR'ы для первой волны (восстановить контекст исторических решений)
+
+Минимум 8 ADR'ов, формат `YYYY-MM-DD-kebab-title.md` с секциями Context / Decision / Consequences:
+
+1. Astro для landing вместо Next.js — zero-JS, статика, polyglot marquee как island
+2. Serverpod вместо custom Dart/Node backend — codegen клиента, миграции, future calls
+3. Curated dish dataset (Sprint 4.5) вместо real-time scraping — legal, latency, quality
+4. Mixed-stack (.NET для ImageService/PaymentService) вместо all-Dart — Stripe.NET SDK, GPU inference
+5. Cloudflare Access вместо self-rolled auth для admin — нет надо городить admin login
+6. Restaurant dedup по geo (lat/lng + pg_trgm на name) вместо по userId — multi-user шаринг
+7. Dual-font Fraunces / Literata по script — Cyrillic в Fraunces плохо рендерится
+8. InferenceService на remote Windows GPU без Docker — нет виртуализации в host BIOS
+9. Astro StaticRoute через Serverpod вместо отдельного CDN на pre-Sprint-6 этапе — простота
+
+### Runbook'и для первой волны
+
+Минимум 7 runbook'ов:
+
+- **Local stack startup** — postgres docker / serverpod migrate+run / flutter run -d chrome / admin pnpm dev / inference run_windows.ps1
+- **Serverpod миграции** — apply / rollback / создание новой миграции / pg_trgm extension setup
+- **Curated dish bootstrap** — как добавить новое блюдо вручную через `bin/` скрипты (description / image / translation)
+- **InferenceService на remote Windows GPU** — setup_windows.ps1 / run_windows.ps1 / диагностика драйверов
+- **Flutter Web italic TTF pair matcher** — gotcha #21, как чинить если italic не подхватываются
+- **DB-IP CSV update** — что если future_call зафейлился, как откатить таблицу
+- **Тестовые юзеры** — как создать / сбросить / войти (см. tooling_state.md)
+- **Debugging Claude LLM enrichment** — где смотреть логи, как воспроизвести промпт
+
+### Сервисы и экраны
+
+- **services/** — по одной странице на сервис: Serverpod backend, ImageService, InferenceService, Flutter app, Admin (Next.js), Landing (Astro). Содержит: назначение, ключевые endpoints/routes, БД-схема (для backend), внешние зависимости, env vars
+- **screens/** — по одной странице на каждый Flutter экран (post-Sprint-4.7) и каждую страницу Admin: UX flow, состояния, ключевые виджеты, какие endpoints дёргает
+
+### Inline-комменты — convention (записать в CLAUDE.md root)
+
+Завести `CLAUDE.md` в корне репо (сейчас только `admin/CLAUDE.md`):
+
+- **Dart**: `///` doc-comment на каждый public class / method / endpoint. Минимум — summary + параметры + return
+- **TypeScript**: TSDoc на каждый exported function / component / API route
+- **Python**: docstring на каждый public function / class
+- **Правило "при изменении X обнови Y"**:
+  - Меняешь публичный API (Serverpod endpoint, Flutter widget API, admin route, REST endpoint) → обнови doc-comment в том же PR
+  - Добавляешь новый сервис → создай `docs/src/content/docs/services/<name>.md` в том же PR
+  - Добавляешь новый Flutter экран или admin страницу → создай `docs/src/content/docs/screens/<name>.md` в том же PR
+  - Принимаешь архитектурное решение → создай `docs/src/content/docs/adr/YYYY-MM-DD-title.md` в том же PR
+  - Меняешь deploy / migration / runtime процесс → обнови соответствующий runbook в том же PR
+
+### CI integration
+
+Новый workflow `.github/workflows/docs.yml`:
+
+- На каждый PR: markdown lint (`markdownlint-cli2`) + проверка что новые public Dart symbols имеют `///` (через `dart analyze` с custom rule или простой grep-скрипт)
+- На merge в main: build Starlight + `dart doc` (server + flutter) + TypeDoc (admin) → deploy на Cloudflare Pages
+- Cloudflare Access policy на `docs.menuassistant.app` — только email команды
+
+### Критерии готовности Sprint 5.7
+
+- Starlight site развёрнут на `docs.menuassistant.app` под Cloudflare Access
+- Sidebar содержит разделы: Architecture / ADR / Runbooks / Services / Screens / API Reference
+- ≥ 8 ADR'ов восстановлены и опубликованы
+- ≥ 7 runbook'ов написаны и проверены (хотя бы раз пройдены вручную)
+- Каждый сервис имеет страницу в `services/`
+- Каждый Flutter экран и admin страница имеют страницу в `screens/`
+- `dart doc` собирается без warning'ов для server и flutter packages, выводится в `api/dart-*/`
+- TypeDoc собирается без warning'ов для admin, выводится в `api/admin/`
+- Корневой `CLAUDE.md` содержит inline-comment convention и правило "при изменении X обнови Y"
+- CI workflow `.github/workflows/docs.yml` зелёный, deploy on merge работает
+- Backlog-задача в Sprint 6: добавить runbook'и для AWS deploy / IaC / CI/CD при их создании
+
+---
+
 ## ⏳ Sprint 6 — Платежи и деплой
 
 ### 6.1 PaymentService (.NET 10)
@@ -1265,10 +1378,11 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 4. **Sprint 4.10** — Curated Candidate Promotion. ~1 неделя, требует готовой admin UI из 4.9. Замыкает loop: unmatched menu dishes → candidate queue → curated_dish
 5. **Sprint 5** — Локализация меню (i18n + currency). Использует инфраструктуру `dish_translation` из Sprint 4.5
 6. **Sprint 5.5** — Landing (Astro). ~1 неделя. Отодвинут с позиции 4.8 — идёт после Sprint 5, чтобы переиспользовать готовые переводы и curated photo dataset
-7. **Sprint 6** — PaymentService + AWS production deploy
-8. **Tech debt**: Spoonacular (#1), fal.ai upload (#2), Observability (#8-10)
+7. **Sprint 5.7** — Internal Wiki (Starlight + ADR + Runbooks + Auto-API). ~2 недели. Идёт после 5.5 (Astro toolchain переиспользуется), до 6 (runbook'и нужны до prod). Архитектура к этому моменту стабилизирована (4.6→4.10→5→5.5)
+8. **Sprint 6** — PaymentService + AWS production deploy. AWS-specific runbook'и дописываются ВНУТРИ этого спринта по правилу "при изменении X обнови Y" (см. Sprint 5.7)
+9. **Tech debt**: Spoonacular (#1), fal.ai upload (#2), Observability (#8-10)
 
-**Параллелизация Sprint 4.6 → 4.9**: 4.6 фундамент, блокирует 4.7/4.9. После 4.6 — два независимых трека (Flutter / admin), можно вести параллельно. Landing (5.5) идёт после i18n и параллелизуется с ранними стадиями Sprint 6. Общая длительность: ~10-12 недель sequential, ~6-8 недель при параллельности.
+**Параллелизация Sprint 4.6 → 4.9**: 4.6 фундамент, блокирует 4.7/4.9. После 4.6 — два независимых трека (Flutter / admin), можно вести параллельно. Landing (5.5) идёт после i18n и параллелизуется с ранними стадиями Sprint 6. Sprint 5.7 (wiki) можно частично распараллелить с 5.5: ADR'ы и services/-страницы пишутся независимо, Starlight-stack ставится после готовности 5.5. Общая длительность: ~12-14 недель sequential, ~8-10 недель при параллельности.
 
 ### TODO tech debt (записано в этот спринт-цикл, но отложено)
 
@@ -1346,6 +1460,17 @@ Sprints 1-3 + 4.5 ✅ done. Sprint 4 отменён. Далее рекоменд
 - Ключевые: `landing/src/pages/index.astro`, `landing/src/components/Polyglot.astro`, `landing/src/content/i18n.json`
 - Build artifact: `MenuAssistant/menu_assistant_server/web/pages/landing/` (generated, в .gitignore)
 - [server.dart](MenuAssistant/menu_assistant_server/lib/server.dart) — StaticRoute для `web/pages/landing`
+
+### Sprint 5.7 — Internal Wiki
+
+- Новая папка в корне репо: `docs/` (Astro + Starlight проект)
+- Ключевые: `docs/astro.config.mjs`, `docs/package.json`
+- `docs/src/content/docs/architecture/*.md` (≥ 5 файлов), `adr/*.md` (≥ 8), `runbooks/*.md` (≥ 7), `services/*.md`, `screens/*.md`
+- `docs/src/content/docs/api/` — gitignored, build artifact для `dart doc` / TypeDoc / mkdocstrings
+- Новый файл в корне: `CLAUDE.md` — inline-comment convention + правило "при изменении X обнови Y"
+- Новое: `.github/workflows/docs.yml` — markdown lint + dart doc + TypeDoc + Cloudflare Pages deploy
+- Cloudflare Access policy на `docs.menuassistant.app` (terraform или ручной setup, по аналогии с admin в 4.9)
+- Backlog в Sprint 6: добавить `runbooks/aws-deploy.md`, `runbooks/iac-terraform.md`, `runbooks/cicd.md` при их создании
 
 ### Sprint 6 — платежи
 

@@ -1,0 +1,15 @@
+### Admin Translations DTO. Одна строка в inline-edit таблице —
+### `curatedDishId` + язык задают уникальный lookup-key. `translationId`
+### null если перевода ещё не существует (показываем placeholder, при
+### upsert создаём row). `dishDisplayName` — английское имя из
+### `curated_dish.displayName` для навигации.
+class: TranslationRow
+fields:
+  translationId: int?
+  curatedDishId: int
+  dishDisplayName: String
+  language: String
+  name: String?
+  description: String?
+  source: String?
+  createdAt: DateTime?

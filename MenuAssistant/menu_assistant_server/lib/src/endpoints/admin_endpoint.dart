@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
+import '../service_registry.dart';
 
 /// Scope для moderation panel. Полностью изолирован от B2C auth —
 /// `requireLogin = false` (см. gotcha #22), identity парсится вручную
@@ -148,6 +150,439 @@ class AdminEndpoint extends Endpoint {
       );
     }).toList();
   }
+
+  // ── Phase C.1 · Dish Library (CuratedDish + DishCatalog CRUD) ───────────
+
+  Future<List<CuratedDish>> listCuratedDishes(
+    Session session, {
+    String? status,
+    String? cuisine,
+    String? search,
+    int? offset,
+    int? limit,
+  }) async {
+    await _requireAdmin(session);
+
+    final effOffset = offset ?? 0;
+    final clamped = (limit ?? 50).clamp(1, 500);
+    final needle = (search == null || search.trim().isEmpty)
+        ? null
+        : '%${search.trim().toLowerCase()}%';
+
+    return CuratedDish.db.find(
+      session,
+      where: (t) {
+        Expression expr = Constant.bool(true);
+        if (status != null) expr = expr & t.status.equals(status);
+        if (cuisine != null) expr = expr & t.cuisine.equals(cuisine);
+        if (needle != null) {
+          expr = expr &
+              (t.canonicalName.ilike(needle) |
+                  t.displayName.ilike(needle));
+        }
+        return expr;
+      },
+      orderBy: (t) => t.updatedAt,
+      orderDescending: true,
+      offset: effOffset,
+      limit: clamped,
+    );
+  }
+
+  /// Патч subset полей. Любой аргумент null трактуется как "не менять";
+  /// чтобы занулить nullable-поле, клиент шлёт пустую строку (или
+  /// дополнительный `clear*` флаг в будущем). MVP — минимальный набор.
+  Future<CuratedDish> updateCuratedDish(
+    Session session,
+    int id, {
+    String? displayName,
+    String? cuisine,
+    String? countryCode,
+    String? courseType,
+    String? description,
+    String? status,
+  }) async {
+    final admin = await _requireAdmin(session);
+    final existing = await CuratedDish.db.findById(session, id);
+    if (existing == null) {
+      throw StateError('CuratedDish $id not found');
+    }
+
+    final prev = <String, Object?>{
+      'displayName': existing.displayName,
+      'cuisine': existing.cuisine,
+      'countryCode': existing.countryCode,
+      'courseType': existing.courseType,
+      'description': existing.description,
+      'status': existing.status,
+    };
+
+    final updated = existing.copyWith(
+      displayName: displayName ?? existing.displayName,
+      cuisine: cuisine ?? existing.cuisine,
+      countryCode: countryCode ?? existing.countryCode,
+      courseType: courseType ?? existing.courseType,
+      description: description ?? existing.description,
+      status: status ?? existing.status,
+      approvedBy: status == 'approved' ? admin.email : existing.approvedBy,
+      updatedAt: DateTime.now(),
+    );
+    final saved = await CuratedDish.db.updateRow(session, updated);
+
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: status != null && status != existing.status
+          ? 'status_changed'
+          : 'edited',
+      objectType: 'curated_dish',
+      objectId: id.toString(),
+      diff: jsonEncode({'before': prev, 'after': _dishPatchMap(saved)}),
+    );
+    return saved;
+  }
+
+  Future<List<DishCatalogRow>> listDishCatalog(
+    Session session, {
+    bool? linked,
+    String? search,
+    int? offset,
+    int? limit,
+  }) async {
+    await _requireAdmin(session);
+
+    final effOffset = offset ?? 0;
+    final clamped = (limit ?? 50).clamp(1, 500);
+    final pattern = (search == null || search.trim().isEmpty)
+        ? null
+        : '%${search.trim().toLowerCase()}%';
+
+    final where = StringBuffer('WHERE 1=1');
+    if (linked == true) where.write(' AND dc."curatedDishId" IS NOT NULL');
+    if (linked == false) where.write(' AND dc."curatedDishId" IS NULL');
+    if (pattern != null) {
+      where.write(
+        ' AND (LOWER(dc."canonicalName") LIKE @q OR LOWER(dc."normalizedName") LIKE @q)',
+      );
+    }
+
+    final rows = await session.db.unsafeQuery(
+      '''
+SELECT dc.id AS id,
+       dc."normalizedName" AS normalized_name,
+       dc."canonicalName" AS canonical_name,
+       dc."cuisineType" AS cuisine_type,
+       dc.description AS description,
+       dc."curatedDishId" AS curated_dish_id,
+       cd."displayName" AS curated_display_name,
+       (
+         SELECT di."imageUrl" FROM dish_image di
+         WHERE di."dishCatalogId" = dc.id AND di."isPrimary" = true
+         LIMIT 1
+       ) AS primary_image_url,
+       dc."enrichmentStatus" AS enrichment_status,
+       dc."createdAt" AS created_at,
+       dc."updatedAt" AS updated_at
+FROM dish_catalog dc
+LEFT JOIN curated_dish cd ON cd.id = dc."curatedDishId"
+$where
+ORDER BY dc."updatedAt" DESC
+OFFSET @off LIMIT @lim
+''',
+      parameters: QueryParameters.named({
+        'q': ?pattern,
+        'off': effOffset,
+        'lim': clamped,
+      }),
+    );
+
+    return rows.map((r) {
+      final m = r.toColumnMap();
+      return DishCatalogRow(
+        id: m['id'] as int,
+        normalizedName: m['normalized_name'] as String,
+        canonicalName: m['canonical_name'] as String,
+        cuisineType: m['cuisine_type'] as String?,
+        description: m['description'] as String?,
+        curatedDishId: m['curated_dish_id'] as int?,
+        curatedDisplayName: m['curated_display_name'] as String?,
+        primaryImageUrl: m['primary_image_url'] as String?,
+        enrichmentStatus: m['enrichment_status'] as String,
+        createdAt: m['created_at'] as DateTime,
+        updatedAt: m['updated_at'] as DateTime,
+      );
+    }).toList();
+  }
+
+  // ── Phase C.3 · Translations ────────────────────────────────────────────
+
+  Future<List<TranslationRow>> listTranslations(
+    Session session, {
+    required String language,
+    String? search,
+    int? offset,
+    int? limit,
+  }) async {
+    await _requireAdmin(session);
+
+    final effOffset = offset ?? 0;
+    final clamped = (limit ?? 100).clamp(1, 500);
+    final pattern = (search == null || search.trim().isEmpty)
+        ? null
+        : '%${search.trim().toLowerCase()}%';
+
+    final where = StringBuffer(
+      'WHERE (tr.language = @lang OR tr.language IS NULL)',
+    );
+    if (pattern != null) {
+      where.write(
+        ' AND (LOWER(cd."displayName") LIKE @q OR LOWER(COALESCE(tr.name, \'\')) LIKE @q)',
+      );
+    }
+
+    final rows = await session.db.unsafeQuery(
+      '''
+SELECT tr.id AS translation_id,
+       cd.id AS curated_dish_id,
+       cd."displayName" AS dish_display_name,
+       @lang AS language,
+       tr.name AS name,
+       tr.description AS description,
+       tr.source AS source,
+       tr."createdAt" AS created_at
+FROM curated_dish cd
+LEFT JOIN dish_translation tr
+       ON tr."curatedDishId" = cd.id AND tr.language = @lang
+$where
+ORDER BY cd."displayName"
+OFFSET @off LIMIT @lim
+''',
+      parameters: QueryParameters.named({
+        'lang': language,
+        'q': ?pattern,
+        'off': effOffset,
+        'lim': clamped,
+      }),
+    );
+
+    return rows.map((r) {
+      final m = r.toColumnMap();
+      return TranslationRow(
+        translationId: m['translation_id'] as int?,
+        curatedDishId: m['curated_dish_id'] as int,
+        dishDisplayName: m['dish_display_name'] as String,
+        language: m['language'] as String,
+        name: m['name'] as String?,
+        description: m['description'] as String?,
+        source: m['source'] as String?,
+        createdAt: m['created_at'] as DateTime?,
+      );
+    }).toList();
+  }
+
+  /// Создаёт или обновляет перевод. Источник помечаем как `manual`
+  /// (в отличие от `claude_auto` — последние были сгенерены промптом).
+  Future<DishTranslation> upsertTranslation(
+    Session session, {
+    required int curatedDishId,
+    required String language,
+    required String name,
+    required String description,
+  }) async {
+    final admin = await _requireAdmin(session);
+    final existing = await DishTranslation.db.findFirstRow(
+      session,
+      where: (t) =>
+          t.curatedDishId.equals(curatedDishId) & t.language.equals(language),
+    );
+    final now = DateTime.now();
+
+    DishTranslation saved;
+    if (existing == null) {
+      saved = await DishTranslation.db.insertRow(
+        session,
+        DishTranslation(
+          curatedDishId: curatedDishId,
+          language: language,
+          name: name,
+          description: description,
+          source: 'manual',
+          createdAt: now,
+        ),
+      );
+    } else {
+      saved = await DishTranslation.db.updateRow(
+        session,
+        existing.copyWith(
+          name: name,
+          description: description,
+          source: 'manual',
+        ),
+      );
+    }
+
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: existing == null ? 'created' : 'edited',
+      objectType: 'translation',
+      objectId: '$curatedDishId/$language',
+      diff: jsonEncode({
+        'name': name,
+        'description': description,
+      }),
+    );
+    return saved;
+  }
+
+  // ── Phase C.4 · Photo review ────────────────────────────────────────────
+
+  Future<List<PhotoReviewRow>> listLowQualityPhotos(
+    Session session, {
+    int? maxQuality,
+    int? offset,
+    int? limit,
+  }) async {
+    await _requireAdmin(session);
+
+    final effMax = maxQuality ?? 3;
+    final effOffset = offset ?? 0;
+    final clamped = (limit ?? 60).clamp(1, 300);
+
+    final rows = await session.db.unsafeQuery(
+      '''
+SELECT img.id AS image_id,
+       img."curatedDishId" AS curated_dish_id,
+       cd."displayName" AS dish_display_name,
+       img."imageUrl" AS image_url,
+       img.source AS source,
+       img."qualityScore" AS quality_score,
+       img."isPrimary" AS is_primary,
+       img.width AS width,
+       img.height AS height,
+       img."createdAt" AS created_at
+FROM curated_dish_image img
+JOIN curated_dish cd ON cd.id = img."curatedDishId"
+WHERE img."qualityScore" <= @max
+ORDER BY img."qualityScore" ASC, img."createdAt" ASC
+OFFSET @off LIMIT @lim
+''',
+      parameters: QueryParameters.named({
+        'max': effMax,
+        'off': effOffset,
+        'lim': clamped,
+      }),
+    );
+
+    return rows.map((r) {
+      final m = r.toColumnMap();
+      return PhotoReviewRow(
+        imageId: m['image_id'] as int,
+        curatedDishId: m['curated_dish_id'] as int,
+        dishDisplayName: m['dish_display_name'] as String,
+        imageUrl: m['image_url'] as String,
+        source: m['source'] as String,
+        qualityScore: m['quality_score'] as int,
+        isPrimary: m['is_primary'] as bool,
+        width: m['width'] as int?,
+        height: m['height'] as int?,
+        createdAt: m['created_at'] as DateTime,
+      );
+    }).toList();
+  }
+
+  Future<CuratedDishImage> setPhotoQuality(
+    Session session,
+    int imageId,
+    int qualityScore,
+  ) async {
+    final admin = await _requireAdmin(session);
+    if (qualityScore < 1 || qualityScore > 5) {
+      throw ArgumentError.value(qualityScore, 'qualityScore', 'must be 1..5');
+    }
+    final existing = await CuratedDishImage.db.findById(session, imageId);
+    if (existing == null) {
+      throw StateError('CuratedDishImage $imageId not found');
+    }
+    final saved = await CuratedDishImage.db.updateRow(
+      session,
+      existing.copyWith(qualityScore: qualityScore),
+    );
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: 'rated_photo',
+      objectType: 'photo',
+      objectId: imageId.toString(),
+      diff: jsonEncode({
+        'from': existing.qualityScore,
+        'to': qualityScore,
+      }),
+    );
+    return saved;
+  }
+
+  Future<bool> deletePhoto(Session session, int imageId) async {
+    final admin = await _requireAdmin(session);
+    final existing = await CuratedDishImage.db.findById(session, imageId);
+    if (existing == null) return false;
+    await CuratedDishImage.db.deleteRow(session, existing);
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: 'deleted_photo',
+      objectType: 'photo',
+      objectId: imageId.toString(),
+      diff: jsonEncode({
+        'imageUrl': existing.imageUrl,
+        'source': existing.source,
+        'qualityScore': existing.qualityScore,
+      }),
+    );
+    return true;
+  }
+
+  // ── Phase C.5 · Audit log ───────────────────────────────────────────────
+
+  Future<List<AuditLog>> listAuditLog(
+    Session session, {
+    String? actorEmail,
+    String? objectType,
+    String? action,
+    int? offset,
+    int? limit,
+  }) async {
+    await _requireAdmin(session);
+
+    final effOffset = offset ?? 0;
+    final clamped = (limit ?? 100).clamp(1, 500);
+
+    return AuditLog.db.find(
+      session,
+      where: (t) {
+        Expression expr = Constant.bool(true);
+        if (actorEmail != null) expr = expr & t.actorEmail.equals(actorEmail);
+        if (objectType != null) expr = expr & t.objectType.equals(objectType);
+        if (action != null) expr = expr & t.action.equals(action);
+        return expr;
+      },
+      orderBy: (t) => t.timestamp,
+      orderDescending: true,
+      offset: effOffset,
+      limit: clamped,
+    );
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  Map<String, Object?> _dishPatchMap(CuratedDish d) => <String, Object?>{
+        'displayName': d.displayName,
+        'cuisine': d.cuisine,
+        'countryCode': d.countryCode,
+        'courseType': d.courseType,
+        'description': d.description,
+        'status': d.status,
+      };
 
   // ── Identity ────────────────────────────────────────────────────────────
 

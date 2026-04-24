@@ -13,6 +13,15 @@ admin:
   - getMetrics:
   - listRestaurants:
   - listUsers:
+  - listCuratedDishes:
+  - updateCuratedDish:
+  - listDishCatalog:
+  - listTranslations:
+  - upsertTranslation:
+  - listLowQualityPhotos:
+  - setPhotoQuality:
+  - deletePhoto:
+  - listAuditLog:
 aiProcessing:
   - processMenuUpload:
   - processMultiPageMenu:

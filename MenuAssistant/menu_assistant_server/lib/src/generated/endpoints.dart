@@ -354,6 +354,331 @@ class Endpoints extends _i1.EndpointDispatch {
                 search: params['search'],
               ),
         ),
+        'listCuratedDishes': _i1.MethodConnector(
+          name: 'listCuratedDishes',
+          params: {
+            'status': _i1.ParameterDescription(
+              name: 'status',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'cuisine': _i1.ParameterDescription(
+              name: 'cuisine',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).listCuratedDishes(
+                    session,
+                    status: params['status'],
+                    cuisine: params['cuisine'],
+                    search: params['search'],
+                    offset: params['offset'],
+                    limit: params['limit'],
+                  ),
+        ),
+        'updateCuratedDish': _i1.MethodConnector(
+          name: 'updateCuratedDish',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'displayName': _i1.ParameterDescription(
+              name: 'displayName',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'cuisine': _i1.ParameterDescription(
+              name: 'cuisine',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'countryCode': _i1.ParameterDescription(
+              name: 'countryCode',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'courseType': _i1.ParameterDescription(
+              name: 'courseType',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'description': _i1.ParameterDescription(
+              name: 'description',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'status': _i1.ParameterDescription(
+              name: 'status',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).updateCuratedDish(
+                    session,
+                    params['id'],
+                    displayName: params['displayName'],
+                    cuisine: params['cuisine'],
+                    countryCode: params['countryCode'],
+                    courseType: params['courseType'],
+                    description: params['description'],
+                    status: params['status'],
+                  ),
+        ),
+        'listDishCatalog': _i1.MethodConnector(
+          name: 'listDishCatalog',
+          params: {
+            'linked': _i1.ParameterDescription(
+              name: 'linked',
+              type: _i1.getType<bool?>(),
+              nullable: true,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).listDishCatalog(
+                    session,
+                    linked: params['linked'],
+                    search: params['search'],
+                    offset: params['offset'],
+                    limit: params['limit'],
+                  ),
+        ),
+        'listTranslations': _i1.MethodConnector(
+          name: 'listTranslations',
+          params: {
+            'language': _i1.ParameterDescription(
+              name: 'language',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).listTranslations(
+                    session,
+                    language: params['language'],
+                    search: params['search'],
+                    offset: params['offset'],
+                    limit: params['limit'],
+                  ),
+        ),
+        'upsertTranslation': _i1.MethodConnector(
+          name: 'upsertTranslation',
+          params: {
+            'curatedDishId': _i1.ParameterDescription(
+              name: 'curatedDishId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'language': _i1.ParameterDescription(
+              name: 'language',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'name': _i1.ParameterDescription(
+              name: 'name',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'description': _i1.ParameterDescription(
+              name: 'description',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).upsertTranslation(
+                    session,
+                    curatedDishId: params['curatedDishId'],
+                    language: params['language'],
+                    name: params['name'],
+                    description: params['description'],
+                  ),
+        ),
+        'listLowQualityPhotos': _i1.MethodConnector(
+          name: 'listLowQualityPhotos',
+          params: {
+            'maxQuality': _i1.ParameterDescription(
+              name: 'maxQuality',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint)
+                  .listLowQualityPhotos(
+                    session,
+                    maxQuality: params['maxQuality'],
+                    offset: params['offset'],
+                    limit: params['limit'],
+                  ),
+        ),
+        'setPhotoQuality': _i1.MethodConnector(
+          name: 'setPhotoQuality',
+          params: {
+            'imageId': _i1.ParameterDescription(
+              name: 'imageId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'qualityScore': _i1.ParameterDescription(
+              name: 'qualityScore',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).setPhotoQuality(
+                    session,
+                    params['imageId'],
+                    params['qualityScore'],
+                  ),
+        ),
+        'deletePhoto': _i1.MethodConnector(
+          name: 'deletePhoto',
+          params: {
+            'imageId': _i1.ParameterDescription(
+              name: 'imageId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint).deletePhoto(
+                session,
+                params['imageId'],
+              ),
+        ),
+        'listAuditLog': _i1.MethodConnector(
+          name: 'listAuditLog',
+          params: {
+            'actorEmail': _i1.ParameterDescription(
+              name: 'actorEmail',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'objectType': _i1.ParameterDescription(
+              name: 'objectType',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'action': _i1.ParameterDescription(
+              name: 'action',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint).listAuditLog(
+                session,
+                actorEmail: params['actorEmail'],
+                objectType: params['objectType'],
+                action: params['action'],
+                offset: params['offset'],
+                limit: params['limit'],
+              ),
+        ),
       },
     );
     connectors['aiProcessing'] = _i1.EndpointConnector(

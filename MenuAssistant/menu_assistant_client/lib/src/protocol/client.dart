@@ -19,16 +19,29 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
 import 'package:menu_assistant_client/src/protocol/admin_metrics.dart' as _i5;
 import 'package:menu_assistant_client/src/protocol/restaurant.dart' as _i6;
 import 'package:menu_assistant_client/src/protocol/admin_user_row.dart' as _i7;
-import 'package:menu_assistant_client/src/protocol/process_menu_result.dart'
-    as _i8;
-import 'package:menu_assistant_client/src/protocol/menu_page_input.dart' as _i9;
-import 'package:menu_assistant_client/src/protocol/category.dart' as _i10;
-import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i11;
-import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i12;
-import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
+import 'package:menu_assistant_client/src/protocol/curated_dish.dart' as _i8;
+import 'package:menu_assistant_client/src/protocol/dish_catalog_row.dart'
+    as _i9;
+import 'package:menu_assistant_client/src/protocol/translation_row.dart'
+    as _i10;
+import 'package:menu_assistant_client/src/protocol/dish_translation.dart'
+    as _i11;
+import 'package:menu_assistant_client/src/protocol/photo_review_row.dart'
+    as _i12;
+import 'package:menu_assistant_client/src/protocol/curated_dish_image.dart'
     as _i13;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i14;
-import 'protocol.dart' as _i15;
+import 'package:menu_assistant_client/src/protocol/audit_log.dart' as _i14;
+import 'package:menu_assistant_client/src/protocol/process_menu_result.dart'
+    as _i15;
+import 'package:menu_assistant_client/src/protocol/menu_page_input.dart'
+    as _i16;
+import 'package:menu_assistant_client/src/protocol/category.dart' as _i17;
+import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i18;
+import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i19;
+import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
+    as _i20;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i21;
+import 'protocol.dart' as _i22;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -301,6 +314,149 @@ class EndpointAdmin extends _i2.EndpointRef {
       'search': search,
     },
   );
+
+  _i3.Future<List<_i8.CuratedDish>> listCuratedDishes({
+    String? status,
+    String? cuisine,
+    String? search,
+    int? offset,
+    int? limit,
+  }) => caller.callServerEndpoint<List<_i8.CuratedDish>>(
+    'admin',
+    'listCuratedDishes',
+    {
+      'status': status,
+      'cuisine': cuisine,
+      'search': search,
+      'offset': offset,
+      'limit': limit,
+    },
+  );
+
+  /// Патч subset полей. Любой аргумент null трактуется как "не менять";
+  /// чтобы занулить nullable-поле, клиент шлёт пустую строку (или
+  /// дополнительный `clear*` флаг в будущем). MVP — минимальный набор.
+  _i3.Future<_i8.CuratedDish> updateCuratedDish(
+    int id, {
+    String? displayName,
+    String? cuisine,
+    String? countryCode,
+    String? courseType,
+    String? description,
+    String? status,
+  }) => caller.callServerEndpoint<_i8.CuratedDish>(
+    'admin',
+    'updateCuratedDish',
+    {
+      'id': id,
+      'displayName': displayName,
+      'cuisine': cuisine,
+      'countryCode': countryCode,
+      'courseType': courseType,
+      'description': description,
+      'status': status,
+    },
+  );
+
+  _i3.Future<List<_i9.DishCatalogRow>> listDishCatalog({
+    bool? linked,
+    String? search,
+    int? offset,
+    int? limit,
+  }) => caller.callServerEndpoint<List<_i9.DishCatalogRow>>(
+    'admin',
+    'listDishCatalog',
+    {
+      'linked': linked,
+      'search': search,
+      'offset': offset,
+      'limit': limit,
+    },
+  );
+
+  _i3.Future<List<_i10.TranslationRow>> listTranslations({
+    required String language,
+    String? search,
+    int? offset,
+    int? limit,
+  }) => caller.callServerEndpoint<List<_i10.TranslationRow>>(
+    'admin',
+    'listTranslations',
+    {
+      'language': language,
+      'search': search,
+      'offset': offset,
+      'limit': limit,
+    },
+  );
+
+  /// Создаёт или обновляет перевод. Источник помечаем как `manual`
+  /// (в отличие от `claude_auto` — последние были сгенерены промптом).
+  _i3.Future<_i11.DishTranslation> upsertTranslation({
+    required int curatedDishId,
+    required String language,
+    required String name,
+    required String description,
+  }) => caller.callServerEndpoint<_i11.DishTranslation>(
+    'admin',
+    'upsertTranslation',
+    {
+      'curatedDishId': curatedDishId,
+      'language': language,
+      'name': name,
+      'description': description,
+    },
+  );
+
+  _i3.Future<List<_i12.PhotoReviewRow>> listLowQualityPhotos({
+    int? maxQuality,
+    int? offset,
+    int? limit,
+  }) => caller.callServerEndpoint<List<_i12.PhotoReviewRow>>(
+    'admin',
+    'listLowQualityPhotos',
+    {
+      'maxQuality': maxQuality,
+      'offset': offset,
+      'limit': limit,
+    },
+  );
+
+  _i3.Future<_i13.CuratedDishImage> setPhotoQuality(
+    int imageId,
+    int qualityScore,
+  ) => caller.callServerEndpoint<_i13.CuratedDishImage>(
+    'admin',
+    'setPhotoQuality',
+    {
+      'imageId': imageId,
+      'qualityScore': qualityScore,
+    },
+  );
+
+  _i3.Future<bool> deletePhoto(int imageId) => caller.callServerEndpoint<bool>(
+    'admin',
+    'deletePhoto',
+    {'imageId': imageId},
+  );
+
+  _i3.Future<List<_i14.AuditLog>> listAuditLog({
+    String? actorEmail,
+    String? objectType,
+    String? action,
+    int? offset,
+    int? limit,
+  }) => caller.callServerEndpoint<List<_i14.AuditLog>>(
+    'admin',
+    'listAuditLog',
+    {
+      'actorEmail': actorEmail,
+      'objectType': objectType,
+      'action': action,
+      'offset': offset,
+      'limit': limit,
+    },
+  );
 }
 
 /// {@category Endpoint}
@@ -312,10 +468,10 @@ class EndpointAiProcessing extends _i2.EndpointRef {
 
   /// Backward-compat single-page wrapper — the existing Flutter client
   /// (pre-4.7) still calls this.
-  _i3.Future<_i8.ProcessMenuResult> processMenuUpload(
+  _i3.Future<_i15.ProcessMenuResult> processMenuUpload(
     String fileName,
     List<int> fileBytes,
-  ) => caller.callServerEndpoint<_i8.ProcessMenuResult>(
+  ) => caller.callServerEndpoint<_i15.ProcessMenuResult>(
     'aiProcessing',
     'processMenuUpload',
     {
@@ -330,9 +486,9 @@ class EndpointAiProcessing extends _i2.EndpointRef {
   /// - a [MenuSourcePage] is stored per page,
   /// - menu items are linked to the shared [DishCatalog],
   /// - one [LlmUsage] row is written covering all pages.
-  _i3.Future<_i8.ProcessMenuResult> processMultiPageMenu(
-    List<_i9.MenuPageInput> pages,
-  ) => caller.callServerEndpoint<_i8.ProcessMenuResult>(
+  _i3.Future<_i15.ProcessMenuResult> processMultiPageMenu(
+    List<_i16.MenuPageInput> pages,
+  ) => caller.callServerEndpoint<_i15.ProcessMenuResult>(
     'aiProcessing',
     'processMultiPageMenu',
     {'pages': pages},
@@ -365,9 +521,9 @@ class EndpointRestaurant extends _i2.EndpointRef {
       );
 
   /// Get Categories for a restaurant. Gated on the user having visited it.
-  _i3.Future<List<_i10.Category>> getCategoriesForRestaurant(
+  _i3.Future<List<_i17.Category>> getCategoriesForRestaurant(
     int restaurantId,
-  ) => caller.callServerEndpoint<List<_i10.Category>>(
+  ) => caller.callServerEndpoint<List<_i17.Category>>(
     'restaurant',
     'getCategoriesForRestaurant',
     {'restaurantId': restaurantId},
@@ -376,8 +532,8 @@ class EndpointRestaurant extends _i2.EndpointRef {
   /// Get MenuItems for a category. Returns client-facing [MenuItemView]
   /// payloads with `description` and `imageUrl` resolved via JOIN on
   /// `dish_catalog` and `dish_image` (denorm snapshots removed in 4.6).
-  _i3.Future<List<_i11.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
-      caller.callServerEndpoint<List<_i11.MenuItemView>>(
+  _i3.Future<List<_i18.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
+      caller.callServerEndpoint<List<_i18.MenuItemView>>(
         'restaurant',
         'getMenuItemsForCategory',
         {'categoryId': categoryId},
@@ -409,9 +565,9 @@ class EndpointRestaurant extends _i2.EndpointRef {
   );
 
   /// Get favorite menu items as hydrated views.
-  _i3.Future<List<_i11.MenuItemView>> getFavoriteMenuItems({
+  _i3.Future<List<_i18.MenuItemView>> getFavoriteMenuItems({
     required int limit,
-  }) => caller.callServerEndpoint<List<_i11.MenuItemView>>(
+  }) => caller.callServerEndpoint<List<_i18.MenuItemView>>(
     'restaurant',
     'getFavoriteMenuItems',
     {'limit': limit},
@@ -475,8 +631,8 @@ class EndpointUserAccount extends _i2.EndpointRef {
   /// the post-registration wizard). Returns null if the profile wasn't
   /// set up yet — the client routes through ProfileSetupScreen in that
   /// case. Requires authentication.
-  _i3.Future<_i12.AppUserProfile?> getProfile() =>
-      caller.callServerEndpoint<_i12.AppUserProfile?>(
+  _i3.Future<_i19.AppUserProfile?> getProfile() =>
+      caller.callServerEndpoint<_i19.AppUserProfile?>(
         'userAccount',
         'getProfile',
         {},
@@ -485,10 +641,10 @@ class EndpointUserAccount extends _i2.EndpointRef {
   /// Upserts the caller's profile. Creates the row on first call (post-
   /// registration), overwrites the fields on subsequent calls (edit flow).
   /// Requires authentication.
-  _i3.Future<_i12.AppUserProfile> saveProfile({
+  _i3.Future<_i19.AppUserProfile> saveProfile({
     required String fullName,
     DateTime? birthDate,
-  }) => caller.callServerEndpoint<_i12.AppUserProfile>(
+  }) => caller.callServerEndpoint<_i19.AppUserProfile>(
     'userAccount',
     'saveProfile',
     {
@@ -508,8 +664,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i13.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i13.Greeting>(
+  _i3.Future<_i20.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i20.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -518,12 +674,12 @@ class EndpointGreeting extends _i2.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    auth = _i14.Caller(client);
+    auth = _i21.Caller(client);
     serverpod_auth_idp = _i1.Caller(client);
     serverpod_auth_core = _i4.Caller(client);
   }
 
-  late final _i14.Caller auth;
+  late final _i21.Caller auth;
 
   late final _i1.Caller serverpod_auth_idp;
 
@@ -550,7 +706,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i15.Protocol(),
+         _i22.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

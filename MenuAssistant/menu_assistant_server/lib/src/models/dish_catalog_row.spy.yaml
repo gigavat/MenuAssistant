@@ -1,0 +1,16 @@
+### Admin Dish Library DTO. Расширяет `DishCatalog` основным
+### изображением (из `dish_image WHERE isPrimary=true`), чтобы в UI
+### показывать превью без отдельного запроса.
+class: DishCatalogRow
+fields:
+  id: int
+  normalizedName: String
+  canonicalName: String
+  cuisineType: String?
+  description: String?
+  curatedDishId: int?
+  curatedDisplayName: String?
+  primaryImageUrl: String?
+  enrichmentStatus: String
+  createdAt: DateTime
+  updatedAt: DateTime
