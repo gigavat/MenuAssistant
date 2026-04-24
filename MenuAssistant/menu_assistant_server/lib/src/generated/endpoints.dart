@@ -679,6 +679,172 @@ class Endpoints extends _i1.EndpointDispatch {
                 limit: params['limit'],
               ),
         ),
+        'listMenuQueue': _i1.MethodConnector(
+          name: 'listMenuQueue',
+          params: {
+            'status': _i1.ParameterDescription(
+              name: 'status',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'search': _i1.ParameterDescription(
+              name: 'search',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).listMenuQueue(
+                    session,
+                    status: params['status'],
+                    search: params['search'],
+                    offset: params['offset'],
+                    limit: params['limit'],
+                  ),
+        ),
+        'getMenuForValidation': _i1.MethodConnector(
+          name: 'getMenuForValidation',
+          params: {
+            'restaurantId': _i1.ParameterDescription(
+              name: 'restaurantId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint)
+                  .getMenuForValidation(
+                    session,
+                    params['restaurantId'],
+                  ),
+        ),
+        'updateMenuItem': _i1.MethodConnector(
+          name: 'updateMenuItem',
+          params: {
+            'itemId': _i1.ParameterDescription(
+              name: 'itemId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'name': _i1.ParameterDescription(
+              name: 'name',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'price': _i1.ParameterDescription(
+              name: 'price',
+              type: _i1.getType<double?>(),
+              nullable: true,
+            ),
+            'approvalStatus': _i1.ParameterDescription(
+              name: 'approvalStatus',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).updateMenuItem(
+                    session,
+                    params['itemId'],
+                    name: params['name'],
+                    price: params['price'],
+                    approvalStatus: params['approvalStatus'],
+                  ),
+        ),
+        'updateCategory': _i1.MethodConnector(
+          name: 'updateCategory',
+          params: {
+            'categoryId': _i1.ParameterDescription(
+              name: 'categoryId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'name': _i1.ParameterDescription(
+              name: 'name',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'approvalStatus': _i1.ParameterDescription(
+              name: 'approvalStatus',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['admin'] as _i4.AdminEndpoint).updateCategory(
+                    session,
+                    params['categoryId'],
+                    name: params['name'],
+                    approvalStatus: params['approvalStatus'],
+                  ),
+        ),
+        'approveMenu': _i1.MethodConnector(
+          name: 'approveMenu',
+          params: {
+            'restaurantId': _i1.ParameterDescription(
+              name: 'restaurantId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint).approveMenu(
+                session,
+                params['restaurantId'],
+              ),
+        ),
+        'rejectMenu': _i1.MethodConnector(
+          name: 'rejectMenu',
+          params: {
+            'restaurantId': _i1.ParameterDescription(
+              name: 'restaurantId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'reason': _i1.ParameterDescription(
+              name: 'reason',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['admin'] as _i4.AdminEndpoint).rejectMenu(
+                session,
+                params['restaurantId'],
+                params['reason'],
+              ),
+        ),
       },
     );
     connectors['aiProcessing'] = _i1.EndpointConnector(
@@ -735,6 +901,25 @@ class Endpoints extends _i1.EndpointDispatch {
       name: 'restaurant',
       endpoint: endpoints['restaurant']!,
       methodConnectors: {
+        'getRestaurantRevision': _i1.MethodConnector(
+          name: 'getRestaurantRevision',
+          params: {
+            'restaurantId': _i1.ParameterDescription(
+              name: 'restaurantId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['restaurant'] as _i6.RestaurantEndpoint)
+                  .getRestaurantRevision(
+                    session,
+                    params['restaurantId'],
+                  ),
+        ),
         'getAllRestaurants': _i1.MethodConnector(
           name: 'getAllRestaurants',
           params: {},

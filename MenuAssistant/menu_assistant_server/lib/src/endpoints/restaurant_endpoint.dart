@@ -7,6 +7,25 @@ class RestaurantEndpoint extends Endpoint {
   @override
   bool get requireLogin => true;
 
+  /// Revision marker для Flutter poll (Sprint 4.9 Phase D). Возвращает
+  /// `restaurant.updatedAt` если он не null, иначе `createdAt`. Flutter
+  /// RestaurantScreen поллит этот метод раз в 5 сек и рефетчит меню,
+  /// если timestamp изменился. Требует, чтобы user имел visit на ресторане.
+  Future<DateTime?> getRestaurantRevision(
+    Session session,
+    int restaurantId,
+  ) async {
+    final userId = session.authenticated!.userIdentifier;
+    final visit = await UserRestaurantVisit.db.findFirstRow(
+      session,
+      where: (t) =>
+          t.userId.equals(userId) & t.restaurantId.equals(restaurantId),
+    );
+    if (visit == null) return null;
+    final restaurant = await Restaurant.db.findById(session, restaurantId);
+    return restaurant?.updatedAt ?? restaurant?.createdAt;
+  }
+
   /// Returns every restaurant the current user has ever uploaded a menu
   /// for — tracked via `user_restaurant_visit`.
   Future<List<Restaurant>> getAllRestaurants(Session session) async {

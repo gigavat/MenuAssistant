@@ -31,6 +31,14 @@ class RestaurantRepository {
     return _client.restaurant.getCategoriesForRestaurant(restaurantId);
   }
 
+  /// Sprint 4.9 Phase D: poll-marker для RestaurantScreen. Возвращает
+  /// `restaurant.updatedAt` (fallback `createdAt`) если у пользователя
+  /// есть visit на ресторане, иначе null. Bump'ится admin validator'ом на
+  /// approve/edit — Flutter раз в 5 сек читает и рефетчит меню.
+  Future<DateTime?> getRestaurantRevision(int restaurantId) async {
+    return _client.restaurant.getRestaurantRevision(restaurantId);
+  }
+
   Future<List<MenuItemView>> getMenuItemsForCategory(int categoryId) async {
     return _client.restaurant.getMenuItemsForCategory(categoryId);
   }

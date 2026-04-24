@@ -8,3 +8,7 @@ fields:
   category: Category?, relation
   dishCatalog: DishCatalog?, relation
   createdAt: DateTime
+  # Sprint 4.9 admin validator: 'pending' | 'approved' | 'rejected'. Null =
+  # legacy (трактуется как approved). Mutations через admin bump'ят
+  # restaurant.updatedAt для Flutter poll.
+  approvalStatus: String?

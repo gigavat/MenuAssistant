@@ -24,6 +24,8 @@ abstract class Restaurant implements _i1.SerializableModel {
     this.addressRaw,
     required this.currency,
     required this.createdAt,
+    this.moderationStatus,
+    this.updatedAt,
   });
 
   factory Restaurant({
@@ -37,6 +39,8 @@ abstract class Restaurant implements _i1.SerializableModel {
     String? addressRaw,
     required String currency,
     required DateTime createdAt,
+    String? moderationStatus,
+    DateTime? updatedAt,
   }) = _RestaurantImpl;
 
   factory Restaurant.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -53,6 +57,10 @@ abstract class Restaurant implements _i1.SerializableModel {
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
+      moderationStatus: jsonSerialization['moderationStatus'] as String?,
+      updatedAt: jsonSerialization['updatedAt'] == null
+          ? null
+          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['updatedAt']),
     );
   }
 
@@ -79,6 +87,10 @@ abstract class Restaurant implements _i1.SerializableModel {
 
   DateTime createdAt;
 
+  String? moderationStatus;
+
+  DateTime? updatedAt;
+
   /// Returns a shallow copy of this [Restaurant]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -93,6 +105,8 @@ abstract class Restaurant implements _i1.SerializableModel {
     String? addressRaw,
     String? currency,
     DateTime? createdAt,
+    String? moderationStatus,
+    DateTime? updatedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -108,6 +122,8 @@ abstract class Restaurant implements _i1.SerializableModel {
       if (addressRaw != null) 'addressRaw': addressRaw,
       'currency': currency,
       'createdAt': createdAt.toJson(),
+      if (moderationStatus != null) 'moderationStatus': moderationStatus,
+      if (updatedAt != null) 'updatedAt': updatedAt?.toJson(),
     };
   }
 
@@ -131,6 +147,8 @@ class _RestaurantImpl extends Restaurant {
     String? addressRaw,
     required String currency,
     required DateTime createdAt,
+    String? moderationStatus,
+    DateTime? updatedAt,
   }) : super._(
          id: id,
          name: name,
@@ -142,6 +160,8 @@ class _RestaurantImpl extends Restaurant {
          addressRaw: addressRaw,
          currency: currency,
          createdAt: createdAt,
+         moderationStatus: moderationStatus,
+         updatedAt: updatedAt,
        );
 
   /// Returns a shallow copy of this [Restaurant]
@@ -159,6 +179,8 @@ class _RestaurantImpl extends Restaurant {
     Object? addressRaw = _Undefined,
     String? currency,
     DateTime? createdAt,
+    Object? moderationStatus = _Undefined,
+    Object? updatedAt = _Undefined,
   }) {
     return Restaurant(
       id: id is int? ? id : this.id,
@@ -171,6 +193,10 @@ class _RestaurantImpl extends Restaurant {
       addressRaw: addressRaw is String? ? addressRaw : this.addressRaw,
       currency: currency ?? this.currency,
       createdAt: createdAt ?? this.createdAt,
+      moderationStatus: moderationStatus is String?
+          ? moderationStatus
+          : this.moderationStatus,
+      updatedAt: updatedAt is DateTime? ? updatedAt : this.updatedAt,
     );
   }
 }

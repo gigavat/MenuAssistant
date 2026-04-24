@@ -27,6 +27,7 @@ abstract class MenuItem implements _i1.SerializableModel {
     required this.dishCatalogId,
     this.dishCatalog,
     required this.createdAt,
+    this.approvalStatus,
   });
 
   factory MenuItem({
@@ -40,6 +41,7 @@ abstract class MenuItem implements _i1.SerializableModel {
     required int dishCatalogId,
     _i3.DishCatalog? dishCatalog,
     required DateTime createdAt,
+    String? approvalStatus,
   }) = _MenuItemImpl;
 
   factory MenuItem.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -66,6 +68,7 @@ abstract class MenuItem implements _i1.SerializableModel {
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
+      approvalStatus: jsonSerialization['approvalStatus'] as String?,
     );
   }
 
@@ -92,6 +95,8 @@ abstract class MenuItem implements _i1.SerializableModel {
 
   DateTime createdAt;
 
+  String? approvalStatus;
+
   /// Returns a shallow copy of this [MenuItem]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -106,6 +111,7 @@ abstract class MenuItem implements _i1.SerializableModel {
     int? dishCatalogId,
     _i3.DishCatalog? dishCatalog,
     DateTime? createdAt,
+    String? approvalStatus,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -121,6 +127,7 @@ abstract class MenuItem implements _i1.SerializableModel {
       'dishCatalogId': dishCatalogId,
       if (dishCatalog != null) 'dishCatalog': dishCatalog?.toJson(),
       'createdAt': createdAt.toJson(),
+      if (approvalStatus != null) 'approvalStatus': approvalStatus,
     };
   }
 
@@ -144,6 +151,7 @@ class _MenuItemImpl extends MenuItem {
     required int dishCatalogId,
     _i3.DishCatalog? dishCatalog,
     required DateTime createdAt,
+    String? approvalStatus,
   }) : super._(
          id: id,
          name: name,
@@ -155,6 +163,7 @@ class _MenuItemImpl extends MenuItem {
          dishCatalogId: dishCatalogId,
          dishCatalog: dishCatalog,
          createdAt: createdAt,
+         approvalStatus: approvalStatus,
        );
 
   /// Returns a shallow copy of this [MenuItem]
@@ -172,6 +181,7 @@ class _MenuItemImpl extends MenuItem {
     int? dishCatalogId,
     Object? dishCatalog = _Undefined,
     DateTime? createdAt,
+    Object? approvalStatus = _Undefined,
   }) {
     return MenuItem(
       id: id is int? ? id : this.id,
@@ -188,6 +198,9 @@ class _MenuItemImpl extends MenuItem {
           ? dishCatalog
           : this.dishCatalog?.copyWith(),
       createdAt: createdAt ?? this.createdAt,
+      approvalStatus: approvalStatus is String?
+          ? approvalStatus
+          : this.approvalStatus,
     );
   }
 }

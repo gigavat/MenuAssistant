@@ -21,6 +21,7 @@ abstract class Category implements _i1.SerializableModel {
     required this.restaurantId,
     this.restaurant,
     required this.createdAt,
+    this.approvalStatus,
   });
 
   factory Category({
@@ -29,6 +30,7 @@ abstract class Category implements _i1.SerializableModel {
     required int restaurantId,
     _i2.Restaurant? restaurant,
     required DateTime createdAt,
+    String? approvalStatus,
   }) = _CategoryImpl;
 
   factory Category.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -44,6 +46,7 @@ abstract class Category implements _i1.SerializableModel {
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
+      approvalStatus: jsonSerialization['approvalStatus'] as String?,
     );
   }
 
@@ -60,6 +63,8 @@ abstract class Category implements _i1.SerializableModel {
 
   DateTime createdAt;
 
+  String? approvalStatus;
+
   /// Returns a shallow copy of this [Category]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -69,6 +74,7 @@ abstract class Category implements _i1.SerializableModel {
     int? restaurantId,
     _i2.Restaurant? restaurant,
     DateTime? createdAt,
+    String? approvalStatus,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -79,6 +85,7 @@ abstract class Category implements _i1.SerializableModel {
       'restaurantId': restaurantId,
       if (restaurant != null) 'restaurant': restaurant?.toJson(),
       'createdAt': createdAt.toJson(),
+      if (approvalStatus != null) 'approvalStatus': approvalStatus,
     };
   }
 
@@ -97,12 +104,14 @@ class _CategoryImpl extends Category {
     required int restaurantId,
     _i2.Restaurant? restaurant,
     required DateTime createdAt,
+    String? approvalStatus,
   }) : super._(
          id: id,
          name: name,
          restaurantId: restaurantId,
          restaurant: restaurant,
          createdAt: createdAt,
+         approvalStatus: approvalStatus,
        );
 
   /// Returns a shallow copy of this [Category]
@@ -115,6 +124,7 @@ class _CategoryImpl extends Category {
     int? restaurantId,
     Object? restaurant = _Undefined,
     DateTime? createdAt,
+    Object? approvalStatus = _Undefined,
   }) {
     return Category(
       id: id is int? ? id : this.id,
@@ -124,6 +134,9 @@ class _CategoryImpl extends Category {
           ? restaurant
           : this.restaurant?.copyWith(),
       createdAt: createdAt ?? this.createdAt,
+      approvalStatus: approvalStatus is String?
+          ? approvalStatus
+          : this.approvalStatus,
     );
   }
 }

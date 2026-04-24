@@ -1,0 +1,15 @@
+### Admin Queue DTO. Строка таблицы «parsed menus» — ресторан + агрегат
+### по дочерним категориям/блюдам + moderationStatus. parsedAt = момент
+### когда ресторан был создан (аналог "меню загружено").
+class: MenuQueueEntry
+fields:
+  restaurantId: int
+  name: String
+  cityHint: String?
+  countryCode: String?
+  parsedAt: DateTime
+  updatedAt: DateTime?
+  dishCount: int
+  categoryCount: int
+  pageCount: int
+  moderationStatus: String?

@@ -573,6 +573,275 @@ OFFSET @off LIMIT @lim
     );
   }
 
+  // ── Phase D · Queue + Menu Validator ────────────────────────────────────
+
+  Future<List<MenuQueueEntry>> listMenuQueue(
+    Session session, {
+    String? status,
+    String? search,
+    int? offset,
+    int? limit,
+  }) async {
+    await _requireAdmin(session);
+
+    final effOffset = offset ?? 0;
+    final clamped = (limit ?? 50).clamp(1, 500);
+    final pattern = (search == null || search.trim().isEmpty)
+        ? null
+        : '%${search.trim().toLowerCase()}%';
+
+    // Статус-фильтр. 'legacy' = moderationStatus IS NULL (трактуется
+    // клиентом как 'auto'). Null / 'all' = без фильтра.
+    final statusClause = switch (status) {
+      'under_review' => 'AND r."moderationStatus" = \'under_review\'',
+      'approved' => 'AND r."moderationStatus" = \'approved\'',
+      'rejected' => 'AND r."moderationStatus" = \'rejected\'',
+      'legacy' => 'AND r."moderationStatus" IS NULL',
+      _ => '',
+    };
+
+    final rows = await session.db.unsafeQuery(
+      '''
+SELECT r.id AS restaurant_id,
+       r.name AS name,
+       r."cityHint" AS city_hint,
+       r."countryCode" AS country_code,
+       r."createdAt" AS parsed_at,
+       r."updatedAt" AS updated_at,
+       r."moderationStatus" AS moderation_status,
+       (SELECT COUNT(*) FROM category c WHERE c."restaurantId" = r.id) AS category_count,
+       (SELECT COUNT(*) FROM menu_item mi
+          JOIN category c ON c.id = mi."categoryId"
+         WHERE c."restaurantId" = r.id) AS dish_count,
+       (SELECT COUNT(*) FROM menu_source_page p WHERE p."restaurantId" = r.id) AS page_count
+FROM restaurant r
+WHERE 1=1
+  ${pattern != null ? 'AND (LOWER(r.name) LIKE @q OR LOWER(r."normalizedName") LIKE @q)' : ''}
+  $statusClause
+ORDER BY COALESCE(r."updatedAt", r."createdAt") DESC
+OFFSET @off LIMIT @lim
+''',
+      parameters: QueryParameters.named({
+        'q': ?pattern,
+        'off': effOffset,
+        'lim': clamped,
+      }),
+    );
+
+    return rows.map((r) {
+      final m = r.toColumnMap();
+      return MenuQueueEntry(
+        restaurantId: m['restaurant_id'] as int,
+        name: m['name'] as String,
+        cityHint: m['city_hint'] as String?,
+        countryCode: m['country_code'] as String?,
+        parsedAt: m['parsed_at'] as DateTime,
+        updatedAt: m['updated_at'] as DateTime?,
+        dishCount: (m['dish_count'] as num).toInt(),
+        categoryCount: (m['category_count'] as num).toInt(),
+        pageCount: (m['page_count'] as num).toInt(),
+        moderationStatus: m['moderation_status'] as String?,
+      );
+    }).toList();
+  }
+
+  Future<MenuValidationView> getMenuForValidation(
+    Session session,
+    int restaurantId,
+  ) async {
+    await _requireAdmin(session);
+
+    final restaurant = await Restaurant.db.findById(session, restaurantId);
+    if (restaurant == null) {
+      throw StateError('Restaurant $restaurantId not found');
+    }
+
+    final pages = await MenuSourcePage.db.find(
+      session,
+      where: (t) => t.restaurantId.equals(restaurantId),
+      orderBy: (t) => t.ordinal,
+    );
+    final categories = await Category.db.find(
+      session,
+      where: (t) => t.restaurantId.equals(restaurantId),
+      orderBy: (t) => t.createdAt,
+    );
+    final categoryIds = categories.map((c) => c.id!).toList();
+    final items = categoryIds.isEmpty
+        ? <MenuItem>[]
+        : await MenuItem.db.find(
+            session,
+            where: (t) => t.categoryId.inSet(categoryIds.toSet()),
+            orderBy: (t) => t.createdAt,
+          );
+
+    return MenuValidationView(
+      restaurant: restaurant,
+      pages: pages,
+      categories: categories,
+      items: items,
+    );
+  }
+
+  Future<MenuItem> updateMenuItem(
+    Session session,
+    int itemId, {
+    String? name,
+    double? price,
+    String? approvalStatus,
+  }) async {
+    final admin = await _requireAdmin(session);
+    final existing = await MenuItem.db.findById(session, itemId);
+    if (existing == null) {
+      throw StateError('MenuItem $itemId not found');
+    }
+
+    final prev = <String, Object?>{
+      'name': existing.name,
+      'price': existing.price,
+      'approvalStatus': existing.approvalStatus,
+    };
+
+    final saved = await MenuItem.db.updateRow(
+      session,
+      existing.copyWith(
+        name: name ?? existing.name,
+        price: price ?? existing.price,
+        approvalStatus: approvalStatus ?? existing.approvalStatus,
+      ),
+    );
+
+    await _touchRestaurantRevision(session, saved.categoryId);
+
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: 'edited',
+      objectType: 'menu_item',
+      objectId: itemId.toString(),
+      diff: jsonEncode({
+        'before': prev,
+        'after': {
+          'name': saved.name,
+          'price': saved.price,
+          'approvalStatus': saved.approvalStatus,
+        },
+      }),
+    );
+    return saved;
+  }
+
+  Future<Category> updateCategory(
+    Session session,
+    int categoryId, {
+    String? name,
+    String? approvalStatus,
+  }) async {
+    final admin = await _requireAdmin(session);
+    final existing = await Category.db.findById(session, categoryId);
+    if (existing == null) {
+      throw StateError('Category $categoryId not found');
+    }
+
+    final prev = <String, Object?>{
+      'name': existing.name,
+      'approvalStatus': existing.approvalStatus,
+    };
+    final saved = await Category.db.updateRow(
+      session,
+      existing.copyWith(
+        name: name ?? existing.name,
+        approvalStatus: approvalStatus ?? existing.approvalStatus,
+      ),
+    );
+
+    await _touchRestaurantRevision(session, saved.restaurantId);
+
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: 'edited',
+      objectType: 'category',
+      objectId: categoryId.toString(),
+      diff: jsonEncode({
+        'before': prev,
+        'after': {
+          'name': saved.name,
+          'approvalStatus': saved.approvalStatus,
+        },
+      }),
+    );
+    return saved;
+  }
+
+  Future<Restaurant> approveMenu(Session session, int restaurantId) async {
+    return _setModerationStatus(session, restaurantId, 'approved', reason: null);
+  }
+
+  Future<Restaurant> rejectMenu(
+    Session session,
+    int restaurantId,
+    String reason,
+  ) async {
+    return _setModerationStatus(
+      session,
+      restaurantId,
+      'rejected',
+      reason: reason,
+    );
+  }
+
+  Future<Restaurant> _setModerationStatus(
+    Session session,
+    int restaurantId,
+    String status, {
+    String? reason,
+  }) async {
+    final admin = await _requireAdmin(session);
+    final existing = await Restaurant.db.findById(session, restaurantId);
+    if (existing == null) {
+      throw StateError('Restaurant $restaurantId not found');
+    }
+    final now = DateTime.now();
+    final saved = await Restaurant.db.updateRow(
+      session,
+      existing.copyWith(
+        moderationStatus: status,
+        updatedAt: now,
+      ),
+    );
+    await ServiceRegistry.instance.auditService.logAction(
+      session,
+      actorEmail: admin.email,
+      action: status == 'approved' ? 'approved_menu' : 'rejected_menu',
+      objectType: 'restaurant',
+      objectId: restaurantId.toString(),
+      diff: jsonEncode({
+        'before': {'moderationStatus': existing.moderationStatus},
+        'after': {'moderationStatus': status},
+        'reason': ?reason,
+      }),
+    );
+    return saved;
+  }
+
+  /// Вызывается на каждое child mutation (updateMenuItem / updateCategory),
+  /// чтобы Flutter poll увидел изменение через getRestaurantRevision.
+  Future<void> _touchRestaurantRevision(
+    Session session,
+    int? categoryOrRestaurantId,
+  ) async {
+    if (categoryOrRestaurantId == null) return;
+    // Находим ресторан по category.id если передан, иначе считаем что это уже restaurantId.
+    final cat = await Category.db.findById(session, categoryOrRestaurantId);
+    final restaurantId = cat?.restaurantId ?? categoryOrRestaurantId;
+    final now = DateTime.now();
+    await session.db.unsafeExecute(
+      'UPDATE restaurant SET "updatedAt" = @t WHERE id = @id',
+      parameters: QueryParameters.named({'t': now, 'id': restaurantId}),
+    );
+  }
+
   // ── Helpers ─────────────────────────────────────────────────────────────
 
   Map<String, Object?> _dishPatchMap(CuratedDish d) => <String, Object?>{

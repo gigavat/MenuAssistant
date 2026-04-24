@@ -22,10 +22,17 @@ admin:
   - setPhotoQuality:
   - deletePhoto:
   - listAuditLog:
+  - listMenuQueue:
+  - getMenuForValidation:
+  - updateMenuItem:
+  - updateCategory:
+  - approveMenu:
+  - rejectMenu:
 aiProcessing:
   - processMenuUpload:
   - processMultiPageMenu:
 restaurant:
+  - getRestaurantRevision:
   - getAllRestaurants:
   - getRestaurantById:
   - getCategoriesForRestaurant:

@@ -13,7 +13,7 @@ export function PageHeader({
   actions,
   kpis,
 }: {
-  eyebrow?: string;
+  eyebrow?: ReactNode;
   title: string;
   sub?: string;
   actions?: ReactNode;

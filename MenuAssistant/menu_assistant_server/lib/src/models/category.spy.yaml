@@ -4,3 +4,7 @@ fields:
   name: String
   restaurant: Restaurant?, relation
   createdAt: DateTime
+  # Sprint 4.9 admin validator: 'pending' | 'approved' | 'rejected'. Null =
+  # legacy (трактуется как approved). Изменения bump'ят restaurant.updatedAt
+  # для Flutter poll.
+  approvalStatus: String?

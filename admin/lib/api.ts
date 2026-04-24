@@ -175,6 +175,61 @@ export interface AuditLog {
   ipAddress?: string | null;
 }
 
+// ── Phase D payloads ─────────────────────────────────────────────────────
+
+export interface MenuQueueEntry {
+  restaurantId: number;
+  name: string;
+  cityHint?: string | null;
+  countryCode?: string | null;
+  parsedAt: string;
+  updatedAt?: string | null;
+  dishCount: number;
+  categoryCount: number;
+  pageCount: number;
+  moderationStatus?: string | null;
+}
+
+export interface MenuSourcePage {
+  id?: number;
+  restaurantId?: number | null;
+  uploadBatchId: string;
+  ordinal: number;
+  sourceType: string;
+  imageUrl: string;
+  createdAt: string;
+}
+
+export interface Category {
+  id?: number;
+  name: string;
+  restaurantId?: number | null;
+  createdAt: string;
+  approvalStatus?: string | null;
+}
+
+export interface MenuItem {
+  id?: number;
+  name: string;
+  price: number;
+  tags?: string[] | null;
+  spicyLevel?: number | null;
+  categoryId?: number | null;
+  dishCatalogId?: number | null;
+  createdAt: string;
+  approvalStatus?: string | null;
+}
+
+export interface MenuValidationView {
+  restaurant: Restaurant & {
+    moderationStatus?: string | null;
+    updatedAt?: string | null;
+  };
+  pages: MenuSourcePage[];
+  categories: Category[];
+  items: MenuItem[];
+}
+
 // ── Thin method wrappers ─────────────────────────────────────────────────
 
 export const adminApi = {
@@ -248,4 +303,29 @@ export const adminApi = {
     offset?: number;
     limit?: number;
   }) => adminCall<AuditLog[]>("listAuditLog", params),
+
+  // Phase D — Queue + Validator
+  listMenuQueue: (params: {
+    status?: string | null;
+    search?: string | null;
+    offset?: number;
+    limit?: number;
+  }) => adminCall<MenuQueueEntry[]>("listMenuQueue", params),
+  getMenuForValidation: (params: { restaurantId: number }) =>
+    adminCall<MenuValidationView>("getMenuForValidation", params),
+  updateMenuItem: (params: {
+    itemId: number;
+    name?: string;
+    price?: number;
+    approvalStatus?: string;
+  }) => adminCall<MenuItem>("updateMenuItem", params),
+  updateCategory: (params: {
+    categoryId: number;
+    name?: string;
+    approvalStatus?: string;
+  }) => adminCall<Category>("updateCategory", params),
+  approveMenu: (params: { restaurantId: number }) =>
+    adminCall<Restaurant>("approveMenu", params),
+  rejectMenu: (params: { restaurantId: number; reason: string }) =>
+    adminCall<Restaurant>("rejectMenu", params),
 };

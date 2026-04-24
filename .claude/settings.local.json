@@ -119,7 +119,9 @@
       "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Id 36696 -Force\")",
       "Bash(curl -sS -X POST 'http://localhost:8080/admin/listCuratedDishes?__TRACKED_VAR__' -H 'Content-Type: application/json' -d '{\"limit\":2}')",
       "Bash(powershell.exe -NoProfile -Command \"Get-Process -Id 28888 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime | Format-List\")",
-      "Bash(curl -sS -X POST 'http://localhost:8080/admin/updateCuratedDish?_adminEmail=andrey.grachev38@gmail.com' -H 'Content-Type: application/json' -d '{\"id\":62,\"status\":\"approved\"}')"
+      "Bash(curl -sS -X POST 'http://localhost:8080/admin/updateCuratedDish?_adminEmail=andrey.grachev38@gmail.com' -H 'Content-Type: application/json' -d '{\"id\":62,\"status\":\"approved\"}')",
+      "Bash(curl -sS -X POST \"http://localhost:8080/admin/listMenuQueue?_adminEmail=andrey.grachev38@gmail.com\" -H \"Content-Type: application/json\" -d '{\"limit\":2}')",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Process -Id 23876 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime | Format-List\")"
     ],
     "additionalDirectories": [
       "\\tmp"

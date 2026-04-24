@@ -31,17 +31,22 @@ import 'package:menu_assistant_client/src/protocol/photo_review_row.dart'
 import 'package:menu_assistant_client/src/protocol/curated_dish_image.dart'
     as _i13;
 import 'package:menu_assistant_client/src/protocol/audit_log.dart' as _i14;
-import 'package:menu_assistant_client/src/protocol/process_menu_result.dart'
+import 'package:menu_assistant_client/src/protocol/menu_queue_entry.dart'
     as _i15;
-import 'package:menu_assistant_client/src/protocol/menu_page_input.dart'
+import 'package:menu_assistant_client/src/protocol/menu_validation_view.dart'
     as _i16;
-import 'package:menu_assistant_client/src/protocol/category.dart' as _i17;
-import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i18;
-import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i19;
-import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
+import 'package:menu_assistant_client/src/protocol/menu_item.dart' as _i17;
+import 'package:menu_assistant_client/src/protocol/category.dart' as _i18;
+import 'package:menu_assistant_client/src/protocol/process_menu_result.dart'
+    as _i19;
+import 'package:menu_assistant_client/src/protocol/menu_page_input.dart'
     as _i20;
-import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i21;
-import 'protocol.dart' as _i22;
+import 'package:menu_assistant_client/src/protocol/menu_item_view.dart' as _i21;
+import 'package:menu_assistant_client/src/protocol/user_profile.dart' as _i22;
+import 'package:menu_assistant_client/src/protocol/greetings/greeting.dart'
+    as _i23;
+import 'package:serverpod_auth_client/serverpod_auth_client.dart' as _i24;
+import 'protocol.dart' as _i25;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -457,6 +462,78 @@ class EndpointAdmin extends _i2.EndpointRef {
       'limit': limit,
     },
   );
+
+  _i3.Future<List<_i15.MenuQueueEntry>> listMenuQueue({
+    String? status,
+    String? search,
+    int? offset,
+    int? limit,
+  }) => caller.callServerEndpoint<List<_i15.MenuQueueEntry>>(
+    'admin',
+    'listMenuQueue',
+    {
+      'status': status,
+      'search': search,
+      'offset': offset,
+      'limit': limit,
+    },
+  );
+
+  _i3.Future<_i16.MenuValidationView> getMenuForValidation(int restaurantId) =>
+      caller.callServerEndpoint<_i16.MenuValidationView>(
+        'admin',
+        'getMenuForValidation',
+        {'restaurantId': restaurantId},
+      );
+
+  _i3.Future<_i17.MenuItem> updateMenuItem(
+    int itemId, {
+    String? name,
+    double? price,
+    String? approvalStatus,
+  }) => caller.callServerEndpoint<_i17.MenuItem>(
+    'admin',
+    'updateMenuItem',
+    {
+      'itemId': itemId,
+      'name': name,
+      'price': price,
+      'approvalStatus': approvalStatus,
+    },
+  );
+
+  _i3.Future<_i18.Category> updateCategory(
+    int categoryId, {
+    String? name,
+    String? approvalStatus,
+  }) => caller.callServerEndpoint<_i18.Category>(
+    'admin',
+    'updateCategory',
+    {
+      'categoryId': categoryId,
+      'name': name,
+      'approvalStatus': approvalStatus,
+    },
+  );
+
+  _i3.Future<_i6.Restaurant> approveMenu(int restaurantId) =>
+      caller.callServerEndpoint<_i6.Restaurant>(
+        'admin',
+        'approveMenu',
+        {'restaurantId': restaurantId},
+      );
+
+  _i3.Future<_i6.Restaurant> rejectMenu(
+    int restaurantId,
+    String reason,
+  ) => caller.callServerEndpoint<_i6.Restaurant>(
+    'admin',
+    'rejectMenu',
+    {
+      'restaurantId': restaurantId,
+      'reason': reason,
+    },
+  );
 }
 
 /// {@category Endpoint}
@@ -468,10 +545,10 @@ class EndpointAiProcessing extends _i2.EndpointRef {
 
   /// Backward-compat single-page wrapper — the existing Flutter client
   /// (pre-4.7) still calls this.
-  _i3.Future<_i15.ProcessMenuResult> processMenuUpload(
+  _i3.Future<_i19.ProcessMenuResult> processMenuUpload(
     String fileName,
     List<int> fileBytes,
-  ) => caller.callServerEndpoint<_i15.ProcessMenuResult>(
+  ) => caller.callServerEndpoint<_i19.ProcessMenuResult>(
     'aiProcessing',
     'processMenuUpload',
     {
@@ -486,9 +563,9 @@ class EndpointAiProcessing extends _i2.EndpointRef {
   /// - a [MenuSourcePage] is stored per page,
   /// - menu items are linked to the shared [DishCatalog],
   /// - one [LlmUsage] row is written covering all pages.
-  _i3.Future<_i15.ProcessMenuResult> processMultiPageMenu(
-    List<_i16.MenuPageInput> pages,
-  ) => caller.callServerEndpoint<_i15.ProcessMenuResult>(
+  _i3.Future<_i19.ProcessMenuResult> processMultiPageMenu(
+    List<_i20.MenuPageInput> pages,
+  ) => caller.callServerEndpoint<_i19.ProcessMenuResult>(
     'aiProcessing',
     'processMultiPageMenu',
     {'pages': pages},
@@ -501,6 +578,17 @@ class EndpointRestaurant extends _i2.EndpointRef {
 
   @override
   String get name => 'restaurant';
+
+  /// Revision marker для Flutter poll (Sprint 4.9 Phase D). Возвращает
+  /// `restaurant.updatedAt` если он не null, иначе `createdAt`. Flutter
+  /// RestaurantScreen поллит этот метод раз в 5 сек и рефетчит меню,
+  /// если timestamp изменился. Требует, чтобы user имел visit на ресторане.
+  _i3.Future<DateTime?> getRestaurantRevision(int restaurantId) =>
+      caller.callServerEndpoint<DateTime?>(
+        'restaurant',
+        'getRestaurantRevision',
+        {'restaurantId': restaurantId},
+      );
 
   /// Returns every restaurant the current user has ever uploaded a menu
   /// for — tracked via `user_restaurant_visit`.
@@ -521,9 +609,9 @@ class EndpointRestaurant extends _i2.EndpointRef {
       );
 
   /// Get Categories for a restaurant. Gated on the user having visited it.
-  _i3.Future<List<_i17.Category>> getCategoriesForRestaurant(
+  _i3.Future<List<_i18.Category>> getCategoriesForRestaurant(
     int restaurantId,
-  ) => caller.callServerEndpoint<List<_i17.Category>>(
+  ) => caller.callServerEndpoint<List<_i18.Category>>(
     'restaurant',
     'getCategoriesForRestaurant',
     {'restaurantId': restaurantId},
@@ -532,8 +620,8 @@ class EndpointRestaurant extends _i2.EndpointRef {
   /// Get MenuItems for a category. Returns client-facing [MenuItemView]
   /// payloads with `description` and `imageUrl` resolved via JOIN on
   /// `dish_catalog` and `dish_image` (denorm snapshots removed in 4.6).
-  _i3.Future<List<_i18.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
-      caller.callServerEndpoint<List<_i18.MenuItemView>>(
+  _i3.Future<List<_i21.MenuItemView>> getMenuItemsForCategory(int categoryId) =>
+      caller.callServerEndpoint<List<_i21.MenuItemView>>(
         'restaurant',
         'getMenuItemsForCategory',
         {'categoryId': categoryId},
@@ -565,9 +653,9 @@ class EndpointRestaurant extends _i2.EndpointRef {
   );
 
   /// Get favorite menu items as hydrated views.
-  _i3.Future<List<_i18.MenuItemView>> getFavoriteMenuItems({
+  _i3.Future<List<_i21.MenuItemView>> getFavoriteMenuItems({
     required int limit,
-  }) => caller.callServerEndpoint<List<_i18.MenuItemView>>(
+  }) => caller.callServerEndpoint<List<_i21.MenuItemView>>(
     'restaurant',
     'getFavoriteMenuItems',
     {'limit': limit},
@@ -631,8 +719,8 @@ class EndpointUserAccount extends _i2.EndpointRef {
   /// the post-registration wizard). Returns null if the profile wasn't
   /// set up yet — the client routes through ProfileSetupScreen in that
   /// case. Requires authentication.
-  _i3.Future<_i19.AppUserProfile?> getProfile() =>
-      caller.callServerEndpoint<_i19.AppUserProfile?>(
+  _i3.Future<_i22.AppUserProfile?> getProfile() =>
+      caller.callServerEndpoint<_i22.AppUserProfile?>(
         'userAccount',
         'getProfile',
         {},
@@ -641,10 +729,10 @@ class EndpointUserAccount extends _i2.EndpointRef {
   /// Upserts the caller's profile. Creates the row on first call (post-
   /// registration), overwrites the fields on subsequent calls (edit flow).
   /// Requires authentication.
-  _i3.Future<_i19.AppUserProfile> saveProfile({
+  _i3.Future<_i22.AppUserProfile> saveProfile({
     required String fullName,
     DateTime? birthDate,
-  }) => caller.callServerEndpoint<_i19.AppUserProfile>(
+  }) => caller.callServerEndpoint<_i22.AppUserProfile>(
     'userAccount',
     'saveProfile',
     {
@@ -664,8 +752,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i20.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i20.Greeting>(
+  _i3.Future<_i23.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i23.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -674,12 +762,12 @@ class EndpointGreeting extends _i2.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    auth = _i21.Caller(client);
+    auth = _i24.Caller(client);
     serverpod_auth_idp = _i1.Caller(client);
     serverpod_auth_core = _i4.Caller(client);
   }
 
-  late final _i21.Caller auth;
+  late final _i24.Caller auth;
 
   late final _i1.Caller serverpod_auth_idp;
 
@@ -706,7 +794,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i22.Protocol(),
+         _i25.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

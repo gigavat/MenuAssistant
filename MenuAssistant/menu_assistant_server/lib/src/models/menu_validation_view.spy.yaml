@@ -1,0 +1,10 @@
+### Admin Validator payload. Один большой snapshot ресторана +
+### source-страниц + всех категорий/блюд, чтобы UI мог рендерить split
+### view без дополнительных запросов. Ответ может быть 100-300KB на
+### длинном меню — ОК для модерации.
+class: MenuValidationView
+fields:
+  restaurant: Restaurant
+  pages: List<MenuSourcePage>
+  categories: List<Category>
+  items: List<MenuItem>

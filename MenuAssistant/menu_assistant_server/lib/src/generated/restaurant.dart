@@ -25,6 +25,8 @@ abstract class Restaurant
     this.addressRaw,
     required this.currency,
     required this.createdAt,
+    this.moderationStatus,
+    this.updatedAt,
   });
 
   factory Restaurant({
@@ -38,6 +40,8 @@ abstract class Restaurant
     String? addressRaw,
     required String currency,
     required DateTime createdAt,
+    String? moderationStatus,
+    DateTime? updatedAt,
   }) = _RestaurantImpl;
 
   factory Restaurant.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -54,6 +58,10 @@ abstract class Restaurant
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
+      moderationStatus: jsonSerialization['moderationStatus'] as String?,
+      updatedAt: jsonSerialization['updatedAt'] == null
+          ? null
+          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['updatedAt']),
     );
   }
 
@@ -82,6 +90,10 @@ abstract class Restaurant
 
   DateTime createdAt;
 
+  String? moderationStatus;
+
+  DateTime? updatedAt;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -99,6 +111,8 @@ abstract class Restaurant
     String? addressRaw,
     String? currency,
     DateTime? createdAt,
+    String? moderationStatus,
+    DateTime? updatedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -114,6 +128,8 @@ abstract class Restaurant
       if (addressRaw != null) 'addressRaw': addressRaw,
       'currency': currency,
       'createdAt': createdAt.toJson(),
+      if (moderationStatus != null) 'moderationStatus': moderationStatus,
+      if (updatedAt != null) 'updatedAt': updatedAt?.toJson(),
     };
   }
 
@@ -131,6 +147,8 @@ abstract class Restaurant
       if (addressRaw != null) 'addressRaw': addressRaw,
       'currency': currency,
       'createdAt': createdAt.toJson(),
+      if (moderationStatus != null) 'moderationStatus': moderationStatus,
+      if (updatedAt != null) 'updatedAt': updatedAt?.toJson(),
     };
   }
 
@@ -178,6 +196,8 @@ class _RestaurantImpl extends Restaurant {
     String? addressRaw,
     required String currency,
     required DateTime createdAt,
+    String? moderationStatus,
+    DateTime? updatedAt,
   }) : super._(
          id: id,
          name: name,
@@ -189,6 +209,8 @@ class _RestaurantImpl extends Restaurant {
          addressRaw: addressRaw,
          currency: currency,
          createdAt: createdAt,
+         moderationStatus: moderationStatus,
+         updatedAt: updatedAt,
        );
 
   /// Returns a shallow copy of this [Restaurant]
@@ -206,6 +228,8 @@ class _RestaurantImpl extends Restaurant {
     Object? addressRaw = _Undefined,
     String? currency,
     DateTime? createdAt,
+    Object? moderationStatus = _Undefined,
+    Object? updatedAt = _Undefined,
   }) {
     return Restaurant(
       id: id is int? ? id : this.id,
@@ -218,6 +242,10 @@ class _RestaurantImpl extends Restaurant {
       addressRaw: addressRaw is String? ? addressRaw : this.addressRaw,
       currency: currency ?? this.currency,
       createdAt: createdAt ?? this.createdAt,
+      moderationStatus: moderationStatus is String?
+          ? moderationStatus
+          : this.moderationStatus,
+      updatedAt: updatedAt is DateTime? ? updatedAt : this.updatedAt,
     );
   }
 }
@@ -271,6 +299,18 @@ class RestaurantUpdateTable extends _i1.UpdateTable<RestaurantTable> {
         table.createdAt,
         value,
       );
+
+  _i1.ColumnValue<String, String> moderationStatus(String? value) =>
+      _i1.ColumnValue(
+        table.moderationStatus,
+        value,
+      );
+
+  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime? value) =>
+      _i1.ColumnValue(
+        table.updatedAt,
+        value,
+      );
 }
 
 class RestaurantTable extends _i1.Table<int?> {
@@ -312,6 +352,14 @@ class RestaurantTable extends _i1.Table<int?> {
       'createdAt',
       this,
     );
+    moderationStatus = _i1.ColumnString(
+      'moderationStatus',
+      this,
+    );
+    updatedAt = _i1.ColumnDateTime(
+      'updatedAt',
+      this,
+    );
   }
 
   late final RestaurantUpdateTable updateTable;
@@ -334,6 +382,10 @@ class RestaurantTable extends _i1.Table<int?> {
 
   late final _i1.ColumnDateTime createdAt;
 
+  late final _i1.ColumnString moderationStatus;
+
+  late final _i1.ColumnDateTime updatedAt;
+
   @override
   List<_i1.Column> get columns => [
     id,
@@ -346,6 +398,8 @@ class RestaurantTable extends _i1.Table<int?> {
     addressRaw,
     currency,
     createdAt,
+    moderationStatus,
+    updatedAt,
   ];
 }
 

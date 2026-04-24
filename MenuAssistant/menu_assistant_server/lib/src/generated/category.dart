@@ -23,6 +23,7 @@ abstract class Category
     required this.restaurantId,
     this.restaurant,
     required this.createdAt,
+    this.approvalStatus,
   });
 
   factory Category({
@@ -31,6 +32,7 @@ abstract class Category
     required int restaurantId,
     _i2.Restaurant? restaurant,
     required DateTime createdAt,
+    String? approvalStatus,
   }) = _CategoryImpl;
 
   factory Category.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -46,6 +48,7 @@ abstract class Category
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
+      approvalStatus: jsonSerialization['approvalStatus'] as String?,
     );
   }
 
@@ -64,6 +67,8 @@ abstract class Category
 
   DateTime createdAt;
 
+  String? approvalStatus;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -76,6 +81,7 @@ abstract class Category
     int? restaurantId,
     _i2.Restaurant? restaurant,
     DateTime? createdAt,
+    String? approvalStatus,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -86,6 +92,7 @@ abstract class Category
       'restaurantId': restaurantId,
       if (restaurant != null) 'restaurant': restaurant?.toJson(),
       'createdAt': createdAt.toJson(),
+      if (approvalStatus != null) 'approvalStatus': approvalStatus,
     };
   }
 
@@ -98,6 +105,7 @@ abstract class Category
       'restaurantId': restaurantId,
       if (restaurant != null) 'restaurant': restaurant?.toJsonForProtocol(),
       'createdAt': createdAt.toJson(),
+      if (approvalStatus != null) 'approvalStatus': approvalStatus,
     };
   }
 
@@ -140,12 +148,14 @@ class _CategoryImpl extends Category {
     required int restaurantId,
     _i2.Restaurant? restaurant,
     required DateTime createdAt,
+    String? approvalStatus,
   }) : super._(
          id: id,
          name: name,
          restaurantId: restaurantId,
          restaurant: restaurant,
          createdAt: createdAt,
+         approvalStatus: approvalStatus,
        );
 
   /// Returns a shallow copy of this [Category]
@@ -158,6 +168,7 @@ class _CategoryImpl extends Category {
     int? restaurantId,
     Object? restaurant = _Undefined,
     DateTime? createdAt,
+    Object? approvalStatus = _Undefined,
   }) {
     return Category(
       id: id is int? ? id : this.id,
@@ -167,6 +178,9 @@ class _CategoryImpl extends Category {
           ? restaurant
           : this.restaurant?.copyWith(),
       createdAt: createdAt ?? this.createdAt,
+      approvalStatus: approvalStatus is String?
+          ? approvalStatus
+          : this.approvalStatus,
     );
   }
 }
@@ -189,6 +203,12 @@ class CategoryUpdateTable extends _i1.UpdateTable<CategoryTable> {
         table.createdAt,
         value,
       );
+
+  _i1.ColumnValue<String, String> approvalStatus(String? value) =>
+      _i1.ColumnValue(
+        table.approvalStatus,
+        value,
+      );
 }
 
 class CategoryTable extends _i1.Table<int?> {
@@ -206,6 +226,10 @@ class CategoryTable extends _i1.Table<int?> {
       'createdAt',
       this,
     );
+    approvalStatus = _i1.ColumnString(
+      'approvalStatus',
+      this,
+    );
   }
 
   late final CategoryUpdateTable updateTable;
@@ -217,6 +241,8 @@ class CategoryTable extends _i1.Table<int?> {
   _i2.RestaurantTable? _restaurant;
 
   late final _i1.ColumnDateTime createdAt;
+
+  late final _i1.ColumnString approvalStatus;
 
   _i2.RestaurantTable get restaurant {
     if (_restaurant != null) return _restaurant!;
@@ -237,6 +263,7 @@ class CategoryTable extends _i1.Table<int?> {
     name,
     restaurantId,
     createdAt,
+    approvalStatus,
   ];
 
   @override

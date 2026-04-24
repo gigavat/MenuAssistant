@@ -14,8 +14,19 @@ fields:
   addressRaw: String?
   currency: String
   createdAt: DateTime
+  # Moderation state machine (Sprint 4.9). Nullable = legacy row, трактуется
+  # клиентом как 'auto' (видно без ревью). После admin approve/reject статус
+  # меняется явно. Значения: 'auto' | 'under_review' | 'approved' | 'rejected'.
+  moderationStatus: String?
+  # Revision marker для Flutter poll (Sprint 4.9). Bump'ится при каждом
+  # mutation через admin validator (updateMenuItem / approveMenu и т.д.).
+  # Flutter RestaurantScreen раз в 5 сек читает updatedAt и рефетчит меню
+  # если изменилось. Null для legacy — Flutter fallback на createdAt.
+  updatedAt: DateTime?
 indexes:
   restaurant_geo_idx:
     fields: latitude, longitude
   restaurant_normalized_name_idx:
     fields: normalizedName
+  restaurant_moderation_status_idx:
+    fields: moderationStatus

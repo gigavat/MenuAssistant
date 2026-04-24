@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:menu_assistant_client/menu_assistant_client.dart';
 
@@ -34,10 +36,47 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   bool _loading = true;
   String? _error;
 
+  Timer? _pollTimer;
+  DateTime? _lastSeenRevision;
+
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    _startRevisionPoll();
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Sprint 4.9 Phase D: Flutter poll админского validator'а. Раз в 5 сек
+  /// спрашиваем у сервера `restaurant.updatedAt` через
+  /// `getRestaurantRevision(id)`. Если отличается от последнего
+  /// заквеченного — рефетчим категории/блюда, чтобы UI обновился.
+  void _startRevisionPoll() {
+    final id = widget.restaurant.id;
+    if (id == null) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted) return;
+      try {
+        final rev = await _repo.getRestaurantRevision(id);
+        if (!mounted || rev == null) return;
+        if (_lastSeenRevision == null) {
+          _lastSeenRevision = rev;
+          return;
+        }
+        if (rev.isAfter(_lastSeenRevision!)) {
+          _lastSeenRevision = rev;
+          await _loadCategories();
+        }
+      } catch (_) {
+        // swallow — transient network / auth hiccup, try next tick.
+      }
+    });
   }
 
   Future<void> _loadCategories() async {
